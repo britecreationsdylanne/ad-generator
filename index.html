@@ -453,9 +453,9 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
     <div id="loadingOverlay" class="loading-overlay hidden">
         <div class="loading-content">
             <div class="spinner"></div>
-            <h2 style="color: #272D3F; margin-bottom: 1rem;" id="overlayTitle">Generating Images...</h2>
+            <h2 style="color: #272D3F; margin-bottom: 1rem;" id="overlayTitle">Generating Images</h2>
             <p style="color: #7DA3AF; font-size: 1.1rem; line-height: 1.6;" id="overlayMessage">
-                This may take 1-2 minutes. Google Gemini is creating your custom ad images with the perfect aspect ratios for each platform.
+                This may take a minute. Google Gemini is creating your custom ad images.
             </p>
             <p style="color: #31D7CA; font-weight: 600; margin-top: 1rem; font-size: 0.9rem;">☕ Grab a coffee while you wait!</p>
         </div>
@@ -477,7 +477,11 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             { name: 'BriteCo Logo 3', url: 'http://localhost:3000/logos/Logo-BriteCo-Solid-Color-03.png' },
             { name: 'BriteCo Logo 4', url: 'http://localhost:3000/logos/Logo-BriteCo-Solid-Color-04.png' },
             { name: 'Emblem 1', url: 'http://localhost:3000/logos/Emblem-01.png' },
-            { name: 'Emblem 2', url: 'http://localhost:3000/logos/Emblem-02.png' }
+            { name: 'Emblem 2', url: 'http://localhost:3000/logos/Emblem-02.png' },
+            { name: 'White & Teal', url: 'http://localhost:3000/logos/White and Teal-Jewelry-Watch-Insurance-RGB.png' },
+            { name: 'Blue & Teal', url: 'http://localhost:3000/logos/Blue and Teal-Jewelry-Watch-Insurance-RGB.png' },
+            { name: 'Blue & White', url: 'http://localhost:3000/logos/Blue and white-Jewelry-Watch-Insurance-RGB.png' },
+            { name: 'Blue RGB', url: 'http://localhost:3000/logos/Blue-Jewelry-Watch-Insurance-RGB.png' }
         ];
 
         // Pre-loaded BriteCo logo - loaded from file (deprecated, using availableLogos now)
@@ -570,11 +574,11 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             const platforms = Array.from(selectedPlatforms);
 
             try {
-                // Update loading overlay status with provider name
+                // Update loading overlay status
                 const providerName = provider === 'claude' ? 'Claude' : 'OpenAI';
-                document.getElementById('overlayTitle').textContent = 'Generating Prompts...';
-                document.getElementById('loadingText').textContent = 'Generating Prompts...';
-                document.getElementById('loadingStatus').textContent = `Using ${providerName} to create an optimized image generation prompt`;
+                document.getElementById('overlayTitle').textContent = 'Generating Image Prompts';
+                document.getElementById('loadingText').textContent = 'Generating Image Prompts';
+                document.getElementById('loadingStatus').textContent = `This may take a minute. ${providerName} is creating your custom image prompts.`;
 
                 const response = await fetch('http://localhost:3000/api/generate-prompt', {
                     method: 'POST',
@@ -704,11 +708,13 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
         async function generateImagesFromPrompt() {
             const prompt = document.getElementById('promptText').value;
             const platforms = Array.from(selectedPlatforms);
+            const provider = document.getElementById('aiProvider').value;
+            const providerName = provider === 'claude' ? 'Claude' : 'OpenAI';
 
             // Show loading overlay
             document.getElementById('loadingOverlay').classList.remove('hidden');
-            document.getElementById('overlayTitle').textContent = 'Generating Images...';
-            document.getElementById('overlayMessage').textContent = 'This may take 1-2 minutes. Google Gemini is creating your custom ad images with the perfect aspect ratios for each platform.';
+            document.getElementById('overlayTitle').textContent = 'Generating Images';
+            document.getElementById('overlayMessage').textContent = `This may take a minute. Google Gemini is creating your custom ad images.`;
 
             document.getElementById('generateImagesBtn').disabled = true;
             document.getElementById('generateImagesBtn').textContent = 'Generating Images...';
@@ -1041,8 +1047,8 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                     logoSettings[index] = {
                         x: 50, // Percentage from left (center)
                         y: 50, // Percentage from top (center)
-                        scale: 15, // Logo size percentage (15% of image width)
-                        enabled: true,
+                        scale: 27, // Logo size percentage (27% of image width - middle of range)
+                        enabled: false, // Default to disabled - user must opt-in
                         selectedLogoIndex: 0 // Default to first logo
                     };
                 }
@@ -1087,9 +1093,9 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                                          id="logo-option-${index}-${logoIdx}"
                                          style="border: 3px solid ${logoSettings[index].selectedLogoIndex === logoIdx ? '#31D7CA' : '#E1E7EF'};
                                                 border-radius: 8px; padding: 0.5rem; cursor: pointer; background: white;
-                                                transition: all 0.2s ease;">
+                                                transition: all 0.2s ease; height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
                                         <img src="${logo.url}" alt="${logo.name}"
-                                             style="width: 100%; height: auto; display: block; margin-bottom: 0.25rem;">
+                                             style="max-width: 100%; max-height: 80px; object-fit: contain; display: block; margin-bottom: 0.25rem;">
                                         <p style="font-size: 0.75rem; color: #7DA3AF; margin: 0; text-align: center;">${logo.name}</p>
                                     </div>
                                 `).join('')}
@@ -1215,10 +1221,20 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             const selectedLogo = availableLogos[selectedLogoIndex];
 
             if (logoEnabled && selectedLogo) {
+                // Calculate logo width based on actual image width (not preview container)
+                // Preview image is displayed with "width: 100%" of container
+                // We need the logo to appear proportional to the actual final image
+                const previewImg = document.getElementById(`logo-preview-img-${index}`);
+                const previewWidth = previewImg ? previewImg.clientWidth : 500;
+
+                // Scale logo based on actual image dimensions
+                // logoScale is percentage of image width we want the logo to be
+                const logoWidthPx = (logoScale / 100) * previewWidth;
+
                 logoPreview.style.pointerEvents = 'auto';
                 logoPreview.innerHTML = `
                     <img src="${selectedLogo.url}" alt="${selectedLogo.name}"
-                         style="width: ${logoScale}%; height: auto; display: block; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); pointer-events: none;">
+                         style="width: ${logoWidthPx}px; height: auto; display: block; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); pointer-events: none;">
                 `;
             } else {
                 logoPreview.innerHTML = '';
@@ -1264,15 +1280,36 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             const adCopyGrid = document.getElementById('adCopyGrid');
             adCopyGrid.innerHTML = '';
 
+            // Group images by base size to show ONE card per base size
+            const sizeGroups = {};
             generatedImages.forEach((img, index) => {
+                const baseSizeName = img.size.replace(/\s*-\s*Variation\s+\d+/, '');
+                const groupKey = `${img.platform}|||${baseSizeName}`; // Use ||| as separator
+                if (!sizeGroups[groupKey]) {
+                    sizeGroups[groupKey] = {
+                        platform: img.platform,
+                        baseSizeName: baseSizeName,
+                        width: img.width,
+                        height: img.height,
+                        indices: []
+                    };
+                }
+                sizeGroups[groupKey].indices.push(index);
+            });
+
+            // Create ONE card per base size
+            Object.values(sizeGroups).forEach(group => {
+                const firstIndex = group.indices[0]; // Use first index as reference
                 const card = document.createElement('div');
                 card.style.cssText = 'border: 2px solid #E1E7EF; border-radius: 12px; padding: 2rem; background: white;';
 
-                card.innerHTML = `
-                    <h3 style="margin-bottom: 0.5rem; color: #272D3F;">${img.platform.toUpperCase()} - ${img.size}</h3>
-                    <p style="color: #7DA3AF; font-size: 0.9rem; margin-bottom: 2rem;">${img.width}x${img.height}</p>
+                const variationCount = group.indices.length;
 
-                    <div id="ad-copy-container-${index}" style="min-height: 400px;">
+                card.innerHTML = `
+                    <h3 style="margin-bottom: 0.5rem; color: #272D3F;">${group.platform.toUpperCase()} - ${group.baseSizeName}</h3>
+                    <p style="color: #7DA3AF; font-size: 0.9rem; margin-bottom: 2rem;">${group.width}x${group.height}</p>
+
+                    <div id="ad-copy-container-${firstIndex}" style="min-height: 400px;">
                         <div style="text-align: center; padding: 3rem;">
                             <div style="width: 40px; height: 40px; border: 4px solid #E1E7EF; border-top-color: #31D7CA; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1rem;"></div>
                             <p style="color: #7DA3AF; font-size: 1rem;">Generating ad copy variations...</p>
@@ -1296,14 +1333,19 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             generatedImages.forEach((img, index) => {
                 // Extract base size name (e.g., "Square Feed" from "Square Feed - Variation 1")
                 const baseSizeName = img.size.replace(/\s*-\s*Variation\s+\d+/, '');
+                console.log(`[DEBUG] Image ${index}: Original="${img.size}", Platform="${img.platform}", Base="${baseSizeName}"`);
                 if (!sizeGroups[baseSizeName]) {
                     sizeGroups[baseSizeName] = [];
                 }
                 sizeGroups[baseSizeName].push(index);
             });
 
+            console.log('[DEBUG] Size groups:', sizeGroups);
+
             // Generate ad copy once per size group
             for (const [baseSizeName, indices] of Object.entries(sizeGroups)) {
+                console.log(`[DEBUG] Generating ad copy for base size "${baseSizeName}" (applies to ${indices.length} variations: indices ${indices.join(', ')})`);
+
                 const firstIndex = indices[0];
                 const img = generatedImages[firstIndex];
                 const overlay = textOverlays[firstIndex] || {};
@@ -1312,6 +1354,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                     // Generate 3 variations by making 3 API calls
                     const variations = [];
                     for (let i = 0; i < 3; i++) {
+                        console.log(`[DEBUG] API Call ${i + 1}/3 - Platform: "${img.platform}", SizeName: "${baseSizeName}"`);
                         const response = await fetch('http://localhost:3000/api/generate-ad-copy', {
                             method: 'POST',
                             headers: {
@@ -1328,6 +1371,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
 
                         const result = await response.json();
                         if (result.success && result.adCopy) {
+                            console.log(`[DEBUG] API returned copy variation ${i + 1}:`, result.adCopy.headline?.substring(0, 50));
                             variations.push(result.adCopy);
                         }
 
@@ -1336,7 +1380,9 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                     }
 
                     // Apply the same variations to all images in this size group
+                    console.log(`[DEBUG] Applying ${variations.length} variations to ${indices.length} image indices:`, indices);
                     indices.forEach(index => {
+                        console.log(`[DEBUG] Setting adCopyVariations[${index}] (${generatedImages[index].size})`);
                         adCopyVariations[index] = variations;
 
                         // Initialize selected copy (default to first variation)
