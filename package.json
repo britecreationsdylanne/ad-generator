@@ -1,0 +1,22 @@
+{
+  "name": "briteco-ad-generator",
+  "version": "1.0.0",
+  "description": "AI-powered ad generator for BriteCo jewelry insurance campaigns",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "ai",
+    "ad-generator",
+    "briteco",
+    "claude",
+    "gemini"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.3.1"
+  }
+}

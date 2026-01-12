@@ -1,0 +1,2215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BriteCo Ad Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f5f5f5;
+            color: #272D3F;
+        }
+
+        header {
+            background: #272D3F;
+            color: white;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .logo span {
+            color: #31D7CA;
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 2.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: #272D3F;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #272D3F;
+        }
+
+        .platform-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .platform-card {
+            border: 3px solid #E1E7EF;
+            border-radius: 12px;
+            padding: 2rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        .platform-card:hover {
+            border-color: #31D7CA;
+            transform: translateY(-4px);
+            box-shadow: 0 4px 12px rgba(49, 215, 202, 0.2);
+        }
+
+        .platform-card.selected {
+            border-color: #31D7CA;
+            background: #F4F7FC;
+            box-shadow: 0 4px 12px rgba(49, 215, 202, 0.3);
+        }
+
+        .platform-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .btn-primary {
+            background: #FC883A;
+            color: white;
+            padding: 1rem 2.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s;
+            margin-top: 2rem;
+        }
+
+        .btn-primary:hover {
+            background: #e77a33;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(252, 136, 58, 0.3);
+        }
+
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #008182;
+            color: white;
+            padding: 1rem 2.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s;
+            margin-top: 2rem;
+        }
+
+        .btn-secondary:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 129, 130, 0.3);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #E1E7EF;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 1rem;
+            resize: vertical;
+            min-height: 150px;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #31D7CA;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0;
+        }
+
+        .image-upload-area {
+            border: 3px dashed #E1E7EF;
+            border-radius: 12px;
+            padding: 3rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 1rem 0;
+            background: #fafafa;
+        }
+
+        .image-upload-area:hover {
+            border-color: #31D7CA;
+            background: #F4F7FC;
+        }
+
+        .char-count {
+            text-align: right;
+            font-size: 0.875rem;
+            color: #A9C1CB;
+            margin-top: 0.5rem;
+        }
+
+        .selected-count {
+            background: #31D7CA;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 600;
+            display: inline-block;
+            margin-top: 1rem;
+        }
+
+        footer {
+            background: #272D3F;
+            color: #A9C1CB;
+            padding: 2rem;
+            text-align: center;
+            margin-top: 4rem;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(39, 45, 63, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .loading-content {
+            background: white;
+            padding: 3rem;
+            border-radius: 16px;
+            text-align: center;
+            max-width: 500px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid #E1E7EF;
+            border-top-color: #31D7CA;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1.5rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div class="logo">
+                <span>BriteCo</span> Ad Generator
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Step 1: Platform Selection -->
+        <div id="step1" class="card">
+            <h1>Select Your Platforms</h1>
+            <p style="color: #7DA3AF; font-size: 1.1rem; margin-bottom: 1rem;">
+                Choose which platforms you want to create ads for. We'll generate the correct sizes for each.
+            </p>
+
+            <div class="platform-selector">
+                <div class="platform-card" onclick="togglePlatform('meta', this)">
+                    <h3>📱 Meta</h3>
+                    <p style="color: #7DA3AF; margin-top: 0.5rem;">Facebook & Instagram</p>
+                    <p style="color: #A9C1CB; font-size: 0.9rem; margin-top: 0.5rem;">
+                        Feed (1:1, 4:5), Stories (9:16), Carousel
+                    </p>
+                </div>
+                <div class="platform-card" onclick="togglePlatform('reddit', this)">
+                    <h3>🔴 Reddit</h3>
+                    <p style="color: #7DA3AF; margin-top: 0.5rem;">Community Ads</p>
+                    <p style="color: #A9C1CB; font-size: 0.9rem; margin-top: 0.5rem;">
+                        Feed, Sidebar, Banner
+                    </p>
+                </div>
+                <div class="platform-card" onclick="togglePlatform('pinterest', this)">
+                    <h3>📌 Pinterest</h3>
+                    <p style="color: #7DA3AF; margin-top: 0.5rem;">Visual Discovery</p>
+                    <p style="color: #A9C1CB; font-size: 0.9rem; margin-top: 0.5rem;">
+                        Standard Pin (2:3), Square, Long Pin
+                    </p>
+                </div>
+            </div>
+
+            <button class="btn-primary" id="continueBtn" onclick="nextStep()" disabled>
+                Continue to Inspiration →
+            </button>
+        </div>
+
+        <!-- Step 2: Inspiration Input -->
+        <div id="step2" class="card hidden">
+            <h1>Add Your Inspiration</h1>
+            <p style="color: #7DA3AF; font-size: 1.1rem; margin-bottom: 2rem;">
+                Tell us about your campaign or upload inspiration images. You can do one or both!
+            </p>
+
+            <h2>Campaign Concept</h2>
+            <textarea id="campaignText" placeholder="Describe your campaign idea, key messages, themes, or any text you want incorporated...
+
+Example: Valentine's Day campaign for engagement ring insurance. Focus on celebrating love and protecting what matters most. Target newly engaged couples."
+                      oninput="updateCharCount()" maxlength="500"></textarea>
+            <div class="char-count" id="charCount">0 / 500 characters</div>
+
+            <h2 style="margin-top: 2rem;">Inspiration Images (Optional)</h2>
+            <div class="image-upload-area" onclick="document.getElementById('fileInput').click()">
+                <p style="font-size: 3rem; margin-bottom: 1rem;">📸</p>
+                <p style="font-weight: 600; font-size: 1.2rem; margin-bottom: 0.5rem;">Upload Inspiration Images</p>
+                <p style="color: #A9C1CB;">Click to browse or drag and drop</p>
+                <input type="file" id="fileInput" multiple accept="image/*" style="display: none;" onchange="handleFiles(this.files)">
+            </div>
+            <div id="imagePreview" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; margin-top: 1rem;"></div>
+
+            <h2 style="margin-top: 2rem;">AI Provider</h2>
+            <div style="margin-bottom: 2rem;">
+                <label style="font-weight: 600; margin-bottom: 0.5rem; display: block;">Choose AI provider for prompt generation:</label>
+                <select id="aiProviderStep2" style="padding: 0.75rem; border: 2px solid #E1E7EF; border-radius: 8px; font-size: 1rem; width: 100%;">
+                    <option value="claude">Claude (Anthropic) - Recommended</option>
+                    <option value="openai">OpenAI (GPT-4)</option>
+                </select>
+            </div>
+
+            <div class="button-group">
+                <button class="btn-secondary" onclick="prevStep()">← Back</button>
+                <button class="btn-primary" onclick="generateAds()">Generate Image Prompts →</button>
+            </div>
+        </div>
+
+        <!-- Step 3: Generation -->
+        <div id="step3" class="card hidden">
+            <h1>🎨 Generating Your Ads...</h1>
+
+            <!-- AI Provider Selection -->
+            <div style="margin-bottom: 2rem;">
+                <label style="font-weight: 600; margin-bottom: 0.5rem; display: block;">Choose AI Provider for Prompts:</label>
+                <select id="aiProvider" style="padding: 0.5rem; border: 2px solid #E1E7EF; border-radius: 8px; font-size: 1rem;">
+                    <option value="claude">Claude (Anthropic) - Recommended</option>
+                    <option value="openai">OpenAI (GPT-4)</option>
+                </select>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loadingState" style="background: #F4F7FC; padding: 3rem; border-radius: 12px; margin: 2rem 0; text-align: center;">
+                <p style="font-size: 3rem; margin-bottom: 1rem;">✨</p>
+                <p style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem;" id="loadingText">Click Generate to start</p>
+                <p style="color: #7DA3AF; font-size: 1.1rem;" id="loadingStatus">Ready to create your ads</p>
+            </div>
+
+            <!-- Generated Prompt - Editable -->
+            <div id="generatedPromptSection" class="hidden" style="background: #F4F7FC; padding: 2rem; border-radius: 12px; margin: 2rem 0;">
+                <h3 style="margin-bottom: 1rem;">Generated Prompt (You can edit this):</h3>
+                <textarea id="promptText" style="width: 100%; min-height: 200px; padding: 1rem; border: 2px solid #E1E7EF; border-radius: 8px; font-size: 1rem; line-height: 1.6; font-family: inherit;"></textarea>
+                <p style="color: #7DA3AF; margin-top: 0.5rem; font-size: 0.9rem;">✏️ Edit the prompt above if you want to adjust the image style</p>
+            </div>
+
+            <div class="button-group">
+                <button class="btn-secondary" onclick="prevStep()">← Back</button>
+                <button class="btn-primary" id="generatePromptBtn" onclick="generatePromptOnly()">Generate Prompt →</button>
+                <button class="btn-secondary hidden" id="regeneratePromptBtn" onclick="regeneratePrompt()">🔄 Regenerate Prompt</button>
+                <button class="btn-primary hidden" id="generateImagesBtn" onclick="generateImagesFromPrompt()">Generate Images →</button>
+            </div>
+        </div>
+
+        <!-- Step 4: Generated Images Preview -->
+        <div id="step4" class="card hidden">
+            <h1>✨ Your Images Are Ready!</h1>
+            <p style="color: #7DA3AF; font-size: 1.1rem; margin-bottom: 2rem;">
+                Preview your AI-generated images below. Next, we'll add text overlays for each platform.
+            </p>
+
+            <div id="imagesGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 2rem;"></div>
+
+            <div class="button-group" style="margin-top: 2rem;">
+                <button class="btn-secondary" onclick="backToPromptEdit()">← Edit Prompt</button>
+                <button class="btn-secondary" onclick="regenerateImagesFromStep4()">🔄 Regenerate Images</button>
+                <button class="btn-primary" onclick="goToTextOverlay()">Add Text Overlays →</button>
+            </div>
+        </div>
+
+        <!-- Step 5: Text Overlay Customization -->
+        <div id="step5" class="card hidden">
+            <h1>✏️ Customize Text Overlays</h1>
+            <p style="color: #7DA3AF; font-size: 1.1rem; margin-bottom: 2rem;">
+                Add custom headlines and text to each ad. Customize the font, size, color, and background for each platform.
+            </p>
+
+            <div id="textOverlayGrid" style="display: grid; grid-template-columns: 1fr; gap: 2rem;"></div>
+
+            <div class="button-group" style="margin-top: 2rem;">
+                <button class="btn-secondary" onclick="backToImagePreview()">← Back to Images</button>
+                <button class="btn-primary" onclick="goToLogoPlacement()">Add Logos →</button>
+            </div>
+        </div>
+
+        <!-- Step 6: Logo Placement -->
+        <div id="step6" class="card hidden">
+            <h1>🏢 Add Your Logo</h1>
+            <p style="color: #7DA3AF; font-size: 1.1rem; margin-bottom: 2rem;">
+                Position and size your logo on each ad.
+            </p>
+
+            <div id="logoGrid" style="display: grid; grid-template-columns: 1fr; gap: 2rem;"></div>
+
+            <div class="button-group" style="margin-top: 2rem;">
+                <button class="btn-secondary" onclick="backToTextOverlay()">← Back to Text</button>
+                <button class="btn-primary" onclick="goToAdCopy()">Generate Ad Copy →</button>
+            </div>
+        </div>
+
+        <!-- Step 7: Ad Copy Generation -->
+        <div id="step7" class="card hidden">
+            <h1>✍️ Generate Ad Copy</h1>
+            <p style="color: #7DA3AF; font-size: 1.1rem; margin-bottom: 2rem;">
+                AI-generated ad copy with 3 variations for each component. Select your favorites and edit as needed.
+            </p>
+
+            <div id="adCopyGrid" style="display: grid; grid-template-columns: 1fr; gap: 2rem;"></div>
+
+            <div class="button-group" style="margin-top: 2rem;">
+                <button class="btn-secondary" onclick="backToLogoPlacement()">← Back to Logos</button>
+                <button class="btn-secondary" onclick="exportAllCopyOptions()">📋 Export All Copy Options</button>
+                <button class="btn-primary" onclick="goToFinalReview()">Review & Download →</button>
+            </div>
+        </div>
+
+        <!-- Step 8: Final Review -->
+        <div id="step8" class="card hidden">
+            <h1>🎉 Final Review</h1>
+            <p style="color: #7DA3AF; font-size: 1.1rem; margin-bottom: 2rem;">
+                Review your completed ads with images and copy. Download individual ads or export all copy.
+            </p>
+
+            <div id="finalReviewGrid" style="display: grid; grid-template-columns: 1fr; gap: 2rem;"></div>
+
+            <div class="button-group" style="margin-top: 2rem;">
+                <button class="btn-secondary" onclick="backToAdCopy()">← Back to Ad Copy</button>
+                <button class="btn-secondary" onclick="exportAllCopy()">📋 Export Selected Copy</button>
+                <button class="btn-secondary" onclick="exportAllCopyOptions()">📋 Export All Copy Options</button>
+                <button class="btn-primary" onclick="downloadAll()">📥 Download All Ads</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <h2 style="color: #272D3F; margin-bottom: 1rem;" id="overlayTitle">Generating Images...</h2>
+            <p style="color: #7DA3AF; font-size: 1.1rem; line-height: 1.6;" id="overlayMessage">
+                This may take 1-2 minutes. Google Gemini is creating your custom ad images with the perfect aspect ratios for each platform.
+            </p>
+            <p style="color: #31D7CA; font-weight: 600; margin-top: 1rem; font-size: 0.9rem;">☕ Grab a coffee while you wait!</p>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2026 BriteCo. Internal use only.</p>
+        <p style="margin-top: 0.5rem;">Powered by Claude AI, OpenAI, and Nano Banana</p>
+    </footer>
+
+    <script>
+        let selectedPlatforms = new Set();
+        let uploadedImages = [];
+
+        // Available logos
+        const availableLogos = [
+            { name: 'BriteCo Logo 1', url: 'http://localhost:3000/logos/Logo-BriteCo-Solid-Color-01.png' },
+            { name: 'BriteCo Logo 2', url: 'http://localhost:3000/logos/Logo-BriteCo-Solid-Color-02.png' },
+            { name: 'BriteCo Logo 3', url: 'http://localhost:3000/logos/Logo-BriteCo-Solid-Color-03.png' },
+            { name: 'BriteCo Logo 4', url: 'http://localhost:3000/logos/Logo-BriteCo-Solid-Color-04.png' },
+            { name: 'Emblem 1', url: 'http://localhost:3000/logos/Emblem-01.png' },
+            { name: 'Emblem 2', url: 'http://localhost:3000/logos/Emblem-02.png' }
+        ];
+
+        // Pre-loaded BriteCo logo - loaded from file (deprecated, using availableLogos now)
+        let uploadedLogo = null;
+        let currentStep = 1;
+        let generatedImages = []; // Store generated images for use across steps
+        let textOverlays = {}; // Store text overlay settings for each image
+        let logoSettings = {}; // Store logo position (x, y), scale, and selectedLogoIndex for each image
+
+        function togglePlatform(platform, element) {
+            if (selectedPlatforms.has(platform)) {
+                selectedPlatforms.delete(platform);
+                element.classList.remove('selected');
+            } else {
+                selectedPlatforms.add(platform);
+                element.classList.add('selected');
+            }
+
+            updateSelectedCount();
+        }
+
+        function updateSelectedCount() {
+            const count = selectedPlatforms.size;
+            const btn = document.getElementById('continueBtn');
+
+            if (count > 0) {
+                btn.disabled = false;
+            } else {
+                btn.disabled = true;
+            }
+        }
+
+        function nextStep() {
+            if (selectedPlatforms.size === 0) {
+                alert('Please select at least one platform!');
+                return;
+            }
+
+            document.getElementById('step1').classList.add('hidden');
+            document.getElementById('step2').classList.remove('hidden');
+            currentStep = 2;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function prevStep() {
+            if (currentStep === 2) {
+                document.getElementById('step2').classList.add('hidden');
+                document.getElementById('step1').classList.remove('hidden');
+                currentStep = 1;
+            } else if (currentStep === 3) {
+                document.getElementById('step3').classList.add('hidden');
+                document.getElementById('step2').classList.remove('hidden');
+                currentStep = 2;
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function generateAds() {
+            const text = document.getElementById('campaignText').value;
+
+            if (!text && uploadedImages.length === 0) {
+                alert('Please add campaign text or upload images!');
+                return;
+            }
+
+            // Get provider from Step 2 selector
+            const provider = document.getElementById('aiProviderStep2').value;
+            // Sync to Step 3 selector
+            document.getElementById('aiProvider').value = provider;
+
+            // Show loading overlay immediately
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+            document.getElementById('loadingText').textContent = 'Generating image prompt...';
+
+            // Navigate to Step 3 (but user sees loading overlay)
+            document.getElementById('step2').classList.add('hidden');
+            document.getElementById('step3').classList.remove('hidden');
+            currentStep = 3;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // Start generating prompt
+            generatePromptOnlyWithLoading();
+        }
+
+        // Step 1: Generate prompt only
+        // Generate prompt with loading overlay (called from Step 2)
+        async function generatePromptOnlyWithLoading() {
+            const campaignText = document.getElementById('campaignText').value;
+            const provider = document.getElementById('aiProvider').value;
+            const platforms = Array.from(selectedPlatforms);
+
+            try {
+                // Update loading overlay status with provider name
+                const providerName = provider === 'claude' ? 'Claude' : 'OpenAI';
+                document.getElementById('overlayTitle').textContent = 'Generating Prompts...';
+                document.getElementById('loadingText').textContent = 'Generating Prompts...';
+                document.getElementById('loadingStatus').textContent = `Using ${providerName} to create an optimized image generation prompt`;
+
+                const response = await fetch('http://localhost:3000/api/generate-prompt', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        campaignText,
+                        platforms,
+                        provider
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Show editable prompt
+                    document.getElementById('promptText').value = result.prompt;
+                    document.getElementById('generatedPromptSection').classList.remove('hidden');
+                    document.getElementById('loadingState').style.display = 'none';
+
+                    // Hide prompt button, show images button and regenerate button
+                    document.getElementById('generatePromptBtn').classList.add('hidden');
+                    document.getElementById('generateImagesBtn').classList.remove('hidden');
+                    document.getElementById('regeneratePromptBtn').classList.remove('hidden');
+
+                    // Hide loading overlay - prompt is complete and displayed
+                    document.getElementById('loadingOverlay').classList.add('hidden');
+                } else {
+                    alert('Failed to generate prompt: ' + result.error);
+                    // Hide loading overlay on error
+                    document.getElementById('loadingOverlay').classList.add('hidden');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+                // Hide loading overlay on error
+                document.getElementById('loadingOverlay').classList.add('hidden');
+            }
+        }
+
+        async function generatePromptOnly() {
+            const campaignText = document.getElementById('campaignText').value;
+            const provider = document.getElementById('aiProvider').value;
+            const platforms = Array.from(selectedPlatforms);
+
+            // Update UI
+            document.getElementById('loadingText').textContent = 'Generating prompt...';
+            document.getElementById('loadingStatus').textContent = 'Using AI to create an optimized image generation prompt';
+            document.getElementById('generatePromptBtn').disabled = true;
+            document.getElementById('generatePromptBtn').textContent = 'Generating...';
+
+            try {
+                const response = await fetch('http://localhost:3000/api/generate-prompt', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        campaignText,
+                        platforms,
+                        provider
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Show editable prompt
+                    document.getElementById('promptText').value = result.prompt;
+                    document.getElementById('generatedPromptSection').classList.remove('hidden');
+                    document.getElementById('loadingState').style.display = 'none';
+
+                    // Hide prompt button, show images button and regenerate button
+                    document.getElementById('generatePromptBtn').classList.add('hidden');
+                    document.getElementById('generateImagesBtn').classList.remove('hidden');
+                    document.getElementById('regeneratePromptBtn').classList.remove('hidden');
+                } else {
+                    alert('Failed to generate prompt: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            } finally {
+                document.getElementById('generatePromptBtn').disabled = false;
+                document.getElementById('generatePromptBtn').textContent = 'Generate Prompt →';
+            }
+        }
+
+        // Regenerate prompt with new AI variation
+        async function regeneratePrompt() {
+            const campaignText = document.getElementById('campaignText').value;
+            const provider = document.getElementById('aiProvider').value;
+            const platforms = Array.from(selectedPlatforms);
+
+            document.getElementById('regeneratePromptBtn').disabled = true;
+            document.getElementById('regeneratePromptBtn').textContent = 'Regenerating...';
+
+            try {
+                const response = await fetch('http://localhost:3000/api/generate-prompt', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        campaignText,
+                        platforms,
+                        provider
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Replace prompt with new version
+                    document.getElementById('promptText').value = result.prompt;
+                } else {
+                    alert('Failed to regenerate prompt: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            } finally {
+                document.getElementById('regeneratePromptBtn').disabled = false;
+                document.getElementById('regeneratePromptBtn').textContent = '🔄 Regenerate Prompt';
+            }
+        }
+
+        // Step 2: Generate images from edited prompt
+        async function generateImagesFromPrompt() {
+            const prompt = document.getElementById('promptText').value;
+            const platforms = Array.from(selectedPlatforms);
+
+            // Show loading overlay
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+            document.getElementById('overlayTitle').textContent = 'Generating Images...';
+            document.getElementById('overlayMessage').textContent = 'This may take 1-2 minutes. Google Gemini is creating your custom ad images with the perfect aspect ratios for each platform.';
+
+            document.getElementById('generateImagesBtn').disabled = true;
+            document.getElementById('generateImagesBtn').textContent = 'Generating Images...';
+
+            try {
+                const response = await fetch('http://localhost:3000/api/generate-images', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        prompt,
+                        platforms
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    console.log('Images received:', result.images.length);
+
+                    // Store images globally
+                    generatedImages = result.images;
+
+                    // Show simple preview in Step 4
+                    renderImagePreviews();
+
+                    // Hide loading overlay
+                    document.getElementById('loadingOverlay').classList.add('hidden');
+
+                    // Go to step 4
+                    document.getElementById('step3').classList.add('hidden');
+                    document.getElementById('step4').classList.remove('hidden');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                    document.getElementById('loadingOverlay').classList.add('hidden');
+                    alert('Failed to generate images: ' + result.error);
+                }
+            } catch (error) {
+                document.getElementById('loadingOverlay').classList.add('hidden');
+                alert('Error: ' + error.message);
+            } finally {
+                document.getElementById('generateImagesBtn').disabled = false;
+                document.getElementById('generateImagesBtn').textContent = 'Generate Images →';
+            }
+        }
+
+        function renderImagePreviews() {
+            const imagesGrid = document.getElementById('imagesGrid');
+            imagesGrid.innerHTML = '';
+
+            // Group images by base size
+            const sizeGroups = {};
+            generatedImages.forEach((img, index) => {
+                const baseSizeName = img.size.replace(/\s*-\s*Variation\s+\d+/, '');
+                if (!sizeGroups[baseSizeName]) {
+                    sizeGroups[baseSizeName] = [];
+                }
+                sizeGroups[baseSizeName].push({ img, index });
+            });
+
+            // Render each size group
+            Object.entries(sizeGroups).forEach(([baseSizeName, items]) => {
+                // Create group header
+                const groupHeader = document.createElement('div');
+                groupHeader.style.cssText = 'grid-column: 1 / -1; margin-top: 1rem; margin-bottom: 0.5rem;';
+                groupHeader.innerHTML = `<h3 style="color: #272D3F; font-size: 1.1rem; margin: 0;">${items[0].img.platform.toUpperCase()} - ${baseSizeName}</h3>`;
+                imagesGrid.appendChild(groupHeader);
+
+                // Render images in this group
+                items.forEach(({ img, index }) => {
+                    const card = document.createElement('div');
+                    card.style.cssText = 'border: 2px solid #E1E7EF; border-radius: 12px; padding: 1rem; background: white;';
+
+                    const variationNumber = img.size.match(/Variation\s+(\d+)/)?.[1] || '';
+                    card.innerHTML = `
+                        <img src="${img.url}" alt="${img.platform} ${img.size}"
+                             style="width: 100%; max-width: 100%; border-radius: 8px; display: block; margin-bottom: 1rem;">
+                        <p style="color: #7DA3AF; font-size: 0.9rem; font-weight: 600;">Variation ${variationNumber}</p>
+                        <p style="color: #A9C1CB; font-size: 0.85rem;">${img.width}x${img.height}</p>
+                    `;
+
+                    imagesGrid.appendChild(card);
+                });
+            });
+        }
+
+        function backToPromptEdit() {
+            document.getElementById('step4').classList.add('hidden');
+            document.getElementById('step3').classList.remove('hidden');
+            currentStep = 3;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function regenerateImagesFromStep4() {
+            document.getElementById('step4').classList.add('hidden');
+            document.getElementById('step3').classList.remove('hidden');
+            currentStep = 3;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            // User can then click "Generate Images" again
+        }
+
+        function goToTextOverlay() {
+            renderTextOverlayPage();
+            document.getElementById('step4').classList.add('hidden');
+            document.getElementById('step5').classList.remove('hidden');
+            currentStep = 5;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function backToImagePreview() {
+            document.getElementById('step5').classList.add('hidden');
+            document.getElementById('step4').classList.remove('hidden');
+            currentStep = 4;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function goToLogoPlacement() {
+            renderLogoPlacementPage();
+            document.getElementById('step5').classList.add('hidden');
+            document.getElementById('step6').classList.remove('hidden');
+            currentStep = 6;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function backToTextOverlay() {
+            document.getElementById('step6').classList.add('hidden');
+            document.getElementById('step5').classList.remove('hidden');
+            currentStep = 5;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function renderTextOverlayPage() {
+            const textOverlayGrid = document.getElementById('textOverlayGrid');
+            textOverlayGrid.innerHTML = '';
+
+            generatedImages.forEach((img, index) => {
+                // Initialize text overlay settings if not exists
+                if (!textOverlays[index]) {
+                    textOverlays[index] = {
+                        text: '',
+                        x: 50, // Percentage from left
+                        y: 85, // Percentage from top (default bottom)
+                        fontSize: 32,
+                        textColor: '#FFFFFF',
+                        bgColor: 'rgba(0, 0, 0, 0.7)',
+                        fontFamily: 'Gilroy'
+                    };
+                }
+
+                const card = document.createElement('div');
+                card.style.cssText = 'border: 2px solid #E1E7EF; border-radius: 12px; padding: 2rem; background: white;';
+
+                card.innerHTML = `
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                        <!-- Image Preview -->
+                        <div>
+                            <div id="preview-container-${index}" style="position: relative; border: 2px solid #E1E7EF; border-radius: 8px; overflow: hidden; cursor: move;">
+                                <img id="preview-img-${index}" src="${img.url}" alt="${img.platform} ${img.size}"
+                                     style="width: 100%; display: block;">
+                                <div id="text-preview-${index}" class="draggable-text" data-index="${index}"
+                                     style="position: absolute; top: ${textOverlays[index].y}%; left: ${textOverlays[index].x}%; transform: translate(-50%, -50%); cursor: move;">
+                                </div>
+                            </div>
+                            <p style="background: #F4F7FC; padding: 0.75rem; border-radius: 8px; margin-top: 0.75rem; color: #7DA3AF; font-size: 0.9rem; text-align: center;">
+                                💡 <strong>Drag the text</strong> to position it anywhere on the image
+                            </p>
+                            <h4 style="margin-top: 1rem; color: #272D3F;">${img.platform.toUpperCase()} - ${img.size}</h4>
+                            <p style="color: #7DA3AF; font-size: 0.9rem;">${img.width}x${img.height}</p>
+                        </div>
+
+                        <!-- Controls -->
+                        <div>
+                            <h3 style="margin-bottom: 1rem; color: #272D3F;">Text Overlay Settings</h3>
+
+                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #272D3F;">Headline Text</label>
+                            <input type="text" id="overlay-text-${index}" value="${textOverlays[index].text}"
+                                   placeholder="Enter your headline..."
+                                   style="width: 100%; padding: 0.75rem; border: 2px solid #E1E7EF; border-radius: 8px; margin-bottom: 1rem; font-size: 1rem;"
+                                   oninput="updateTextOverlayPreview(${index})">
+
+                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #272D3F;">Font Family</label>
+                            <select id="overlay-font-${index}" onchange="updateTextOverlayPreview(${index})"
+                                    style="width: 100%; padding: 0.75rem; border: 2px solid #E1E7EF; border-radius: 8px; margin-bottom: 1rem; font-size: 1rem;">
+                                <option value="Gilroy" ${textOverlays[index].fontFamily === 'Gilroy' ? 'selected' : ''}>Gilroy (Brand Font)</option>
+                                <option value="Arial" ${textOverlays[index].fontFamily === 'Arial' ? 'selected' : ''}>Arial</option>
+                                <option value="Helvetica" ${textOverlays[index].fontFamily === 'Helvetica' ? 'selected' : ''}>Helvetica</option>
+                                <option value="Georgia" ${textOverlays[index].fontFamily === 'Georgia' ? 'selected' : ''}>Georgia</option>
+                                <option value="Times New Roman" ${textOverlays[index].fontFamily === 'Times New Roman' ? 'selected' : ''}>Times New Roman</option>
+                            </select>
+
+                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #272D3F;">Font Size (${textOverlays[index].fontSize}px)</label>
+                            <input type="range" id="overlay-size-${index}" value="${textOverlays[index].fontSize}" min="16" max="72" step="2"
+                                   oninput="updateTextOverlayPreview(${index})"
+                                   style="width: 100%; margin-bottom: 1rem;">
+
+                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #272D3F;">Text Color</label>
+                            <input type="color" id="overlay-textcolor-${index}" value="${textOverlays[index].textColor}"
+                                   onchange="updateTextOverlayPreview(${index})"
+                                   style="width: 100%; height: 50px; padding: 0.25rem; border: 2px solid #E1E7EF; border-radius: 8px; margin-bottom: 1rem; cursor: pointer;">
+
+                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #272D3F;">Background</label>
+                            <select id="overlay-bg-${index}" onchange="updateTextOverlayPreview(${index})"
+                                    style="width: 100%; padding: 0.75rem; border: 2px solid #E1E7EF; border-radius: 8px; margin-bottom: 1rem; font-size: 1rem;">
+                                <option value="rgba(0, 0, 0, 0.7)">Dark (70% opacity)</option>
+                                <option value="rgba(0, 0, 0, 0.5)">Dark (50% opacity)</option>
+                                <option value="rgba(0, 0, 0, 0.3)">Dark (30% opacity)</option>
+                                <option value="rgba(49, 215, 202, 0.9)">Turquoise (Brand)</option>
+                                <option value="rgba(39, 45, 63, 0.9)">Navy (Brand)</option>
+                                <option value="rgba(252, 136, 58, 0.9)">Orange (Brand)</option>
+                                <option value="none">No Background</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+
+                textOverlayGrid.appendChild(card);
+
+                // Render initial preview and setup drag handler
+                setTimeout(() => {
+                    updateTextOverlayPreview(index);
+                    setupDragHandler(index);
+                }, 100);
+            });
+        }
+
+        function setupDragHandler(index) {
+            const textElement = document.getElementById(`text-preview-${index}`);
+            const container = document.getElementById(`preview-container-${index}`);
+
+            if (!textElement || !container) return;
+
+            let isDragging = false;
+            let startX, startY, startLeft, startTop;
+
+            textElement.addEventListener('mousedown', function(e) {
+                if (!textOverlays[index].text) return;
+
+                isDragging = true;
+                const rect = container.getBoundingClientRect();
+                const textRect = textElement.getBoundingClientRect();
+
+                startX = e.clientX;
+                startY = e.clientY;
+                startLeft = ((textRect.left + textRect.width / 2 - rect.left) / rect.width) * 100;
+                startTop = ((textRect.top + textRect.height / 2 - rect.top) / rect.height) * 100;
+
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', function(e) {
+                if (!isDragging) return;
+
+                const rect = container.getBoundingClientRect();
+                const deltaX = e.clientX - startX;
+                const deltaY = e.clientY - startY;
+
+                let newX = startLeft + (deltaX / rect.width) * 100;
+                let newY = startTop + (deltaY / rect.height) * 100;
+
+                // Constrain to image bounds
+                newX = Math.max(5, Math.min(95, newX));
+                newY = Math.max(5, Math.min(95, newY));
+
+                textOverlays[index].x = newX;
+                textOverlays[index].y = newY;
+
+                textElement.style.left = newX + '%';
+                textElement.style.top = newY + '%';
+
+                e.preventDefault();
+            });
+
+            document.addEventListener('mouseup', function() {
+                isDragging = false;
+            });
+        }
+
+        function updateTextOverlayPreview(index) {
+            const text = document.getElementById(`overlay-text-${index}`).value;
+            const fontSize = document.getElementById(`overlay-size-${index}`).value;
+            const textColor = document.getElementById(`overlay-textcolor-${index}`).value;
+            const fontFamily = document.getElementById(`overlay-font-${index}`).value;
+            const bgColor = document.getElementById(`overlay-bg-${index}`).value;
+
+            // Update font size label
+            const sizeLabel = document.getElementById(`overlay-size-${index}`)?.previousElementSibling;
+            if (sizeLabel) {
+                sizeLabel.textContent = `Font Size (${fontSize}px)`;
+            }
+
+            // Store settings (preserve x, y from drag or defaults)
+            if (!textOverlays[index].x) textOverlays[index].x = 50;
+            if (!textOverlays[index].y) textOverlays[index].y = 85;
+
+            textOverlays[index] = {
+                ...textOverlays[index],
+                text,
+                fontSize,
+                textColor,
+                fontFamily,
+                bgColor
+            };
+
+            // Update preview
+            const preview = document.getElementById(`text-preview-${index}`);
+            if (!text) {
+                preview.innerHTML = '';
+                preview.style.pointerEvents = 'none';
+                return;
+            }
+
+            preview.style.pointerEvents = 'auto';
+            const bgStyle = bgColor === 'none' ? 'background: transparent;' : `background: ${bgColor};`;
+
+            preview.innerHTML = `
+                <div style="display: inline-block; ${bgStyle} padding: 10px 20px; border-radius: 8px;">
+                    <p style="color: ${textColor}; font-family: '${fontFamily}', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: ${fontSize}px; font-weight: 700; margin: 0; line-height: 1.2; white-space: nowrap;">${text}</p>
+                </div>
+            `;
+        }
+
+        function renderLogoPlacementPage() {
+            const logoGrid = document.getElementById('logoGrid');
+            logoGrid.innerHTML = '';
+
+            generatedImages.forEach((img, index) => {
+                // Initialize logo settings if not exists
+                if (!logoSettings[index]) {
+                    logoSettings[index] = {
+                        x: 50, // Percentage from left (center)
+                        y: 50, // Percentage from top (center)
+                        scale: 15, // Logo size percentage (15% of image width)
+                        enabled: true,
+                        selectedLogoIndex: 0 // Default to first logo
+                    };
+                }
+
+                const card = document.createElement('div');
+                card.style.cssText = 'border: 2px solid #E1E7EF; border-radius: 12px; padding: 2rem; background: white;';
+
+                card.innerHTML = `
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                        <!-- Image Preview with Text & Logo -->
+                        <div>
+                            <div id="logo-preview-container-${index}" style="position: relative; border: 2px solid #E1E7EF; border-radius: 8px; overflow: hidden; cursor: move;">
+                                <img id="logo-preview-img-${index}" src="${img.url}" alt="${img.platform} ${img.size}" style="width: 100%; display: block;">
+                                <div id="final-text-${index}" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none;"></div>
+                                <div id="logo-draggable-${index}" class="draggable-logo" data-index="${index}"
+                                     style="position: absolute; top: ${logoSettings[index].y}%; left: ${logoSettings[index].x}%; transform: translate(-50%, -50%); cursor: move; pointer-events: auto;">
+                                </div>
+                            </div>
+                            <p style="background: #F4F7FC; padding: 0.75rem; border-radius: 8px; margin-top: 0.75rem; color: #7DA3AF; font-size: 0.9rem; text-align: center;">
+                                💡 <strong>Drag the logo</strong> to position it anywhere on the image
+                            </p>
+                            <h4 style="margin-top: 1rem; color: #272D3F;">${img.platform.toUpperCase()} - ${img.size}</h4>
+                            <p style="color: #7DA3AF; font-size: 0.9rem;">${img.width}x${img.height}</p>
+                        </div>
+
+                        <!-- Logo Controls -->
+                        <div>
+                            <h3 style="margin-bottom: 1rem; color: #272D3F;">Logo Settings</h3>
+
+                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #272D3F;">
+                                <input type="checkbox" id="logo-enabled-${index}"
+                                       ${logoSettings[index].enabled ? 'checked' : ''}
+                                       onchange="updateLogoPreview(${index})"
+                                       style="margin-right: 0.5rem;">
+                                Show Logo
+                            </label>
+
+                            <label style="display: block; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.5rem; color: #272D3F;">Select Logo/Emblem</label>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 1.5rem;">
+                                ${availableLogos.map((logo, logoIdx) => `
+                                    <div onclick="selectLogo(${index}, ${logoIdx})"
+                                         id="logo-option-${index}-${logoIdx}"
+                                         style="border: 3px solid ${logoSettings[index].selectedLogoIndex === logoIdx ? '#31D7CA' : '#E1E7EF'};
+                                                border-radius: 8px; padding: 0.5rem; cursor: pointer; background: white;
+                                                transition: all 0.2s ease;">
+                                        <img src="${logo.url}" alt="${logo.name}"
+                                             style="width: 100%; height: auto; display: block; margin-bottom: 0.25rem;">
+                                        <p style="font-size: 0.75rem; color: #7DA3AF; margin: 0; text-align: center;">${logo.name}</p>
+                                    </div>
+                                `).join('')}
+                            </div>
+
+                            <label id="logo-scale-label-${index}" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #272D3F;">Logo Size</label>
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.5rem;">
+                                <span style="font-size: 0.85rem; color: #7DA3AF;">Smaller</span>
+                                <input type="range" id="logo-scale-${index}" value="${logoSettings[index].scale}" min="5" max="50" step="1"
+                                       oninput="updateLogoPreview(${index})"
+                                       style="flex: 1;">
+                                <span style="font-size: 0.85rem; color: #7DA3AF;">Larger</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                logoGrid.appendChild(card);
+
+                // Render text overlay and logo, then setup drag handler
+                setTimeout(() => {
+                    updateLogoPreview(index);
+                    setupLogoDragHandler(index);
+                }, 100);
+            });
+        }
+
+        function setupLogoDragHandler(index) {
+            const logoElement = document.getElementById(`logo-draggable-${index}`);
+            const container = document.getElementById(`logo-preview-container-${index}`);
+
+            if (!logoElement || !container) return;
+
+            let isDragging = false;
+            let startX, startY, startLeft, startTop;
+
+            logoElement.addEventListener('mousedown', function(e) {
+                if (!logoSettings[index].enabled || !uploadedLogo) return;
+
+                isDragging = true;
+                const rect = container.getBoundingClientRect();
+                const logoRect = logoElement.getBoundingClientRect();
+
+                startX = e.clientX;
+                startY = e.clientY;
+                startLeft = ((logoRect.left + logoRect.width / 2 - rect.left) / rect.width) * 100;
+                startTop = ((logoRect.top + logoRect.height / 2 - rect.top) / rect.height) * 100;
+
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', function(e) {
+                if (!isDragging) return;
+
+                const rect = container.getBoundingClientRect();
+                const deltaX = e.clientX - startX;
+                const deltaY = e.clientY - startY;
+
+                let newX = startLeft + (deltaX / rect.width) * 100;
+                let newY = startTop + (deltaY / rect.height) * 100;
+
+                // Constrain to image bounds
+                newX = Math.max(5, Math.min(95, newX));
+                newY = Math.max(5, Math.min(95, newY));
+
+                logoSettings[index].x = newX;
+                logoSettings[index].y = newY;
+
+                logoElement.style.left = newX + '%';
+                logoElement.style.top = newY + '%';
+
+                e.preventDefault();
+            });
+
+            document.addEventListener('mouseup', function() {
+                isDragging = false;
+            });
+        }
+
+        function selectLogo(index, logoIdx) {
+            // Update borders for all logo options
+            availableLogos.forEach((_, i) => {
+                const optionElement = document.getElementById(`logo-option-${index}-${i}`);
+                if (optionElement) {
+                    optionElement.style.border = i === logoIdx ? '3px solid #31D7CA' : '3px solid #E1E7EF';
+                }
+            });
+
+            // Update settings and preview
+            logoSettings[index].selectedLogoIndex = logoIdx;
+            updateLogoPreview(index);
+        }
+
+        function updateLogoPreview(index) {
+            const img = generatedImages[index];
+            const overlay = textOverlays[index];
+            const logoEnabled = document.getElementById(`logo-enabled-${index}`).checked;
+            const logoScale = document.getElementById(`logo-scale-${index}`).value;
+            const selectedLogoIndex = logoSettings[index].selectedLogoIndex || 0;
+
+            // Store settings
+            logoSettings[index].enabled = logoEnabled;
+            logoSettings[index].scale = parseFloat(logoScale);
+            logoSettings[index].selectedLogoIndex = selectedLogoIndex;
+
+            // Render text overlay
+            const textPreview = document.getElementById(`final-text-${index}`);
+            if (overlay && overlay.text) {
+                const positionStyles = `top: ${overlay.y || 85}%; left: ${overlay.x || 50}%; transform: translate(-50%, -50%);`;
+                const bgStyle = overlay.bgColor === 'none' ? 'background: transparent;' : `background: ${overlay.bgColor};`;
+
+                textPreview.innerHTML = `
+                    <div style="position: absolute; ${positionStyles}">
+                        <div style="display: inline-block; ${bgStyle} padding: 10px 20px; border-radius: 8px;">
+                            <p style="color: ${overlay.textColor}; font-family: '${overlay.fontFamily}', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: ${overlay.fontSize}px; font-weight: 700; margin: 0; line-height: 1.2; white-space: nowrap;">${overlay.text}</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Render logo
+            const logoPreview = document.getElementById(`logo-draggable-${index}`);
+            const selectedLogo = availableLogos[selectedLogoIndex];
+
+            if (logoEnabled && selectedLogo) {
+                logoPreview.style.pointerEvents = 'auto';
+                logoPreview.innerHTML = `
+                    <img src="${selectedLogo.url}" alt="${selectedLogo.name}"
+                         style="width: ${logoScale}%; height: auto; display: block; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); pointer-events: none;">
+                `;
+            } else {
+                logoPreview.innerHTML = '';
+                logoPreview.style.pointerEvents = 'none';
+            }
+        }
+
+        function goToAdCopy() {
+            renderAdCopyPage();
+            document.getElementById('step6').classList.add('hidden');
+            document.getElementById('step7').classList.remove('hidden');
+            currentStep = 7;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function backToLogoPlacement() {
+            document.getElementById('step7').classList.add('hidden');
+            document.getElementById('step6').classList.remove('hidden');
+            currentStep = 6;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function goToFinalReview() {
+            renderFinalReviewPage();
+            document.getElementById('step7').classList.add('hidden');
+            document.getElementById('step8').classList.remove('hidden');
+            currentStep = 8;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function backToAdCopy() {
+            document.getElementById('step8').classList.add('hidden');
+            document.getElementById('step7').classList.remove('hidden');
+            currentStep = 7;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+
+        let adCopyVariations = {}; // Store ad copy variations for each image
+        let selectedAdCopy = {}; // Store selected ad copy for each image
+
+        function renderAdCopyPage() {
+            const adCopyGrid = document.getElementById('adCopyGrid');
+            adCopyGrid.innerHTML = '';
+
+            generatedImages.forEach((img, index) => {
+                const card = document.createElement('div');
+                card.style.cssText = 'border: 2px solid #E1E7EF; border-radius: 12px; padding: 2rem; background: white;';
+
+                card.innerHTML = `
+                    <h3 style="margin-bottom: 0.5rem; color: #272D3F;">${img.platform.toUpperCase()} - ${img.size}</h3>
+                    <p style="color: #7DA3AF; font-size: 0.9rem; margin-bottom: 2rem;">${img.width}x${img.height}</p>
+
+                    <div id="ad-copy-container-${index}" style="min-height: 400px;">
+                        <div style="text-align: center; padding: 3rem;">
+                            <div style="width: 40px; height: 40px; border: 4px solid #E1E7EF; border-top-color: #31D7CA; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1rem;"></div>
+                            <p style="color: #7DA3AF; font-size: 1rem;">Generating ad copy variations...</p>
+                        </div>
+                    </div>
+                `;
+
+                adCopyGrid.appendChild(card);
+            });
+
+            // Generate ad copy with 3 variations for all images
+            generateAdCopyWithVariations();
+        }
+
+        async function generateAdCopyWithVariations() {
+            const campaignText = document.getElementById('campaignText').value;
+            const provider = document.getElementById('aiProvider').value;
+
+            // Group images by base size (without "- Variation X")
+            const sizeGroups = {};
+            generatedImages.forEach((img, index) => {
+                // Extract base size name (e.g., "Square Feed" from "Square Feed - Variation 1")
+                const baseSizeName = img.size.replace(/\s*-\s*Variation\s+\d+/, '');
+                if (!sizeGroups[baseSizeName]) {
+                    sizeGroups[baseSizeName] = [];
+                }
+                sizeGroups[baseSizeName].push(index);
+            });
+
+            // Generate ad copy once per size group
+            for (const [baseSizeName, indices] of Object.entries(sizeGroups)) {
+                const firstIndex = indices[0];
+                const img = generatedImages[firstIndex];
+                const overlay = textOverlays[firstIndex] || {};
+
+                try {
+                    // Generate 3 variations by making 3 API calls
+                    const variations = [];
+                    for (let i = 0; i < 3; i++) {
+                        const response = await fetch('http://localhost:3000/api/generate-ad-copy', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                platform: img.platform,
+                                sizeName: baseSizeName, // Use base size name without variation
+                                campaignText: campaignText,
+                                textOverlay: overlay.text || '',
+                                provider: provider
+                            })
+                        });
+
+                        const result = await response.json();
+                        if (result.success && result.adCopy) {
+                            variations.push(result.adCopy);
+                        }
+
+                        // Small delay between requests
+                        await new Promise(resolve => setTimeout(resolve, 300));
+                    }
+
+                    // Apply the same variations to all images in this size group
+                    indices.forEach(index => {
+                        adCopyVariations[index] = variations;
+
+                        // Initialize selected copy (default to first variation)
+                        if (!selectedAdCopy[index]) {
+                            selectedAdCopy[index] = {
+                                headline: variations[0]?.headline || '',
+                                body: variations[0]?.body || '',
+                                description: variations[0]?.description || '',
+                                cta: variations[0]?.cta || ''
+                            };
+                        }
+
+                        // Render the ad copy UI
+                        renderAdCopyUI(index, variations);
+                    });
+
+                } catch (error) {
+                    console.error(`Error generating ad copy for ${img.platform} ${baseSizeName}:`, error);
+                    indices.forEach(index => {
+                        document.getElementById(`ad-copy-container-${index}`).innerHTML = `
+                            <p style="color: #D73D4F;">⚠️ Failed to generate ad copy</p>
+                            <p style="color: #A9C1CB; font-size: 0.9rem; margin-top: 0.5rem;">${error.message}</p>
+                        `;
+                    });
+                }
+
+                // Delay between size groups
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+        }
+
+        function renderAdCopyUI(index, variations) {
+            const container = document.getElementById(`ad-copy-container-${index}`);
+            if (!container || !variations || variations.length === 0) return;
+
+            const img = generatedImages[index];
+            const platform = img.platform.toLowerCase();
+
+            // Platform-specific terminology
+            const terminology = {
+                'meta': {
+                    headline: 'Headline',
+                    headlineLimit: '(max 27 chars)',
+                    body: 'Primary Text',
+                    bodyLimit: '(first 125 chars visible)',
+                    description: 'Description',
+                    descriptionLimit: '(max 27 chars)',
+                    hasDescription: true,
+                    cta: 'Call-to-Action'
+                },
+                'reddit': {
+                    headline: 'Headline',
+                    headlineLimit: '(max 300 chars)',
+                    body: 'Body Text',
+                    bodyLimit: '(max 500 chars)',
+                    hasDescription: false,
+                    cta: 'Call-to-Action'
+                },
+                'pinterest': {
+                    headline: 'Pin Title',
+                    headlineLimit: '(max 100 chars, first 40 visible)',
+                    body: 'Description',
+                    bodyLimit: '(max 500 chars)',
+                    hasDescription: false,
+                    cta: 'Call-to-Action'
+                }
+            };
+
+            const terms = terminology[platform] || terminology['meta'];
+
+            container.innerHTML = `
+                <!-- Headline Section -->
+                <div style="margin-bottom: 2rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <h4 style="color: #31D7CA; font-size: 0.9rem; text-transform: uppercase; margin: 0;">${terms.headline} <span style="font-size: 0.75rem; color: #A9C1CB; font-weight: normal; text-transform: none;">${terms.headlineLimit}</span></h4>
+                        <button onclick="regenerateHeadline(${index})"
+                                style="padding: 0.4rem 0.8rem; border: 2px solid #31D7CA; border-radius: 6px; background: white; color: #31D7CA; cursor: pointer; font-size: 0.85rem; font-weight: 600;">
+                            🔄 Regenerate
+                        </button>
+                    </div>
+                    <textarea id="headline-edit-${index}"
+                              style="width: 100%; padding: 0.75rem; border: 2px solid #E1E7EF; border-radius: 8px; font-size: 1rem; font-weight: 600; min-height: 60px; font-family: inherit; resize: vertical;"
+                              oninput="updateSelectedAdCopy(${index})">${selectedAdCopy[index]?.headline || ''}</textarea>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem;">
+                        ${variations.map((v, i) => `
+                            <button onclick="selectHeadline(${index}, ${i})"
+                                    style="padding: 0.5rem; border: 2px solid ${selectedAdCopy[index]?.headline === v.headline ? '#31D7CA' : '#E1E7EF'}; border-radius: 6px; background: white; cursor: pointer; font-size: 0.85rem; text-align: left;">
+                                <strong>Option ${i + 1}</strong><br/>
+                                <span style="color: #7DA3AF; font-size: 0.8rem;">${v.headline?.substring(0, 40)}...</span>
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <!-- Body Section -->
+                <div style="margin-bottom: 2rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <h4 style="color: #31D7CA; font-size: 0.9rem; text-transform: uppercase; margin: 0;">${terms.body} <span style="font-size: 0.75rem; color: #A9C1CB; font-weight: normal; text-transform: none;">${terms.bodyLimit}</span></h4>
+                        <button onclick="regenerateBody(${index})"
+                                style="padding: 0.4rem 0.8rem; border: 2px solid #31D7CA; border-radius: 6px; background: white; color: #31D7CA; cursor: pointer; font-size: 0.85rem; font-weight: 600;">
+                            🔄 Regenerate
+                        </button>
+                    </div>
+                    <textarea id="body-edit-${index}"
+                              style="width: 100%; padding: 0.75rem; border: 2px solid #E1E7EF; border-radius: 8px; font-size: 0.95rem; min-height: 120px; font-family: inherit; line-height: 1.5; resize: vertical;"
+                              oninput="updateSelectedAdCopy(${index})">${selectedAdCopy[index]?.body || ''}</textarea>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem;">
+                        ${variations.map((v, i) => `
+                            <button onclick="selectBody(${index}, ${i})"
+                                    style="padding: 0.5rem; border: 2px solid ${selectedAdCopy[index]?.body === v.body ? '#31D7CA' : '#E1E7EF'}; border-radius: 6px; background: white; cursor: pointer; font-size: 0.85rem; text-align: left;">
+                                <strong>Option ${i + 1}</strong><br/>
+                                <span style="color: #7DA3AF; font-size: 0.8rem;">${v.body?.substring(0, 40)}...</span>
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+
+                ${terms.hasDescription ? `
+                <!-- Description Section (Meta only) -->
+                <div style="margin-bottom: 2rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <h4 style="color: #31D7CA; font-size: 0.9rem; text-transform: uppercase; margin: 0;">${terms.description} <span style="font-size: 0.75rem; color: #A9C1CB; font-weight: normal; text-transform: none;">${terms.descriptionLimit}</span></h4>
+                        <button onclick="regenerateDescription(${index})"
+                                style="padding: 0.4rem 0.8rem; border: 2px solid #31D7CA; border-radius: 6px; background: white; color: #31D7CA; cursor: pointer; font-size: 0.85rem; font-weight: 600;">
+                            🔄 Regenerate
+                        </button>
+                    </div>
+                    <textarea id="description-edit-${index}"
+                              style="width: 100%; padding: 0.75rem; border: 2px solid #E1E7EF; border-radius: 8px; font-size: 0.95rem; min-height: 60px; font-family: inherit; resize: vertical;"
+                              oninput="updateSelectedAdCopy(${index})">${selectedAdCopy[index]?.description || ''}</textarea>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem;">
+                        ${variations.map((v, i) => `
+                            <button onclick="selectDescription(${index}, ${i})"
+                                    style="padding: 0.5rem; border: 2px solid ${selectedAdCopy[index]?.description === v.description ? '#31D7CA' : '#E1E7EF'}; border-radius: 6px; background: white; cursor: pointer; font-size: 0.85rem; text-align: left;">
+                                <strong>Option ${i + 1}</strong><br/>
+                                <span style="color: #7DA3AF; font-size: 0.8rem;">${v.description?.substring(0, 40) || 'N/A'}...</span>
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+
+                <!-- CTA Section -->
+                <div style="margin-bottom: 1rem;">
+                    <h4 style="color: #31D7CA; margin-bottom: 0.5rem; font-size: 0.9rem; text-transform: uppercase;">${terms.cta}</h4>
+                    <input type="text" id="cta-edit-${index}"
+                           value="${selectedAdCopy[index]?.cta || ''}"
+                           style="width: 100%; padding: 0.75rem; border: 2px solid #E1E7EF; border-radius: 8px; font-size: 0.95rem; font-weight: 600; font-family: inherit;"
+                           oninput="updateSelectedAdCopy(${index})">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem;">
+                        ${variations.map((v, i) => `
+                            <button onclick="selectCTA(${index}, ${i})"
+                                    style="padding: 0.5rem; border: 2px solid ${selectedAdCopy[index]?.cta === v.cta ? '#31D7CA' : '#E1E7EF'}; border-radius: 6px; background: white; cursor: pointer; font-size: 0.85rem; text-align: center;">
+                                <strong>Option ${i + 1}</strong><br/>
+                                <span style="color: #FC883A; font-weight: 600;">${v.cta || 'N/A'}</span>
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function selectHeadline(index, variationIndex) {
+            const variation = adCopyVariations[index][variationIndex];
+            selectedAdCopy[index].headline = variation.headline;
+            document.getElementById(`headline-edit-${index}`).value = variation.headline;
+            renderAdCopyUI(index, adCopyVariations[index]);
+        }
+
+        function selectBody(index, variationIndex) {
+            const variation = adCopyVariations[index][variationIndex];
+            selectedAdCopy[index].body = variation.body;
+            document.getElementById(`body-edit-${index}`).value = variation.body;
+            renderAdCopyUI(index, adCopyVariations[index]);
+        }
+
+        function selectDescription(index, variationIndex) {
+            const variation = adCopyVariations[index][variationIndex];
+            selectedAdCopy[index].description = variation.description;
+            document.getElementById(`description-edit-${index}`).value = variation.description || '';
+            renderAdCopyUI(index, adCopyVariations[index]);
+        }
+
+        function selectCTA(index, variationIndex) {
+            const variation = adCopyVariations[index][variationIndex];
+            selectedAdCopy[index].cta = variation.cta;
+            document.getElementById(`cta-edit-${index}`).value = variation.cta;
+            renderAdCopyUI(index, adCopyVariations[index]);
+        }
+
+        function updateSelectedAdCopy(index) {
+            const img = generatedImages[index];
+            const platform = img.platform.toLowerCase();
+
+            const adCopy = {
+                headline: document.getElementById(`headline-edit-${index}`).value,
+                body: document.getElementById(`body-edit-${index}`).value,
+                cta: document.getElementById(`cta-edit-${index}`).value
+            };
+
+            // Add description for Meta ads
+            if (platform === 'meta') {
+                const descEl = document.getElementById(`description-edit-${index}`);
+                if (descEl) {
+                    adCopy.description = descEl.value;
+                }
+            }
+
+            selectedAdCopy[index] = adCopy;
+        }
+
+        async function regenerateHeadline(index) {
+            const campaignText = document.getElementById('campaignText').value;
+            const provider = document.getElementById('aiProvider').value;
+            const img = generatedImages[index];
+            const overlay = textOverlays[index] || {};
+            const baseSizeName = img.size.replace(/\s*-\s*Variation\s+\d+/, '');
+
+            try {
+                // Generate 3 new variations for headline only
+                const newVariations = [];
+                for (let i = 0; i < 3; i++) {
+                    const response = await fetch('http://localhost:3000/api/generate-ad-copy', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            platform: img.platform,
+                            sizeName: baseSizeName,
+                            campaignText: campaignText,
+                            textOverlay: overlay.text || '',
+                            provider: provider
+                        })
+                    });
+
+                    const result = await response.json();
+                    if (result.success && result.adCopy) {
+                        newVariations.push(result.adCopy);
+                    }
+
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                }
+
+                // Replace headline variations, keep body and cta
+                adCopyVariations[index] = adCopyVariations[index].map((v, i) => ({
+                    headline: newVariations[i]?.headline || v.headline,
+                    body: v.body,
+                    cta: v.cta
+                }));
+
+                // Update selected headline to first new option
+                selectedAdCopy[index].headline = newVariations[0]?.headline || selectedAdCopy[index].headline;
+                document.getElementById(`headline-edit-${index}`).value = selectedAdCopy[index].headline;
+
+                // Re-render UI
+                renderAdCopyUI(index, adCopyVariations[index]);
+
+            } catch (error) {
+                console.error(`Error regenerating headline:`, error);
+                alert('Failed to regenerate headline: ' + error.message);
+            }
+        }
+
+        async function regenerateBody(index) {
+            const campaignText = document.getElementById('campaignText').value;
+            const provider = document.getElementById('aiProvider').value;
+            const img = generatedImages[index];
+            const overlay = textOverlays[index] || {};
+            const baseSizeName = img.size.replace(/\s*-\s*Variation\s+\d+/, '');
+
+            try {
+                // Generate 3 new variations for body only
+                const newVariations = [];
+                for (let i = 0; i < 3; i++) {
+                    const response = await fetch('http://localhost:3000/api/generate-ad-copy', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            platform: img.platform,
+                            sizeName: baseSizeName,
+                            campaignText: campaignText,
+                            textOverlay: overlay.text || '',
+                            provider: provider
+                        })
+                    });
+
+                    const result = await response.json();
+                    if (result.success && result.adCopy) {
+                        newVariations.push(result.adCopy);
+                    }
+
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                }
+
+                // Replace body variations, keep headline and cta
+                adCopyVariations[index] = adCopyVariations[index].map((v, i) => ({
+                    headline: v.headline,
+                    body: newVariations[i]?.body || v.body,
+                    cta: v.cta
+                }));
+
+                // Update selected body to first new option
+                selectedAdCopy[index].body = newVariations[0]?.body || selectedAdCopy[index].body;
+                document.getElementById(`body-edit-${index}`).value = selectedAdCopy[index].body;
+
+                // Re-render UI
+                renderAdCopyUI(index, adCopyVariations[index]);
+
+            } catch (error) {
+                console.error(`Error regenerating body:`, error);
+                alert('Failed to regenerate body: ' + error.message);
+            }
+        }
+
+        async function regenerateDescription(index) {
+            const campaignText = document.getElementById('campaignText').value;
+            const provider = document.getElementById('aiProvider').value;
+            const img = generatedImages[index];
+            const overlay = textOverlays[index] || {};
+            const baseSizeName = img.size.replace(/\s*-\s*Variation\s+\d+/, '');
+
+            try {
+                // Generate 3 new variations for description only
+                const newVariations = [];
+                for (let i = 0; i < 3; i++) {
+                    const response = await fetch('http://localhost:3000/api/generate-ad-copy', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            platform: img.platform,
+                            sizeName: baseSizeName,
+                            campaignText: campaignText,
+                            textOverlay: overlay.text || '',
+                            provider: provider
+                        })
+                    });
+
+                    const result = await response.json();
+                    if (result.success && result.adCopy) {
+                        newVariations.push(result.adCopy);
+                    }
+
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                }
+
+                // Replace description variations, keep headline, body and cta
+                adCopyVariations[index] = adCopyVariations[index].map((v, i) => ({
+                    headline: v.headline,
+                    body: v.body,
+                    description: newVariations[i]?.description || v.description,
+                    cta: v.cta
+                }));
+
+                // Update selected description to first new option
+                selectedAdCopy[index].description = newVariations[0]?.description || selectedAdCopy[index].description;
+                document.getElementById(`description-edit-${index}`).value = selectedAdCopy[index].description || '';
+
+                // Re-render UI
+                renderAdCopyUI(index, adCopyVariations[index]);
+
+            } catch (error) {
+                console.error(`Error regenerating description:`, error);
+                alert('Failed to regenerate description: ' + error.message);
+            }
+        }
+
+        function renderFinalReviewPage() {
+            const finalReviewGrid = document.getElementById('finalReviewGrid');
+            finalReviewGrid.innerHTML = '';
+
+            generatedImages.forEach((img, index) => {
+                const adCopy = selectedAdCopy[index] || { headline: '', body: '', cta: '' };
+                const overlay = textOverlays[index] || {};
+                const logo = logoSettings[index] || {};
+                const platform = img.platform.toLowerCase();
+
+                // Platform-specific terminology (same as ad copy page)
+                const terminology = {
+                    'meta': {
+                        headline: 'Headline',
+                        body: 'Primary Text',
+                        description: 'Description',
+                        hasDescription: true,
+                        cta: 'Call-to-Action'
+                    },
+                    'reddit': {
+                        headline: 'Headline',
+                        body: 'Body Text',
+                        hasDescription: false,
+                        cta: 'Call-to-Action'
+                    },
+                    'pinterest': {
+                        headline: 'Pin Title',
+                        body: 'Description',
+                        hasDescription: false,
+                        cta: 'Call-to-Action'
+                    }
+                };
+
+                const terms = terminology[platform] || terminology['meta'];
+
+                const card = document.createElement('div');
+                card.style.cssText = 'border: 2px solid #E1E7EF; border-radius: 12px; padding: 2rem; background: white;';
+
+                card.innerHTML = `
+                    <h3 style="margin-bottom: 1rem; color: #272D3F;">${img.platform.toUpperCase()} - ${img.size}</h3>
+                    <p style="color: #7DA3AF; font-size: 0.9rem; margin-bottom: 1.5rem;">${img.width}x${img.height}</p>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                        <!-- Image Preview -->
+                        <div>
+                            <div style="position: relative; border: 2px solid #E1E7EF; border-radius: 8px; overflow: hidden;">
+                                <img src="${img.url}" alt="${img.platform} ${img.size}" style="width: 100%; display: block;">
+                                <div id="review-text-${index}" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none;"></div>
+                                <div id="review-logo-${index}" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none;"></div>
+                            </div>
+                            <button class="btn-secondary" onclick="downloadFinalImage(${index})" style="width: 100%; margin-top: 1rem;">
+                                📥 Download This Ad
+                            </button>
+                        </div>
+
+                        <!-- Ad Copy -->
+                        <div>
+                            <div style="background: #F4F7FC; padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem;">
+                                <h4 style="color: #31D7CA; font-size: 0.85rem; text-transform: uppercase; margin-bottom: 0.5rem;">${terms.headline}</h4>
+                                <p style="font-weight: 600; font-size: 1rem; line-height: 1.4; color: #272D3F;">${adCopy.headline || 'No headline'}</p>
+                            </div>
+
+                            <div style="background: #F4F7FC; padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem;">
+                                <h4 style="color: #31D7CA; font-size: 0.85rem; text-transform: uppercase; margin-bottom: 0.5rem;">${terms.body}</h4>
+                                <p style="font-size: 0.95rem; line-height: 1.6; color: #272D3F;">${adCopy.body || 'No body copy'}</p>
+                            </div>
+
+                            ${terms.hasDescription && adCopy.description ? `
+                            <div style="background: #F4F7FC; padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem;">
+                                <h4 style="color: #31D7CA; font-size: 0.85rem; text-transform: uppercase; margin-bottom: 0.5rem;">${terms.description}</h4>
+                                <p style="font-size: 0.95rem; line-height: 1.6; color: #272D3F;">${adCopy.description}</p>
+                            </div>
+                            ` : ''}
+
+                            <div style="background: #F4F7FC; padding: 1.5rem; border-radius: 8px;">
+                                <h4 style="color: #31D7CA; font-size: 0.85rem; text-transform: uppercase; margin-bottom: 0.5rem;">${terms.cta}</h4>
+                                <p style="font-weight: 600; font-size: 1rem; color: #FC883A;">${adCopy.cta || 'No CTA'}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                finalReviewGrid.appendChild(card);
+
+                // Render text overlay and logo preview
+                setTimeout(() => renderReviewPreview(index), 100);
+            });
+        }
+
+        function renderReviewPreview(index) {
+            const overlay = textOverlays[index];
+            const logo = logoSettings[index];
+
+            // Render text overlay
+            const textPreview = document.getElementById(`review-text-${index}`);
+            if (overlay && overlay.text) {
+                const positionStyles = `top: ${overlay.y || 85}%; left: ${overlay.x || 50}%; transform: translate(-50%, -50%);`;
+                const bgStyle = overlay.bgColor === 'none' ? 'background: transparent;' : `background: ${overlay.bgColor};`;
+
+                textPreview.innerHTML = `
+                    <div style="position: absolute; ${positionStyles}">
+                        <div style="display: inline-block; ${bgStyle} padding: 10px 20px; border-radius: 8px;">
+                            <p style="color: ${overlay.textColor}; font-family: '${overlay.fontFamily}', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: ${overlay.fontSize}px; font-weight: 700; margin: 0; line-height: 1.2; white-space: nowrap;">${overlay.text}</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Render logo
+            const logoPreview = document.getElementById(`review-logo-${index}`);
+            const selectedLogo = availableLogos[logo?.selectedLogoIndex || 0];
+            if (logo && logo.enabled && selectedLogo) {
+                const positionStyles = `top: ${logo.y}%; left: ${logo.x}%; transform: translate(-50%, -50%);`;
+                logoPreview.innerHTML = `
+                    <div style="position: absolute; ${positionStyles}">
+                        <img src="${selectedLogo.url}" alt="${selectedLogo.name}" style="width: ${logo.scale}%; height: auto; display: block; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+                    </div>
+                `;
+            }
+        }
+
+        function exportAllCopy() {
+            let copyText = 'BriteCo Ad Campaign - Copy Export (Selected Options)\n';
+            copyText += '='.repeat(50) + '\n\n';
+
+            generatedImages.forEach((img, index) => {
+                const adCopy = selectedAdCopy[index] || { headline: '', body: '', cta: '' };
+                const platform = img.platform.toLowerCase();
+
+                copyText += `${img.platform.toUpperCase()} - ${img.size} (${img.width}x${img.height})\n`;
+                copyText += '-'.repeat(50) + '\n';
+                copyText += `Headline: ${adCopy.headline || 'N/A'}\n\n`;
+                copyText += `Body: ${adCopy.body || 'N/A'}\n\n`;
+
+                // Add description for Meta ads
+                if (platform === 'meta' && adCopy.description) {
+                    copyText += `Description: ${adCopy.description}\n\n`;
+                }
+
+                copyText += `CTA: ${adCopy.cta || 'N/A'}\n\n`;
+                copyText += '='.repeat(50) + '\n\n';
+            });
+
+            // Create downloadable text file
+            const blob = new Blob([copyText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'briteco-ad-copy-selected.txt';
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function exportAllCopyOptions() {
+            let copyText = 'BriteCo Ad Campaign - All Copy Options\n';
+            copyText += '='.repeat(50) + '\n\n';
+
+            // Group by base size
+            const sizeGroups = {};
+            generatedImages.forEach((img, index) => {
+                const baseSizeName = img.size.replace(/\s*-\s*Variation\s+\d+/, '');
+                if (!sizeGroups[baseSizeName]) {
+                    sizeGroups[baseSizeName] = {
+                        img: img,
+                        variations: adCopyVariations[index] || []
+                    };
+                }
+            });
+
+            // Export all variations for each size
+            Object.entries(sizeGroups).forEach(([baseSizeName, data]) => {
+                const img = data.img;
+                const variations = data.variations;
+                const platform = img.platform.toLowerCase();
+
+                copyText += `${img.platform.toUpperCase()} - ${baseSizeName} (${img.width}x${img.height})\n`;
+                copyText += '='.repeat(50) + '\n\n';
+
+                variations.forEach((adCopy, i) => {
+                    copyText += `OPTION ${i + 1}:\n`;
+                    copyText += '-'.repeat(50) + '\n';
+                    copyText += `Headline: ${adCopy.headline || 'N/A'}\n\n`;
+                    copyText += `Body: ${adCopy.body || 'N/A'}\n\n`;
+
+                    // Add description for Meta ads
+                    if (platform === 'meta' && adCopy.description) {
+                        copyText += `Description: ${adCopy.description}\n\n`;
+                    }
+
+                    copyText += `CTA: ${adCopy.cta || 'N/A'}\n\n`;
+                });
+
+                copyText += '='.repeat(50) + '\n\n';
+            });
+
+            // Create downloadable text file
+            const blob = new Blob([copyText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'briteco-ad-copy-all-options.txt';
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        async function downloadFinalImage(index) {
+            const img = generatedImages[index];
+            const overlay = textOverlays[index];
+            const logo = logoSettings[index] || { enabled: false, x: 10, y: 10, scale: 30 };
+
+            // Create canvas
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+
+            // Load base image
+            const baseImage = new Image();
+            baseImage.crossOrigin = 'anonymous';
+
+            baseImage.onload = async function() {
+                // Draw base image
+                ctx.drawImage(baseImage, 0, 0, img.width, img.height);
+
+                // Draw text overlay if exists
+                if (overlay && overlay.text) {
+                    const x = (overlay.x / 100) * img.width;
+                    const y = (overlay.y / 100) * img.height;
+
+                    // Calculate font size proportional to image size
+                    const scaleFactor = img.width / 1080; // Relative to standard width
+                    const fontSize = overlay.fontSize * scaleFactor;
+
+                    ctx.font = `700 ${fontSize}px '${overlay.fontFamily}', Arial, sans-serif`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+
+                    // Measure text for background
+                    const textMetrics = ctx.measureText(overlay.text);
+                    const textWidth = textMetrics.width;
+                    const textHeight = fontSize * 1.2;
+
+                    const padding = 20 * scaleFactor;
+
+                    // Draw background if not 'none'
+                    if (overlay.bgColor && overlay.bgColor !== 'none') {
+                        ctx.fillStyle = overlay.bgColor;
+                        const borderRadius = 8 * scaleFactor;
+                        const bgX = x - textWidth / 2 - padding;
+                        const bgY = y - textHeight / 2 - padding / 2;
+                        const bgWidth = textWidth + padding * 2;
+                        const bgHeight = textHeight + padding;
+
+                        // Draw rounded rectangle
+                        ctx.beginPath();
+                        ctx.moveTo(bgX + borderRadius, bgY);
+                        ctx.lineTo(bgX + bgWidth - borderRadius, bgY);
+                        ctx.quadraticCurveTo(bgX + bgWidth, bgY, bgX + bgWidth, bgY + borderRadius);
+                        ctx.lineTo(bgX + bgWidth, bgY + bgHeight - borderRadius);
+                        ctx.quadraticCurveTo(bgX + bgWidth, bgY + bgHeight, bgX + bgWidth - borderRadius, bgY + bgHeight);
+                        ctx.lineTo(bgX + borderRadius, bgY + bgHeight);
+                        ctx.quadraticCurveTo(bgX, bgY + bgHeight, bgX, bgY + bgHeight - borderRadius);
+                        ctx.lineTo(bgX, bgY + borderRadius);
+                        ctx.quadraticCurveTo(bgX, bgY, bgX + borderRadius, bgY);
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+
+                    // Draw text
+                    ctx.fillStyle = overlay.textColor;
+                    ctx.fillText(overlay.text, x, y);
+                }
+
+                // Draw logo if enabled
+                const selectedLogo = availableLogos[logo.selectedLogoIndex || 0];
+                if (logo.enabled && selectedLogo) {
+                    const logoImage = new Image();
+                    logoImage.crossOrigin = 'anonymous';
+
+                    logoImage.onload = function() {
+                        const logoWidth = (logo.scale / 100) * img.width;
+                        const logoHeight = (logoImage.height / logoImage.width) * logoWidth;
+
+                        // Calculate position from percentage with center anchoring
+                        let logoX = (logo.x / 100) * img.width - logoWidth / 2;
+                        let logoY = (logo.y / 100) * img.height - logoHeight / 2;
+
+                        // Constrain logo to stay within image bounds
+                        logoX = Math.max(0, Math.min(logoX, img.width - logoWidth));
+                        logoY = Math.max(0, Math.min(logoY, img.height - logoHeight));
+
+                        // Add subtle drop shadow for logo
+                        ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+                        ctx.shadowBlur = 4;
+                        ctx.shadowOffsetX = 0;
+                        ctx.shadowOffsetY = 2;
+
+                        ctx.drawImage(logoImage, logoX, logoY, logoWidth, logoHeight);
+
+                        // Reset shadow
+                        ctx.shadowColor = 'transparent';
+                        ctx.shadowBlur = 0;
+                        ctx.shadowOffsetX = 0;
+                        ctx.shadowOffsetY = 0;
+
+                        // Download composited image
+                        canvas.toBlob(function(blob) {
+                            const url = URL.createObjectURL(blob);
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.download = `${img.platform}_${img.size}_final.jpg`;
+                            link.click();
+                            URL.revokeObjectURL(url);
+                        }, 'image/jpeg', 0.95);
+                    };
+
+                    logoImage.src = selectedLogo.url;
+                } else {
+                    // No logo, just download with text
+                    canvas.toBlob(function(blob) {
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `${img.platform}_${img.size}_final.jpg`;
+                        link.click();
+                        URL.revokeObjectURL(url);
+                    }, 'image/jpeg', 0.95);
+                }
+            };
+
+            baseImage.src = img.url;
+        }
+
+        function downloadAll() {
+            generatedImages.forEach((img, index) => {
+                setTimeout(() => {
+                    downloadFinalImage(index);
+                }, index * 500); // Stagger downloads
+            });
+        }
+
+        function handleLogo(file) {
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    uploadedLogo = e.target.result;
+                    document.getElementById('currentLogo').src = uploadedLogo;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Initialize logo on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            // Load BriteCo logo from JPG file
+            fetch('logo file for claude.jpg')
+                .then(response => response.blob())
+                .then(blob => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        uploadedLogo = e.target.result;
+                        console.log('[LOGO] BriteCo logo loaded successfully');
+                    };
+                    reader.readAsDataURL(blob);
+                })
+                .catch(error => {
+                    console.error('[LOGO] Failed to load logo:', error);
+                    alert('Warning: Logo file not found. Please ensure "logo file for claude.jpg" exists in the project directory.');
+                });
+        });
+
+        function updateOverlay(index) {
+            const text = document.getElementById(`text-${index}`).value;
+            const position = document.getElementById(`position-${index}`).value;
+            const size = document.getElementById(`size-${index}`).value;
+            const color = document.getElementById(`color-${index}`).value;
+
+            const overlay = document.getElementById(`overlay-${index}`);
+
+            if (text) {
+                let positionStyles = '';
+                if (position === 'top') {
+                    positionStyles = 'top: 20px; left: 0; right: 0; text-align: center;';
+                } else if (position === 'center') {
+                    positionStyles = 'top: 50%; left: 0; right: 0; transform: translateY(-50%); text-align: center;';
+                } else {
+                    positionStyles = 'bottom: 20px; left: 0; right: 0; text-align: center;';
+                }
+
+                overlay.innerHTML = `
+                    <div style="position: absolute; ${positionStyles}">
+                        <div style="display: inline-block; background: rgba(0, 0, 0, 0.7); padding: 10px 20px; border-radius: 8px;">
+                            <p style="color: ${color}; font-family: 'Gilroy', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: ${size}px; font-weight: 700; margin: 0; text-transform: uppercase; line-height: 1.2;">${text}</p>
+                        </div>
+                    </div>
+                `;
+            } else {
+                overlay.innerHTML = '';
+            }
+        }
+
+        function updateLogoOverlay(index) {
+            if (!uploadedLogo) return;
+
+            const logoOverlay = document.getElementById(`logo-overlay-${index}`);
+            const logoPositionEl = document.getElementById(`logo-position-${index}`);
+            const logoSizeEl = document.getElementById(`logo-size-${index}`);
+            const logoSizeDisplay = document.getElementById(`logo-size-display-${index}`);
+
+            if (!logoPositionEl) return;
+
+            const logoPosition = logoPositionEl.value;
+            const logoSize = logoSizeEl ? logoSizeEl.value : 15;
+
+            if (logoSizeDisplay) {
+                logoSizeDisplay.textContent = logoSize;
+            }
+
+            if (!logoPosition) {
+                logoOverlay.innerHTML = '';
+                return;
+            }
+
+            let positionStyles = '';
+            if (logoPosition === 'top-left') {
+                positionStyles = 'top: 15px; left: 15px;';
+            } else if (logoPosition === 'top-right') {
+                positionStyles = 'top: 15px; right: 15px;';
+            } else if (logoPosition === 'bottom-left') {
+                positionStyles = 'bottom: 15px; left: 15px;';
+            } else if (logoPosition === 'bottom-right') {
+                positionStyles = 'bottom: 15px; right: 15px;';
+            } else if (logoPosition === 'center') {
+                positionStyles = 'top: 50%; left: 50%; transform: translate(-50%, -50%);';
+            }
+
+            logoOverlay.innerHTML = `
+                <div style="position: absolute; ${positionStyles}">
+                    <img src="${uploadedLogo}" alt="Logo" style="width: ${logoSize}%; height: auto; display: block; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+                </div>
+            `;
+        }
+
+        function downloadImageFromUrl(dataUrl, filename) {
+            const link = document.createElement('a');
+            link.href = dataUrl;
+            link.download = filename;
+            link.click();
+        }
+
+        function updateCharCount() {
+            const text = document.getElementById('campaignText').value;
+            const count = text.length;
+            document.getElementById('charCount').textContent = `${count} / 500 characters`;
+
+            if (count > 500) {
+                document.getElementById('charCount').style.color = '#D73D4F';
+            } else {
+                document.getElementById('charCount').style.color = '#A9C1CB';
+            }
+        }
+
+        function handleFiles(files) {
+            const preview = document.getElementById('imagePreview');
+
+            for (let file of files) {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const div = document.createElement('div');
+                        div.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 150px; object-fit: cover; border-radius: 8px; border: 2px solid #E1E7EF;">`;
+                        preview.appendChild(div);
+                        uploadedImages.push({
+                            name: file.name,
+                            data: e.target.result
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+        }
+
+        // Drag and drop
+        const uploadArea = document.querySelector('.image-upload-area');
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#31D7CA';
+            uploadArea.style.background = '#F4F7FC';
+        });
+
+        uploadArea.addEventListener('dragleave', (e) => {
+            uploadArea.style.borderColor = '#E1E7EF';
+            uploadArea.style.background = '#fafafa';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#E1E7EF';
+            uploadArea.style.background = '#fafafa';
+            handleFiles(e.dataTransfer.files);
+        });
+    </script>
+</body>
+</html>
