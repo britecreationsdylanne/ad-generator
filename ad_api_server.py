@@ -189,7 +189,7 @@ def generate_images():
                             composition_hint = "full vertical composition from head to below waist, story-style framing"
 
                         # Enhance prompt with aspect ratio guidance
-                        enhanced_prompt = f"{prompt}\n\nIMPORTANT: Compose this image specifically for {aspect_hint}. Use {composition_hint}. Frame: {width}x{height}px."
+                        enhanced_prompt = f"{prompt}\n\nIMPORTANT: Compose this image specifically for {aspect_hint}. Use {composition_hint}. Frame: {width}x{height}px.\n\nDo NOT include any company logos, brand marks, watermarks, or text overlays in the image. Generate photography only without any branding elements."
 
                         # Generate with Gemini (Nano Banana) with aspect-specific prompt
                         result = gemini_client.generate_image(
@@ -402,6 +402,140 @@ Return ONLY the JSON, no other text."""
             'success': True,
             'adCopy': ad_copy,
             'provider': provider
+        })
+
+    except Exception as e:
+        print(f"[API ERROR] {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/generate-animation', methods=['POST'])
+def generate_animation():
+    """Generate animated GIF from multiple image variations"""
+    try:
+        data = request.json
+        base_prompt = data.get('prompt', '')
+        width = data.get('width', 1080)
+        height = data.get('height', 1080)
+        duration_seconds = data.get('duration', 5)
+        platform = data.get('platform', 'Meta')
+        size_name = data.get('sizeName', 'Square')
+
+        print(f"\n[API] Generate Animation Request")
+        print(f"  Platform: {platform}, Size: {size_name}")
+        print(f"  Duration: {duration_seconds} seconds")
+        print(f"  Dimensions: {width}x{height}")
+
+        # Generate 5 frames with slight variations
+        frame_count = min(duration_seconds, 5)  # Max 5 frames
+        frames = []
+
+        # Define prompt variations for animation effect
+        variations = [
+            "",  # Original
+            "Zoom in slightly to show more detail on the jewelry",
+            "Pan slightly to the right to show the couple's connection",
+            "Zoom out slightly for a wider view",
+            "Return to original composition"
+        ]
+
+        for i in range(frame_count):
+            try:
+                variation_prompt = variations[i] if i < len(variations) else ""
+                enhanced_prompt = f"{base_prompt}\n\n{variation_prompt}".strip()
+
+                print(f"[API] Generating frame {i+1}/{frame_count}...")
+
+                # Calculate aspect ratio hints
+                aspect_ratio = width / height
+                if aspect_ratio > 1.5:
+                    aspect_hint = "wide landscape format (16:9 or wider)"
+                    composition_hint = "horizontal composition with subjects positioned to fill the wide frame"
+                elif aspect_ratio > 1.2:
+                    aspect_hint = "landscape format"
+                    composition_hint = "horizontal composition"
+                elif aspect_ratio > 0.85:
+                    aspect_hint = "square format (1:1)"
+                    composition_hint = "centered composition with subjects filling the square frame"
+                elif aspect_ratio > 0.6:
+                    aspect_hint = "portrait format (4:5)"
+                    composition_hint = "vertical composition with more headroom"
+                else:
+                    aspect_hint = "tall portrait format (9:16 story)"
+                    composition_hint = "full vertical composition from head to below waist, story-style framing"
+
+                enhanced_prompt += f"\n\nIMPORTANT: Compose this image specifically for {aspect_hint}. Use {composition_hint}. Frame: {width}x{height}px.\n\nDo NOT include any company logos, brand marks, watermarks, or text overlays in the image. Generate photography only without any branding elements."
+
+                # Generate frame with Gemini
+                result = gemini_client.generate_image(
+                    prompt=enhanced_prompt,
+                    model="gemini-2.5-flash-image"
+                )
+
+                image_data = result.get('image_data', '')
+
+                if image_data:
+                    import base64
+                    from PIL import Image, ImageOps
+                    from io import BytesIO
+
+                    # Decode and resize frame
+                    image_bytes = base64.b64decode(image_data)
+                    pil_image = Image.open(BytesIO(image_bytes))
+
+                    # Resize to exact dimensions
+                    pil_image = ImageOps.fit(pil_image, (width, height), Image.Resampling.LANCZOS, centering=(0.5, 0.5))
+
+                    frames.append(pil_image.convert('RGB'))
+                    print(f"[API] Frame {i+1} generated successfully")
+
+            except Exception as frame_error:
+                print(f"[API ERROR] Failed to generate frame {i+1}: {frame_error}")
+
+        if len(frames) == 0:
+            return jsonify({'success': False, 'error': 'No frames generated'}), 500
+
+        print(f"[API] Creating GIF from {len(frames)} frames...")
+
+        # Create animated GIF
+        from io import BytesIO
+        import base64
+
+        # Convert frames to base64 for individual editing
+        frame_images = []
+        for i, frame in enumerate(frames):
+            frame_buffer = BytesIO()
+            frame.save(frame_buffer, format='PNG')
+            frame_base64 = base64.b64encode(frame_buffer.getvalue()).decode('utf-8')
+            frame_images.append(f"data:image/png;base64,{frame_base64}")
+
+        gif_buffer = BytesIO()
+
+        # Calculate duration per frame in milliseconds
+        duration_ms = int((duration_seconds * 1000) / len(frames))
+
+        # Save as animated GIF
+        frames[0].save(
+            gif_buffer,
+            format='GIF',
+            save_all=True,
+            append_images=frames[1:],
+            duration=duration_ms,
+            loop=0,  # Infinite loop
+            optimize=True
+        )
+
+        gif_data = base64.b64encode(gif_buffer.getvalue()).decode('utf-8')
+
+        print(f"[API] Animation created successfully ({len(gif_buffer.getvalue())} bytes)")
+
+        return jsonify({
+            'success': True,
+            'animation': f"data:image/gif;base64,{gif_data}",
+            'frames': frame_images,  # Individual frames for editing
+            'frame_count': len(frames),
+            'duration': duration_seconds
         })
 
     except Exception as e:

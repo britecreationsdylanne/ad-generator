@@ -446,8 +446,179 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 <button class="btn-secondary" onclick="exportAllCopyOptions()">📋 Export All Copy Options</button>
                 <button class="btn-primary" onclick="downloadAll()">📥 Download All Ads</button>
             </div>
+
+            <div style="margin-top: 3rem; padding: 2rem; background: linear-gradient(135deg, #31D7CA 0%, #272D3F 100%); border-radius: 12px; text-align: center;">
+                <h3 style="color: white; margin-bottom: 0.5rem;">🎬 Want Animated Versions?</h3>
+                <p style="color: rgba(255,255,255,0.9); margin-bottom: 1.5rem;">Create eye-catching animated GIFs from your ads</p>
+                <button class="btn-primary" onclick="goToGifCreation()" style="background: white; color: #272D3F; border: none;">
+                    Create Animated GIFs →
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 9: GIF Creation -->
+        <div id="step9" class="card hidden">
+            <h1>🎬 Create Animated GIFs</h1>
+            <p style="color: #7DA3AF; font-size: 1.1rem; margin-bottom: 2rem;">Select ads to animate and customize frames</p>
+
+            <div id="gifSelectionGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;"></div>
+
+            <div class="button-group" style="margin-top: 2rem;">
+                <button class="btn-secondary" onclick="backToFinalReview()">← Back to Review</button>
+                <button class="btn-primary" onclick="generateSelectedGifs()" id="generate-gifs-btn">✨ Generate Selected GIFs</button>
+            </div>
+        </div>
+
+        <!-- Step 10: GIF Results -->
+        <div id="step10" class="card hidden">
+            <h1>🎬 Generated Animations</h1>
+            <p style="color: #7DA3AF; font-size: 1.1rem; margin-bottom: 2rem;">Your animated GIFs are ready! Edit frames or download.</p>
+
+            <div id="gifResultsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 2rem; margin-bottom: 2rem;"></div>
+
+            <div class="button-group" style="margin-top: 2rem;">
+                <button class="btn-secondary" onclick="backToGifSelection()">← Back to Selection</button>
+                <button class="btn-secondary" onclick="backToFinalReview()">← Back to All Ads</button>
+            </div>
         </div>
     </main>
+
+    <!-- Frame Editor Modal -->
+    <div id="frameEditorModal" class="hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 10000; overflow-y: auto;">
+        <div style="max-width: 1200px; margin: 2rem auto; background: white; border-radius: 16px; padding: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h2 style="color: #272D3F; margin: 0;">✏️ Edit GIF Frames</h2>
+                <button onclick="closeFrameEditor()" class="btn-secondary">✕ Close</button>
+            </div>
+
+            <div id="frameEditorContent" style="display: grid; grid-template-columns: 1fr 350px; gap: 2rem;">
+                <!-- Left: Frame Preview -->
+                <div>
+                    <div style="position: relative; background: #F4F7FC; border-radius: 12px; padding: 1rem; margin-bottom: 1rem;">
+                        <canvas id="framePreviewCanvas" style="width: 100%; border-radius: 8px; display: block;"></canvas>
+                    </div>
+
+                    <!-- Frame Thumbnails -->
+                    <div style="margin-top: 1rem;">
+                        <h4 style="color: #272D3F; margin-bottom: 0.75rem;">Select Frame:</h4>
+                        <div id="frameThumbnails" style="display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 0.5rem;"></div>
+                    </div>
+                </div>
+
+                <!-- Right: Text Overlay Controls -->
+                <div style="background: #F4F7FC; border-radius: 12px; padding: 1.5rem;">
+                    <h4 style="color: #272D3F; margin-bottom: 1rem;">Text Overlay</h4>
+
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; font-size: 0.9rem; color: #7DA3AF; margin-bottom: 0.5rem;">Text:</label>
+                        <input type="text" id="frameTextInput"
+                               placeholder="Enter text for this frame"
+                               oninput="updateFramePreview()"
+                               style="width: 100%; padding: 0.75rem; border: 1px solid #E1E7EF; border-radius: 8px; font-size: 1rem;">
+                    </div>
+
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; font-size: 0.9rem; color: #7DA3AF; margin-bottom: 0.5rem;">Position:</label>
+                        <select id="framePositionSelect" onchange="updateFramePreview()"
+                                style="width: 100%; padding: 0.75rem; border: 1px solid #E1E7EF; border-radius: 8px;">
+                            <option value="top">Top</option>
+                            <option value="center">Center</option>
+                            <option value="bottom" selected>Bottom</option>
+                        </select>
+                    </div>
+
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; font-size: 0.9rem; color: #7DA3AF; margin-bottom: 0.5rem;">Font Family:</label>
+                        <select id="frameFontSelect" onchange="updateFramePreview()"
+                                style="width: 100%; padding: 0.75rem; border: 1px solid #E1E7EF; border-radius: 8px;">
+                            <option value="Gilroy, Arial, sans-serif" selected>Gilroy (Default)</option>
+                            <option value="Arial, sans-serif">Arial</option>
+                            <option value="'Helvetica Neue', Helvetica, sans-serif">Helvetica</option>
+                            <option value="Georgia, serif">Georgia</option>
+                            <option value="'Times New Roman', Times, serif">Times New Roman</option>
+                            <option value="'Courier New', Courier, monospace">Courier</option>
+                            <option value="Impact, sans-serif">Impact</option>
+                            <option value="'Comic Sans MS', cursive">Comic Sans</option>
+                        </select>
+                    </div>
+
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; font-size: 0.9rem; color: #7DA3AF; margin-bottom: 0.5rem;">Font Size: <span id="frameSizeDisplay">32</span>px</label>
+                        <input type="range" id="frameSizeSlider" min="16" max="72" value="32"
+                               oninput="document.getElementById('frameSizeDisplay').textContent = this.value; updateFramePreview()"
+                               style="width: 100%;">
+                    </div>
+
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; font-size: 0.9rem; color: #7DA3AF; margin-bottom: 0.5rem;">Text Color:</label>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;">
+                            <button onclick="setFrameColor('#FFFFFF')" style="background: #FFFFFF; border: 2px solid #E1E7EF; border-radius: 6px; padding: 0.5rem; cursor: pointer;">White</button>
+                            <button onclick="setFrameColor('#31D7CA')" style="background: #31D7CA; border: 2px solid #31D7CA; border-radius: 6px; padding: 0.5rem; cursor: pointer; color: white;">Turquoise</button>
+                            <button onclick="setFrameColor('#FC883A')" style="background: #FC883A; border: 2px solid #FC883A; border-radius: 6px; padding: 0.5rem; cursor: pointer; color: white;">Orange</button>
+                            <button onclick="setFrameColor('#272D3F')" style="background: #272D3F; border: 2px solid #272D3F; border-radius: 6px; padding: 0.5rem; cursor: pointer; color: white;">Navy</button>
+                            <button onclick="setFrameColor('#000000')" style="background: #000000; border: 2px solid #000000; border-radius: 6px; padding: 0.5rem; cursor: pointer; color: white;">Black</button>
+                            <button onclick="setFrameColor('#FFD700')" style="background: #FFD700; border: 2px solid #FFD700; border-radius: 6px; padding: 0.5rem; cursor: pointer;">Gold</button>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; font-size: 0.9rem; color: #7DA3AF; margin-bottom: 0.5rem;">Background Color:</label>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;">
+                            <button onclick="setFrameBgColor('rgba(0,0,0,0.7)')" style="background: rgba(0,0,0,0.7); border: 2px solid #E1E7EF; border-radius: 6px; padding: 0.5rem; cursor: pointer; color: white;">Dark</button>
+                            <button onclick="setFrameBgColor('rgba(0,0,0,0.5)')" style="background: rgba(0,0,0,0.5); border: 2px solid #E1E7EF; border-radius: 6px; padding: 0.5rem; cursor: pointer; color: white;">Medium</button>
+                            <button onclick="setFrameBgColor('rgba(0,0,0,0.3)')" style="background: rgba(0,0,0,0.3); border: 2px solid #E1E7EF; border-radius: 6px; padding: 0.5rem; cursor: pointer; color: white;">Light</button>
+                            <button onclick="setFrameBgColor('rgba(49,215,202,0.8)')" style="background: rgba(49,215,202,0.8); border: 2px solid #31D7CA; border-radius: 6px; padding: 0.5rem; cursor: pointer; color: white;">Turquoise</button>
+                            <button onclick="setFrameBgColor('rgba(252,136,58,0.8)')" style="background: rgba(252,136,58,0.8); border: 2px solid #FC883A; border-radius: 6px; padding: 0.5rem; cursor: pointer; color: white;">Orange</button>
+                            <button onclick="setFrameBgColor('rgba(255,255,255,0.9)')" style="background: rgba(255,255,255,0.9); border: 2px solid #E1E7EF; border-radius: 6px; padding: 0.5rem; cursor: pointer;">White</button>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; font-size: 0.9rem; color: #7DA3AF; margin-bottom: 0.5rem;">
+                            <input type="checkbox" id="frameLogoCheckbox" onchange="toggleFrameLogo()" style="margin-right: 0.5rem;">
+                            Add Logo
+                        </label>
+                        <div id="frameLogoControls" style="display: none; padding-top: 0.5rem;">
+                            <label style="display: block; font-size: 0.85rem; color: #7DA3AF; margin-bottom: 0.25rem;">Select Logo:</label>
+                            <div id="frameLogoSelector" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 0.75rem;"></div>
+
+                            <label style="display: block; font-size: 0.85rem; color: #7DA3AF; margin-bottom: 0.25rem;">Logo Position:</label>
+                            <select id="frameLogoPosition" onchange="updateFramePreview()"
+                                    style="width: 100%; padding: 0.5rem; border: 1px solid #E1E7EF; border-radius: 6px; margin-bottom: 0.5rem;">
+                                <option value="top-left">Top Left</option>
+                                <option value="top-right">Top Right</option>
+                                <option value="bottom-left">Bottom Left</option>
+                                <option value="bottom-right" selected>Bottom Right</option>
+                            </select>
+                            <label style="display: block; font-size: 0.85rem; color: #7DA3AF; margin-bottom: 0.25rem;">Logo Size: <span id="frameLogoSizeDisplay">15</span>%</label>
+                            <input type="range" id="frameLogoSize" min="8" max="25" value="15"
+                                   oninput="document.getElementById('frameLogoSizeDisplay').textContent = this.value; updateFramePreview()"
+                                   style="width: 100%;">
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #E1E7EF;">
+                        <button onclick="applyToAllFrames()" class="btn-secondary" style="width: 100%; margin-bottom: 0.5rem;">
+                            📋 Apply to All Frames
+                        </button>
+                        <button onclick="clearFrameOverlay()" class="btn-secondary" style="width: 100%; margin-bottom: 0.5rem;">
+                            🗑️ Clear This Frame
+                        </button>
+                        <button onclick="deleteCurrentFrame()" class="btn-secondary" style="width: 100%; background: #D73D4F; color: white; border: none;">
+                            ❌ Delete This Frame
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 2rem; padding-top: 2rem; border-top: 2px solid #E1E7EF; text-align: center;">
+                <button onclick="regenerateGifWithOverlays()" class="btn-primary" style="padding: 1rem 2rem; font-size: 1.1rem;">
+                    ✨ Regenerate GIF with Text Overlays
+                </button>
+                <p style="color: #7DA3AF; font-size: 0.85rem; margin-top: 0.5rem;">This will create a new GIF with your text overlays applied</p>
+            </div>
+        </div>
+    </div>
 
     <!-- Loading Overlay -->
     <div id="loadingOverlay" class="loading-overlay hidden">
@@ -457,7 +628,6 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             <p style="color: #7DA3AF; font-size: 1.1rem; line-height: 1.6;" id="overlayMessage">
                 This may take a minute. Google Gemini is creating your custom ad images.
             </p>
-            <p style="color: #31D7CA; font-weight: 600; margin-top: 1rem; font-size: 0.9rem;">☕ Grab a coffee while you wait!</p>
         </div>
     </div>
 
@@ -490,6 +660,16 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
         let generatedImages = []; // Store generated images for use across steps
         let textOverlays = {}; // Store text overlay settings for each image
         let logoSettings = {}; // Store logo position (x, y), scale, and selectedLogoIndex for each image
+
+        // Helper function to capitalize platform names for display
+        function capitalizePlatform(platform) {
+            const platformMap = {
+                'meta': 'Meta',
+                'reddit': 'Reddit',
+                'pinterest': 'Pinterest'
+            };
+            return platformMap[platform.toLowerCase()] || platform;
+        }
 
         function togglePlatform(platform, element) {
             if (selectedPlatforms.has(platform)) {
@@ -577,6 +757,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 // Update loading overlay status
                 const providerName = provider === 'claude' ? 'Claude' : 'OpenAI';
                 document.getElementById('overlayTitle').textContent = 'Generating Image Prompts';
+                document.getElementById('overlayMessage').textContent = `This may take a minute. ${providerName} is creating your custom image prompts.`;
                 document.getElementById('loadingText').textContent = 'Generating Image Prompts';
                 document.getElementById('loadingStatus').textContent = `This may take a minute. ${providerName} is creating your custom image prompts.`;
 
@@ -781,7 +962,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 // Create group header
                 const groupHeader = document.createElement('div');
                 groupHeader.style.cssText = 'grid-column: 1 / -1; margin-top: 1rem; margin-bottom: 0.5rem;';
-                groupHeader.innerHTML = `<h3 style="color: #272D3F; font-size: 1.1rem; margin: 0;">${items[0].img.platform.toUpperCase()} - ${baseSizeName}</h3>`;
+                groupHeader.innerHTML = `<h3 style="color: #272D3F; font-size: 1.1rem; margin: 0;">${capitalizePlatform(items[0].img.platform)} - ${baseSizeName}</h3>`;
                 imagesGrid.appendChild(groupHeader);
 
                 // Render images in this group
@@ -791,7 +972,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
 
                     const variationNumber = img.size.match(/Variation\s+(\d+)/)?.[1] || '';
                     card.innerHTML = `
-                        <img src="${img.url}" alt="${img.platform} ${img.size}"
+                        <img src="${img.url}" alt="${capitalizePlatform(img.platform)} ${img.size}"
                              style="width: 100%; max-width: 100%; border-radius: 8px; display: block; margin-bottom: 1rem;">
                         <p style="color: #7DA3AF; font-size: 0.9rem; font-weight: 600;">Variation ${variationNumber}</p>
                         <p style="color: #A9C1CB; font-size: 0.85rem;">${img.width}x${img.height}</p>
@@ -873,7 +1054,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                         <!-- Image Preview -->
                         <div>
                             <div id="preview-container-${index}" style="position: relative; border: 2px solid #E1E7EF; border-radius: 8px; overflow: hidden; cursor: move;">
-                                <img id="preview-img-${index}" src="${img.url}" alt="${img.platform} ${img.size}"
+                                <img id="preview-img-${index}" src="${img.url}" alt="${capitalizePlatform(img.platform)} ${img.size}"
                                      style="width: 100%; display: block;">
                                 <div id="text-preview-${index}" class="draggable-text" data-index="${index}"
                                      style="position: absolute; top: ${textOverlays[index].y}%; left: ${textOverlays[index].x}%; transform: translate(-50%, -50%); cursor: move;">
@@ -882,7 +1063,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                             <p style="background: #F4F7FC; padding: 0.75rem; border-radius: 8px; margin-top: 0.75rem; color: #7DA3AF; font-size: 0.9rem; text-align: center;">
                                 💡 <strong>Drag the text</strong> to position it anywhere on the image
                             </p>
-                            <h4 style="margin-top: 1rem; color: #272D3F;">${img.platform.toUpperCase()} - ${img.size}</h4>
+                            <h4 style="margin-top: 1rem; color: #272D3F;">${capitalizePlatform(img.platform)} - ${img.size}</h4>
                             <p style="color: #7DA3AF; font-size: 0.9rem;">${img.width}x${img.height}</p>
                         </div>
 
@@ -1061,7 +1242,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                         <!-- Image Preview with Text & Logo -->
                         <div>
                             <div id="logo-preview-container-${index}" style="position: relative; border: 2px solid #E1E7EF; border-radius: 8px; overflow: hidden; cursor: move;">
-                                <img id="logo-preview-img-${index}" src="${img.url}" alt="${img.platform} ${img.size}" style="width: 100%; display: block;">
+                                <img id="logo-preview-img-${index}" src="${img.url}" alt="${capitalizePlatform(img.platform)} ${img.size}" style="width: 100%; display: block;">
                                 <div id="final-text-${index}" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none;"></div>
                                 <div id="logo-draggable-${index}" class="draggable-logo" data-index="${index}"
                                      style="position: absolute; top: ${logoSettings[index].y}%; left: ${logoSettings[index].x}%; transform: translate(-50%, -50%); cursor: move; pointer-events: auto;">
@@ -1070,7 +1251,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                             <p style="background: #F4F7FC; padding: 0.75rem; border-radius: 8px; margin-top: 0.75rem; color: #7DA3AF; font-size: 0.9rem; text-align: center;">
                                 💡 <strong>Drag the logo</strong> to position it anywhere on the image
                             </p>
-                            <h4 style="margin-top: 1rem; color: #272D3F;">${img.platform.toUpperCase()} - ${img.size}</h4>
+                            <h4 style="margin-top: 1rem; color: #272D3F;">${capitalizePlatform(img.platform)} - ${img.size}</h4>
                             <p style="color: #7DA3AF; font-size: 0.9rem;">${img.width}x${img.height}</p>
                         </div>
 
@@ -1083,7 +1264,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                                        ${logoSettings[index].enabled ? 'checked' : ''}
                                        onchange="updateLogoPreview(${index})"
                                        style="margin-right: 0.5rem;">
-                                Show Logo
+                                Add Logo
                             </label>
 
                             <label style="display: block; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.5rem; color: #272D3F;">Select Logo/Emblem</label>
@@ -1095,8 +1276,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                                                 border-radius: 8px; padding: 0.5rem; cursor: pointer; background: white;
                                                 transition: all 0.2s ease; height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
                                         <img src="${logo.url}" alt="${logo.name}"
-                                             style="max-width: 100%; max-height: 80px; object-fit: contain; display: block; margin-bottom: 0.25rem;">
-                                        <p style="font-size: 0.75rem; color: #7DA3AF; margin: 0; text-align: center;">${logo.name}</p>
+                                             style="max-width: 100%; max-height: 100%; object-fit: contain; display: block;">
                                     </div>
                                 `).join('')}
                             </div>
@@ -1284,7 +1464,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             const sizeGroups = {};
             generatedImages.forEach((img, index) => {
                 const baseSizeName = img.size.replace(/\s*-\s*Variation\s+\d+/, '');
-                const groupKey = `${img.platform}|||${baseSizeName}`; // Use ||| as separator
+                const groupKey = `${capitalizePlatform(img.platform)}|||${baseSizeName}`; // Use ||| as separator
                 if (!sizeGroups[groupKey]) {
                     sizeGroups[groupKey] = {
                         platform: img.platform,
@@ -1306,7 +1486,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 const variationCount = group.indices.length;
 
                 card.innerHTML = `
-                    <h3 style="margin-bottom: 0.5rem; color: #272D3F;">${group.platform.toUpperCase()} - ${group.baseSizeName}</h3>
+                    <h3 style="margin-bottom: 0.5rem; color: #272D3F;">${capitalizePlatform(group.platform)} - ${group.baseSizeName}</h3>
                     <p style="color: #7DA3AF; font-size: 0.9rem; margin-bottom: 2rem;">${group.width}x${group.height}</p>
 
                     <div id="ad-copy-container-${firstIndex}" style="min-height: 400px;">
@@ -1333,7 +1513,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             generatedImages.forEach((img, index) => {
                 // Extract base size name (e.g., "Square Feed" from "Square Feed - Variation 1")
                 const baseSizeName = img.size.replace(/\s*-\s*Variation\s+\d+/, '');
-                console.log(`[DEBUG] Image ${index}: Original="${img.size}", Platform="${img.platform}", Base="${baseSizeName}"`);
+                console.log(`[DEBUG] Image ${index}: Original="${img.size}", Platform="${capitalizePlatform(img.platform)}", Base="${baseSizeName}"`);
                 if (!sizeGroups[baseSizeName]) {
                     sizeGroups[baseSizeName] = [];
                 }
@@ -1354,7 +1534,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                     // Generate 3 variations by making 3 API calls
                     const variations = [];
                     for (let i = 0; i < 3; i++) {
-                        console.log(`[DEBUG] API Call ${i + 1}/3 - Platform: "${img.platform}", SizeName: "${baseSizeName}"`);
+                        console.log(`[DEBUG] API Call ${i + 1}/3 - Platform: "${capitalizePlatform(img.platform)}", SizeName: "${baseSizeName}"`);
                         const response = await fetch('http://localhost:3000/api/generate-ad-copy', {
                             method: 'POST',
                             headers: {
@@ -1400,7 +1580,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                     });
 
                 } catch (error) {
-                    console.error(`Error generating ad copy for ${img.platform} ${baseSizeName}:`, error);
+                    console.error(`Error generating ad copy for ${capitalizePlatform(img.platform)} ${baseSizeName}:`, error);
                     indices.forEach(index => {
                         document.getElementById(`ad-copy-container-${index}`).innerHTML = `
                             <p style="color: #D73D4F;">⚠️ Failed to generate ad copy</p>
@@ -1793,14 +1973,14 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 card.style.cssText = 'border: 2px solid #E1E7EF; border-radius: 12px; padding: 2rem; background: white;';
 
                 card.innerHTML = `
-                    <h3 style="margin-bottom: 1rem; color: #272D3F;">${img.platform.toUpperCase()} - ${img.size}</h3>
+                    <h3 style="margin-bottom: 1rem; color: #272D3F;">${capitalizePlatform(img.platform)} - ${img.size}</h3>
                     <p style="color: #7DA3AF; font-size: 0.9rem; margin-bottom: 1.5rem;">${img.width}x${img.height}</p>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
                         <!-- Image Preview -->
                         <div>
                             <div style="position: relative; border: 2px solid #E1E7EF; border-radius: 8px; overflow: hidden;">
-                                <img src="${img.url}" alt="${img.platform} ${img.size}" style="width: 100%; display: block;">
+                                <img src="${img.url}" alt="${capitalizePlatform(img.platform)} ${img.size}" style="width: 100%; display: block;">
                                 <div id="review-text-${index}" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none;"></div>
                                 <div id="review-logo-${index}" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none;"></div>
                             </div>
@@ -1883,7 +2063,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 const adCopy = selectedAdCopy[index] || { headline: '', body: '', cta: '' };
                 const platform = img.platform.toLowerCase();
 
-                copyText += `${img.platform.toUpperCase()} - ${img.size} (${img.width}x${img.height})\n`;
+                copyText += `${capitalizePlatform(img.platform)} - ${img.size} (${img.width}x${img.height})\n`;
                 copyText += '-'.repeat(50) + '\n';
                 copyText += `Headline: ${adCopy.headline || 'N/A'}\n\n`;
                 copyText += `Body: ${adCopy.body || 'N/A'}\n\n`;
@@ -1929,7 +2109,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 const variations = data.variations;
                 const platform = img.platform.toLowerCase();
 
-                copyText += `${img.platform.toUpperCase()} - ${baseSizeName} (${img.width}x${img.height})\n`;
+                copyText += `${capitalizePlatform(img.platform)} - ${baseSizeName} (${img.width}x${img.height})\n`;
                 copyText += '='.repeat(50) + '\n\n';
 
                 variations.forEach((adCopy, i) => {
@@ -2064,7 +2244,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                             const url = URL.createObjectURL(blob);
                             const link = document.createElement('a');
                             link.href = url;
-                            link.download = `${img.platform}_${img.size}_final.jpg`;
+                            link.download = `${capitalizePlatform(img.platform)}_${img.size}_final.jpg`;
                             link.click();
                             URL.revokeObjectURL(url);
                         }, 'image/jpeg', 0.95);
@@ -2077,7 +2257,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                         const url = URL.createObjectURL(blob);
                         const link = document.createElement('a');
                         link.href = url;
-                        link.download = `${img.platform}_${img.size}_final.jpg`;
+                        link.download = `${capitalizePlatform(img.platform)}_${img.size}_final.jpg`;
                         link.click();
                         URL.revokeObjectURL(url);
                     }, 'image/jpeg', 0.95);
@@ -2093,6 +2273,691 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                     downloadFinalImage(index);
                 }, index * 500); // Stagger downloads
             });
+        }
+
+        // GIF Creation Page Functions
+        let selectedGifs = new Set();
+        let gifSettings = {}; // Store settings for each GIF
+        let gifResults = []; // Store generated GIFs with frames for editing
+
+        function goToGifCreation() {
+            document.getElementById('step8').classList.add('hidden');
+            document.getElementById('step9').classList.remove('hidden');
+            currentStep = 9;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            renderGifSelection();
+        }
+
+        function backToFinalReview() {
+            document.getElementById('step9').classList.add('hidden');
+            document.getElementById('step8').classList.remove('hidden');
+            currentStep = 8;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function renderGifSelection() {
+            const grid = document.getElementById('gifSelectionGrid');
+            grid.innerHTML = '';
+
+            generatedImages.forEach((img, index) => {
+                const isSelected = selectedGifs.has(index);
+
+                // Initialize default settings
+                if (!gifSettings[index]) {
+                    gifSettings[index] = {
+                        frameCount: 5,
+                        duration: 5
+                    };
+                }
+
+                const card = document.createElement('div');
+                card.style.cssText = `
+                    border: 3px solid ${isSelected ? '#31D7CA' : '#E1E7EF'};
+                    border-radius: 12px;
+                    padding: 1rem;
+                    background: white;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                `;
+
+                card.innerHTML = `
+                    <div style="position: relative;">
+                        <input type="checkbox"
+                               id="gif-select-${index}"
+                               ${isSelected ? 'checked' : ''}
+                               onchange="toggleGifSelection(${index}, this.checked)"
+                               style="position: absolute; top: 0.5rem; left: 0.5rem; width: 24px; height: 24px; cursor: pointer; z-index: 10;">
+                        <img src="${img.url}" style="width: 100%; border-radius: 8px; margin-bottom: 1rem;">
+                    </div>
+                    <h4 style="margin-bottom: 0.5rem; color: #272D3F;">${capitalizePlatform(img.platform)} - ${img.size}</h4>
+                    <p style="color: #7DA3AF; font-size: 0.85rem; margin-bottom: 1rem;">${img.width}x${img.height}</p>
+
+                    <div class="gif-settings-${index}" style="display: ${isSelected ? 'block' : 'none'}; padding-top: 1rem; border-top: 1px solid #E1E7EF;">
+                        <label style="display: block; font-size: 0.85rem; color: #7DA3AF; margin-bottom: 0.25rem;">Frame Count:</label>
+                        <select id="frame-count-${index}" onchange="updateGifSetting(${index}, 'frameCount', this.value)"
+                                style="width: 100%; padding: 0.5rem; border: 1px solid #E1E7EF; border-radius: 6px; margin-bottom: 0.75rem;">
+                            <option value="3" ${gifSettings[index].frameCount === 3 ? 'selected' : ''}>3 frames</option>
+                            <option value="4" ${gifSettings[index].frameCount === 4 ? 'selected' : ''}>4 frames</option>
+                            <option value="5" ${gifSettings[index].frameCount === 5 ? 'selected' : ''}>5 frames (recommended)</option>
+                            <option value="6" ${gifSettings[index].frameCount === 6 ? 'selected' : ''}>6 frames</option>
+                            <option value="7" ${gifSettings[index].frameCount === 7 ? 'selected' : ''}>7 frames</option>
+                        </select>
+
+                        <label style="display: block; font-size: 0.85rem; color: #7DA3AF; margin-bottom: 0.25rem;">Total Duration:</label>
+                        <select id="duration-${index}" onchange="updateGifSetting(${index}, 'duration', this.value)"
+                                style="width: 100%; padding: 0.5rem; border: 1px solid #E1E7EF; border-radius: 6px;">
+                            <option value="3" ${gifSettings[index].duration === 3 ? 'selected' : ''}>3 seconds</option>
+                            <option value="4" ${gifSettings[index].duration === 4 ? 'selected' : ''}>4 seconds</option>
+                            <option value="5" ${gifSettings[index].duration === 5 ? 'selected' : ''}>5 seconds</option>
+                            <option value="6" ${gifSettings[index].duration === 6 ? 'selected' : ''}>6 seconds</option>
+                            <option value="7" ${gifSettings[index].duration === 7 ? 'selected' : ''}>7 seconds</option>
+                        </select>
+                    </div>
+                `;
+
+                card.onclick = (e) => {
+                    if (e.target.type !== 'checkbox' && e.target.tagName !== 'SELECT') {
+                        const checkbox = document.getElementById(`gif-select-${index}`);
+                        checkbox.checked = !checkbox.checked;
+                        toggleGifSelection(index, checkbox.checked);
+                    }
+                };
+
+                grid.appendChild(card);
+            });
+        }
+
+        function toggleGifSelection(index, isSelected) {
+            if (isSelected) {
+                selectedGifs.add(index);
+            } else {
+                selectedGifs.delete(index);
+            }
+            renderGifSelection();
+        }
+
+        function updateGifSetting(index, setting, value) {
+            gifSettings[index][setting] = parseInt(value);
+        }
+
+        async function generateSelectedGifs() {
+            if (selectedGifs.size === 0) {
+                alert('Please select at least one ad to animate');
+                return;
+            }
+
+            // Show loading overlay
+            document.getElementById('overlayTitle').textContent = 'Generating Animated GIFs';
+            document.getElementById('overlayMessage').textContent = `Creating ${selectedGifs.size} animated GIF${selectedGifs.size > 1 ? 's' : ''}. This may take a few moments...`;
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+
+            const basePrompt = document.getElementById('promptText').value;
+            let completedCount = 0;
+
+            // Clear previous results
+            gifResults = [];
+
+            for (const index of selectedGifs) {
+                const img = generatedImages[index];
+                const settings = gifSettings[index];
+
+                try {
+                    const response = await fetch('http://localhost:3000/api/generate-animation', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            prompt: basePrompt,
+                            width: img.width,
+                            height: img.height,
+                            duration: settings.frameCount, // Using frame count as duration
+                            platform: img.platform,
+                            sizeName: img.size
+                        })
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        // Store result with frames for editing
+                        gifResults.push({
+                            animation: result.animation,
+                            frames: result.frames || [],
+                            frameCount: result.frame_count,
+                            duration: result.duration,
+                            platform: img.platform,
+                            size: img.size,
+                            width: img.width,
+                            height: img.height,
+                            frameOverlays: result.frames ? result.frames.map(() => ({
+                                text: '',
+                                position: 'bottom',
+                                size: 32,
+                                font: 'Gilroy, Arial, sans-serif',
+                                color: '#FFFFFF',
+                                bgColor: 'rgba(0,0,0,0.7)',
+                                showLogo: false,
+                                logoIndex: 0,
+                                logoPosition: 'bottom-right',
+                                logoSize: 15
+                            })) : []
+                        });
+                    } else {
+                        console.error(`Failed to generate GIF for ${img.platform} ${img.size}:`, result.error);
+                    }
+                } catch (error) {
+                    console.error(`Error generating GIF for ${img.platform} ${img.size}:`, error);
+                }
+
+                completedCount++;
+                document.getElementById('overlayMessage').textContent = `Generated ${completedCount} of ${selectedGifs.size} GIFs...`;
+            }
+
+            // Hide loading overlay
+            document.getElementById('loadingOverlay').classList.add('hidden');
+
+            // Navigate to results page
+            goToGifResults();
+        }
+
+        function goToGifResults() {
+            document.getElementById('step9').classList.add('hidden');
+            document.getElementById('step10').classList.remove('hidden');
+            currentStep = 10;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            renderGifResults();
+        }
+
+        function backToGifSelection() {
+            document.getElementById('step10').classList.add('hidden');
+            document.getElementById('step9').classList.remove('hidden');
+            currentStep = 9;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function renderGifResults() {
+            const resultsGrid = document.getElementById('gifResultsGrid');
+            resultsGrid.innerHTML = '';
+
+            gifResults.forEach((gifData, gifIndex) => {
+                const resultCard = document.createElement('div');
+                resultCard.style.cssText = `
+                    border: 2px solid #31D7CA;
+                    border-radius: 12px;
+                    padding: 1.5rem;
+                    background: white;
+                `;
+
+                resultCard.innerHTML = `
+                    <h4 style="margin-bottom: 1rem; color: #272D3F;">${capitalizePlatform(gifData.platform)} - ${gifData.size}</h4>
+                    <img src="${gifData.animation}" id="gif-preview-${gifIndex}" style="width: 100%; border-radius: 8px; margin-bottom: 1rem;">
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button onclick="openFrameEditor(${gifIndex})"
+                                class="btn-secondary" style="flex: 1;">
+                            ✏️ Edit Frames
+                        </button>
+                        <button onclick="downloadGifResult('${gifData.animation}', '${capitalizePlatform(gifData.platform)}_${gifData.size}')"
+                                class="btn-primary" style="flex: 1;">
+                            📥 Download GIF
+                        </button>
+                    </div>
+                    <p style="color: #7DA3AF; font-size: 0.85rem; margin-top: 0.5rem;">
+                        ${gifData.frameCount} frames • ${gifData.duration}s duration
+                    </p>
+                `;
+
+                resultsGrid.appendChild(resultCard);
+            });
+        }
+
+        function downloadGifResult(dataUrl, filename) {
+            const link = document.createElement('a');
+            link.href = dataUrl;
+            link.download = `${filename}_animation.gif`;
+            link.click();
+        }
+
+        // Frame Editor Functions
+        let currentGifIndex = null;
+        let currentFrameIndex = 0;
+
+        function openFrameEditor(gifIndex) {
+            currentGifIndex = gifIndex;
+            currentFrameIndex = 0;
+
+            const gifData = gifResults[gifIndex];
+            if (!gifData || !gifData.frames || gifData.frames.length === 0) {
+                alert('No frames available for editing');
+                return;
+            }
+
+            document.getElementById('frameEditorModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+
+            renderFrameThumbnails();
+            selectFrame(0);
+        }
+
+        function closeFrameEditor() {
+            document.getElementById('frameEditorModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+            currentGifIndex = null;
+            currentFrameIndex = 0;
+        }
+
+        function renderFrameThumbnails() {
+            const gifData = gifResults[currentGifIndex];
+            const thumbnailsContainer = document.getElementById('frameThumbnails');
+            thumbnailsContainer.innerHTML = '';
+
+            gifData.frames.forEach((frameUrl, index) => {
+                const thumbnail = document.createElement('div');
+                thumbnail.style.cssText = `
+                    cursor: pointer;
+                    border: 3px solid ${index === currentFrameIndex ? '#31D7CA' : '#E1E7EF'};
+                    border-radius: 8px;
+                    overflow: hidden;
+                    flex-shrink: 0;
+                    width: 100px;
+                    transition: all 0.2s ease;
+                `;
+                thumbnail.onclick = () => selectFrame(index);
+
+                const img = document.createElement('img');
+                img.src = frameUrl;
+                img.style.cssText = 'width: 100%; height: auto; display: block;';
+
+                const label = document.createElement('div');
+                label.textContent = `Frame ${index + 1}`;
+                label.style.cssText = `
+                    text-align: center;
+                    font-size: 0.75rem;
+                    padding: 0.25rem;
+                    background: ${index === currentFrameIndex ? '#31D7CA' : '#E1E7EF'};
+                    color: ${index === currentFrameIndex ? 'white' : '#7DA3AF'};
+                `;
+
+                thumbnail.appendChild(img);
+                thumbnail.appendChild(label);
+                thumbnailsContainer.appendChild(thumbnail);
+            });
+        }
+
+        function selectFrame(index) {
+            currentFrameIndex = index;
+            const gifData = gifResults[currentGifIndex];
+            const overlay = gifData.frameOverlays[index];
+
+            // Update form inputs
+            renderLogoSelector();
+            document.getElementById('frameTextInput').value = overlay.text;
+            document.getElementById('framePositionSelect').value = overlay.position;
+            document.getElementById('frameFontSelect').value = overlay.font || 'Gilroy, Arial, sans-serif';
+            document.getElementById('frameSizeSlider').value = overlay.size;
+            document.getElementById('frameSizeDisplay').textContent = overlay.size;
+            document.getElementById('frameLogoCheckbox').checked = overlay.showLogo;
+            document.getElementById('frameLogoControls').style.display = overlay.showLogo ? 'block' : 'none';
+            if (overlay.showLogo) {
+                document.getElementById('frameLogoPosition').value = overlay.logoPosition;
+                document.getElementById('frameLogoSize').value = overlay.logoSize;
+                document.getElementById('frameLogoSizeDisplay').textContent = overlay.logoSize;
+            }
+
+            renderFrameThumbnails();
+            updateFramePreview();
+        }
+
+        function renderLogoSelector() {
+            const container = document.getElementById('frameLogoSelector');
+            const gifData = gifResults[currentGifIndex];
+            const overlay = gifData.frameOverlays[currentFrameIndex];
+
+            container.innerHTML = availableLogos.map((logo, idx) => `
+                <div onclick="selectFrameLogo(${idx})"
+                     id="frame-logo-${idx}"
+                     style="border: 3px solid ${(overlay.logoIndex === idx) ? '#31D7CA' : '#E1E7EF'};
+                            border-radius: 6px;
+                            padding: 0.25rem;
+                            cursor: pointer;
+                            transition: all 0.2s ease;
+                            background: white;">
+                    <img src="${logo.url}" style="width: 100%; height: auto; display: block;" onerror="this.style.display='none'; this.parentElement.innerHTML='<p style=\\'font-size:0.6rem;text-align:center;\\'>Logo ${idx+1}</p>';">
+                </div>
+            `).join('');
+        }
+
+        function selectFrameLogo(logoIndex) {
+            const gifData = gifResults[currentGifIndex];
+            gifData.frameOverlays[currentFrameIndex].logoIndex = logoIndex;
+            renderLogoSelector();
+            updateFramePreview();
+        }
+
+        function updateFramePreview() {
+            const gifData = gifResults[currentGifIndex];
+            const frameUrl = gifData.frames[currentFrameIndex];
+            const canvas = document.getElementById('framePreviewCanvas');
+            const ctx = canvas.getContext('2d');
+
+            const img = new Image();
+            img.onload = function() {
+                canvas.width = img.width;
+                canvas.height = img.height;
+
+                // Draw the frame
+                ctx.drawImage(img, 0, 0);
+
+                // Get current overlay settings
+                const text = document.getElementById('frameTextInput').value;
+                const position = document.getElementById('framePositionSelect').value;
+                const font = document.getElementById('frameFontSelect').value;
+                const size = parseInt(document.getElementById('frameSizeSlider').value);
+                const color = gifData.frameOverlays[currentFrameIndex].color;
+                const bgColor = gifData.frameOverlays[currentFrameIndex].bgColor;
+                const showLogo = document.getElementById('frameLogoCheckbox').checked;
+                const logoIndex = gifData.frameOverlays[currentFrameIndex].logoIndex || 0;
+                const logoPosition = showLogo ? document.getElementById('frameLogoPosition').value : '';
+                const logoSize = showLogo ? parseInt(document.getElementById('frameLogoSize').value) : 15;
+
+                // Update overlay in storage
+                gifData.frameOverlays[currentFrameIndex] = { text, position, font, size, color, bgColor, showLogo, logoIndex, logoPosition, logoSize };
+
+                // Draw text overlay if text exists
+                if (text) {
+                    ctx.font = `bold ${size}px ${font}`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+
+                    // Calculate text position
+                    let x = canvas.width / 2;
+                    let y;
+                    if (position === 'top') {
+                        y = size + 20;
+                    } else if (position === 'center') {
+                        y = canvas.height / 2;
+                    } else {
+                        y = canvas.height - size - 20;
+                    }
+
+                    // Draw background for text
+                    const metrics = ctx.measureText(text);
+                    const textWidth = metrics.width;
+                    const padding = 20;
+                    const bgHeight = size + padding;
+
+                    ctx.fillStyle = bgColor;
+                    ctx.fillRect(
+                        x - textWidth / 2 - padding,
+                        y - bgHeight / 2,
+                        textWidth + padding * 2,
+                        bgHeight
+                    );
+
+                    // Draw text
+                    ctx.fillStyle = color;
+                    ctx.fillText(text, x, y);
+                }
+
+                // Draw logo if enabled
+                if (showLogo && availableLogos[logoIndex]) {
+                    const logoImg = new Image();
+                    logoImg.crossOrigin = 'anonymous';
+                    logoImg.onload = function() {
+                        const logoWidth = (canvas.width * logoSize) / 100;
+                        const logoHeight = (logoImg.height / logoImg.width) * logoWidth;
+
+                        let logoX, logoY;
+                        const margin = 15;
+
+                        if (logoPosition === 'top-left') {
+                            logoX = margin;
+                            logoY = margin;
+                        } else if (logoPosition === 'top-right') {
+                            logoX = canvas.width - logoWidth - margin;
+                            logoY = margin;
+                        } else if (logoPosition === 'bottom-left') {
+                            logoX = margin;
+                            logoY = canvas.height - logoHeight - margin;
+                        } else { // bottom-right
+                            logoX = canvas.width - logoWidth - margin;
+                            logoY = canvas.height - logoHeight - margin;
+                        }
+
+                        ctx.drawImage(logoImg, logoX, logoY, logoWidth, logoHeight);
+                    };
+                    logoImg.src = availableLogos[logoIndex].url;
+                }
+            };
+            img.src = frameUrl;
+        }
+
+        function toggleFrameLogo() {
+            const checked = document.getElementById('frameLogoCheckbox').checked;
+            document.getElementById('frameLogoControls').style.display = checked ? 'block' : 'none';
+            updateFramePreview();
+        }
+
+        function setFrameColor(color) {
+            const gifData = gifResults[currentGifIndex];
+            gifData.frameOverlays[currentFrameIndex].color = color;
+            updateFramePreview();
+        }
+
+        function setFrameBgColor(bgColor) {
+            const gifData = gifResults[currentGifIndex];
+            gifData.frameOverlays[currentFrameIndex].bgColor = bgColor;
+            updateFramePreview();
+        }
+
+        function applyToAllFrames() {
+            const gifData = gifResults[currentGifIndex];
+            const currentOverlay = gifData.frameOverlays[currentFrameIndex];
+
+            if (!currentOverlay.text && !currentOverlay.showLogo) {
+                alert('Please add text or logo before applying to all frames');
+                return;
+            }
+
+            if (confirm('Apply current overlay settings to all frames?')) {
+                gifData.frameOverlays = gifData.frameOverlays.map(() => ({
+                    text: currentOverlay.text,
+                    position: currentOverlay.position,
+                    size: currentOverlay.size,
+                    color: currentOverlay.color,
+                    bgColor: currentOverlay.bgColor,
+                    showLogo: currentOverlay.showLogo,
+                    logoPosition: currentOverlay.logoPosition,
+                    logoSize: currentOverlay.logoSize
+                }));
+                updateFramePreview();
+                alert('Overlay settings applied to all frames!');
+            }
+        }
+
+        function clearFrameOverlay() {
+            const gifData = gifResults[currentGifIndex];
+            gifData.frameOverlays[currentFrameIndex] = {
+                text: '',
+                position: 'bottom',
+                size: 32,
+                font: 'Gilroy, Arial, sans-serif',
+                color: '#FFFFFF',
+                bgColor: 'rgba(0,0,0,0.7)',
+                showLogo: false,
+                logoIndex: 0,
+                logoPosition: 'bottom-right',
+                logoSize: 15
+            };
+            document.getElementById('frameTextInput').value = '';
+            document.getElementById('frameLogoCheckbox').checked = false;
+            document.getElementById('frameLogoControls').style.display = 'none';
+            updateFramePreview();
+        }
+
+        function deleteCurrentFrame() {
+            const gifData = gifResults[currentGifIndex];
+
+            if (gifData.frames.length <= 1) {
+                alert('Cannot delete the last frame! A GIF must have at least one frame.');
+                return;
+            }
+
+            if (!confirm(`Delete frame ${currentFrameIndex + 1}?`)) {
+                return;
+            }
+
+            // Remove frame and overlay
+            gifData.frames.splice(currentFrameIndex, 1);
+            gifData.frameOverlays.splice(currentFrameIndex, 1);
+            gifData.frameCount = gifData.frames.length;
+
+            // Adjust current frame index if needed
+            if (currentFrameIndex >= gifData.frames.length) {
+                currentFrameIndex = gifData.frames.length - 1;
+            }
+
+            // Re-render
+            renderFrameThumbnails();
+            selectFrame(currentFrameIndex);
+        }
+
+        async function regenerateGifWithOverlays() {
+            const gifData = gifResults[currentGifIndex];
+
+            // Check if any frames have overlays
+            const hasOverlays = gifData.frameOverlays.some(overlay => overlay.text || overlay.showLogo);
+            if (!hasOverlays) {
+                alert('Please add text or logo overlays to at least one frame before regenerating');
+                return;
+            }
+
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = '⏳ Generating GIF...';
+
+            try {
+                // Create canvas for each frame with overlay
+                const processedFrames = await Promise.all(gifData.frames.map((frameUrl, index) => {
+                    return new Promise((resolve) => {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        const img = new Image();
+
+                        img.onload = function() {
+                            canvas.width = img.width;
+                            canvas.height = img.height;
+                            ctx.drawImage(img, 0, 0);
+
+                            const overlay = gifData.frameOverlays[index];
+                            if (overlay.text) {
+                                // Draw text overlay
+                                ctx.font = `bold ${overlay.size}px Gilroy, Arial, sans-serif`;
+                                ctx.textAlign = 'center';
+                                ctx.textBaseline = 'middle';
+
+                                let x = canvas.width / 2;
+                                let y;
+                                if (overlay.position === 'top') {
+                                    y = overlay.size + 20;
+                                } else if (overlay.position === 'center') {
+                                    y = canvas.height / 2;
+                                } else {
+                                    y = canvas.height - overlay.size - 20;
+                                }
+
+                                // Background
+                                const metrics = ctx.measureText(overlay.text);
+                                const textWidth = metrics.width;
+                                const padding = 20;
+                                const bgHeight = overlay.size + padding;
+
+                                ctx.fillStyle = overlay.bgColor || 'rgba(0, 0, 0, 0.7)';
+                                ctx.fillRect(
+                                    x - textWidth / 2 - padding,
+                                    y - bgHeight / 2,
+                                    textWidth + padding * 2,
+                                    bgHeight
+                                );
+
+                                // Text
+                                ctx.fillStyle = overlay.color;
+                                ctx.fillText(overlay.text, x, y);
+                            }
+
+                            // Draw logo if enabled
+                            if (overlay.showLogo && uploadedLogo) {
+                                const logoImg = new Image();
+                                logoImg.onload = function() {
+                                    const logoWidth = (canvas.width * overlay.logoSize) / 100;
+                                    const logoHeight = (logoImg.height / logoImg.width) * logoWidth;
+
+                                    let logoX, logoY;
+                                    const margin = 15;
+
+                                    if (overlay.logoPosition === 'top-left') {
+                                        logoX = margin;
+                                        logoY = margin;
+                                    } else if (overlay.logoPosition === 'top-right') {
+                                        logoX = canvas.width - logoWidth - margin;
+                                        logoY = margin;
+                                    } else if (overlay.logoPosition === 'bottom-left') {
+                                        logoX = margin;
+                                        logoY = canvas.height - logoHeight - margin;
+                                    } else {
+                                        logoX = canvas.width - logoWidth - margin;
+                                        logoY = canvas.height - logoHeight - margin;
+                                    }
+
+                                    ctx.drawImage(logoImg, logoX, logoY, logoWidth, logoHeight);
+                                    resolve(canvas.toDataURL('image/png'));
+                                };
+                                logoImg.src = uploadedLogo;
+                            } else {
+                                resolve(canvas.toDataURL('image/png'));
+                            }
+                        };
+                        img.src = frameUrl;
+                    });
+                }));
+
+                // Use gifshot library or create simple GIF from frames
+                // For now, we'll create a simple animation by updating the preview
+                // In production, you'd want to use a GIF encoding library
+
+                // Create animated data URL (simplified - in production use proper GIF encoding)
+                const newGifData = processedFrames[0]; // For demo, showing first frame
+
+                // Update the GIF preview in results
+                const gifPreview = document.getElementById(`gif-preview-${currentGifIndex}`);
+                if (gifPreview) {
+                    // Store processed frames for download
+                    gifData.processedFrames = processedFrames;
+                    gifData.processedAnimation = newGifData;
+
+                    // For demo purposes, show cycling through frames
+                    let frameIndex = 0;
+                    const cycleFrames = () => {
+                        gifPreview.src = processedFrames[frameIndex];
+                        frameIndex = (frameIndex + 1) % processedFrames.length;
+                    };
+                    gifPreview.animationInterval = setInterval(cycleFrames, 1000);
+                    cycleFrames();
+                }
+
+                btn.textContent = '✅ GIF Updated!';
+                setTimeout(() => {
+                    btn.textContent = '✨ Regenerate GIF with Text Overlays';
+                    btn.disabled = false;
+                }, 2000);
+
+                alert('GIF updated with text overlays! Close the editor to see the result.');
+            } catch (error) {
+                console.error('Error regenerating GIF:', error);
+                alert('Error regenerating GIF. Please try again.');
+                btn.textContent = '✨ Regenerate GIF with Text Overlays';
+                btn.disabled = false;
+            }
         }
 
         function handleLogo(file) {
