@@ -59,7 +59,7 @@ PLATFORM_SIZES = {
     'meta': [
         {'name': 'Square Feed', 'width': 1080, 'height': 1080},
         {'name': 'Portrait Story', 'width': 1080, 'height': 1920},
-        {'name': 'Landscape', 'width': 1200, 'height': 1200}
+        {'name': 'Landscape Link', 'width': 1200, 'height': 628}
     ],
     'reddit': [
         {'name': 'Feed', 'width': 1200, 'height': 628},

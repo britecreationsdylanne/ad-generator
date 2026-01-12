@@ -253,7 +253,7 @@
 <body>
     <header>
         <div class="header-content">
-            <div class="logo">
+            <div class="logo" onclick="startOver()" style="cursor: pointer;">
                 <span>BriteCo</span> Ad Generator
             </div>
         </div>
@@ -447,7 +447,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 <button class="btn-primary" onclick="downloadAll()">📥 Download All Ads</button>
             </div>
 
-            <div style="margin-top: 3rem; padding: 2rem; background: #FC883A; border-radius: 12px; text-align: center;">
+            <div style="margin-top: 3rem; padding: 2rem; background: #31D7CA; border-radius: 12px; text-align: center;">
                 <h3 style="color: white; margin-bottom: 0.5rem;">🎬 Want Animated Versions?</h3>
                 <p style="color: rgba(255,255,255,0.9); margin-bottom: 1.5rem;">Create eye-catching animated GIFs from your ads</p>
                 <button class="btn-primary" onclick="goToGifCreation()" style="background: white; color: #272D3F; border: none;">
@@ -3122,6 +3122,35 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             uploadArea.style.background = '#fafafa';
             handleFiles(e.dataTransfer.files);
         });
+
+        // Start Over function - returns to Step 1
+        function startOver() {
+            if (confirm('Start a new campaign? All current work will be lost.')) {
+                // Hide all steps
+                for (let i = 1; i <= 10; i++) {
+                    const step = document.getElementById(`step${i}`);
+                    if (step) step.classList.add('hidden');
+                }
+
+                // Show step 1
+                document.getElementById('step1').classList.remove('hidden');
+
+                // Reset form data
+                document.getElementById('campaignText').value = '';
+                const platformCheckboxes = document.querySelectorAll('.platform-option input[type="checkbox"]');
+                platformCheckboxes.forEach(cb => cb.checked = false);
+
+                // Clear global state
+                generatedImages = [];
+                textOverlays = [];
+                finalAds = [];
+                selectedPlatforms = [];
+                gifResults = [];
+
+                // Scroll to top
+                window.scrollTo(0, 0);
+            }
+        }
     </script>
 </body>
 </html>
