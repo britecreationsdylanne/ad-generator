@@ -302,8 +302,8 @@
             </div>
         </div>
 
-        <!-- Past Projects Panel (Separate Card) -->
-        <div class="card" style="margin-top: 2rem; background: #466F88; padding: 2.5rem;">
+        <!-- Past Projects Panel (Separate Card) - Only visible on Step 1 -->
+        <div id="pastProjectsPanel" class="card" style="margin-top: 2rem; background: #466F88; padding: 2.5rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
                 <h2 style="margin: 0; color: white;">Past Projects</h2>
                 <div style="display: flex; gap: 0.5rem;">
@@ -893,6 +893,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             }
 
             document.getElementById('step1').classList.add('hidden');
+            document.getElementById('pastProjectsPanel').classList.add('hidden');
             document.getElementById('step2').classList.remove('hidden');
             currentStep = 2;
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -902,6 +903,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             if (currentStep === 2) {
                 document.getElementById('step2').classList.add('hidden');
                 document.getElementById('step1').classList.remove('hidden');
+                document.getElementById('pastProjectsPanel').classList.remove('hidden');
                 currentStep = 1;
             } else if (currentStep === 3) {
                 document.getElementById('step3').classList.add('hidden');
@@ -3449,8 +3451,9 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                     if (step) step.classList.add('hidden');
                 }
 
-                // Show step 1
+                // Show step 1 and past projects panel
                 document.getElementById('step1').classList.remove('hidden');
+                document.getElementById('pastProjectsPanel').classList.remove('hidden');
 
                 // Reset form data
                 document.getElementById('campaignText').value = '';
