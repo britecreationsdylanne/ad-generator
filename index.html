@@ -13,7 +13,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #f5f5f5;
+            background: #008182;
             color: #272D3F;
         }
 
@@ -261,39 +261,235 @@
 
     <main>
         <!-- Step 1: Platform Selection -->
-        <div id="step1" class="card">
-            <h1>Select Your Platforms</h1>
-            <p style="color: #7DA3AF; font-size: 1.1rem; margin-bottom: 1rem;">
-                Choose which platforms you want to create ads for. We'll generate the correct sizes for each.
-            </p>
+        <div id="step1" class="card" style="padding: 0; overflow: hidden;">
+            <!-- Navy Title Bar -->
+            <div style="background: #272D3F; padding: 1.5rem 2.5rem;">
+                <h1 style="color: white; margin-bottom: 0.5rem;">Select Your Platforms</h1>
+                <p style="color: rgba(255,255,255,0.7); font-size: 1.1rem; margin: 0;">
+                    Choose which platforms you want to create ads for. We'll generate the correct sizes for each.
+                </p>
+            </div>
 
-            <div class="platform-selector">
-                <div class="platform-card" onclick="togglePlatform('meta', this)">
-                    <h3>📱 Meta</h3>
-                    <p style="color: #7DA3AF; margin-top: 0.5rem;">Facebook & Instagram</p>
-                    <p style="color: #A9C1CB; font-size: 0.9rem; margin-top: 0.5rem;">
-                        Feed (1:1, 4:5), Stories (9:16), Carousel
-                    </p>
+            <!-- White Content Area -->
+            <div style="padding: 2rem 2.5rem;">
+                <div class="platform-selector">
+                    <div class="platform-card" onclick="togglePlatform('meta', this)">
+                        <h3><svg style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px;" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.879V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.989C18.343 21.129 22 16.99 22 12c0-5.523-4.477-10-10-10z" fill="#1877F2"/></svg>Meta</h3>
+                        <p style="color: #7DA3AF; margin-top: 0.5rem;">Facebook & Instagram</p>
+                        <p style="color: #A9C1CB; font-size: 0.9rem; margin-top: 0.5rem;">
+                            Feed (1:1, 4:5), Stories (9:16), Carousel
+                        </p>
+                    </div>
+                    <div class="platform-card" onclick="togglePlatform('reddit', this)">
+                        <h3><svg style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px;" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="#FF4500"/><path d="M16.5 12c0-.55-.45-1-1-1-.27 0-.52.11-.7.29-.69-.45-1.63-.74-2.68-.78l.54-2.5 1.73.37c.02.55.47.99 1.03.99.57 0 1.03-.46 1.03-1.03s-.46-1.03-1.03-1.03c-.4 0-.75.23-.92.57l-1.94-.42c-.12-.03-.24.06-.27.18l-.6 2.8c-1.07.03-2.03.32-2.73.78-.18-.18-.43-.29-.7-.29-.55 0-1 .45-1 1 0 .41.25.76.6.91-.02.13-.03.26-.03.4 0 2.04 2.37 3.69 5.3 3.69s5.3-1.65 5.3-3.69c0-.14-.01-.27-.03-.4.35-.15.6-.5.6-.91zm-7.5 1c0-.55.45-1 1-1s1 .45 1 1-.45 1-1 1-1-.45-1-1zm5.62 2.16c-.39.39-1.17.59-2.12.59s-1.73-.2-2.12-.59c-.08-.08-.08-.22 0-.3.08-.08.22-.08.3 0 .28.28.93.44 1.82.44s1.54-.16 1.82-.44c.08-.08.22-.08.3 0 .08.08.08.22 0 .3zm-.12-1.16c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z" fill="white"/></svg>Reddit</h3>
+                        <p style="color: #7DA3AF; margin-top: 0.5rem;">Community Ads</p>
+                        <p style="color: #A9C1CB; font-size: 0.9rem; margin-top: 0.5rem;">
+                            Feed, Sidebar, Banner
+                        </p>
+                    </div>
+                    <div class="platform-card" onclick="togglePlatform('pinterest', this)">
+                        <h3><svg style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px;" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.237 2.636 7.855 6.356 9.312-.088-.791-.167-2.005.035-2.868.181-.78 1.172-4.97 1.172-4.97s-.299-.598-.299-1.482c0-1.388.805-2.425 1.808-2.425.852 0 1.264.64 1.264 1.408 0 .858-.546 2.14-.828 3.33-.236.995.5 1.807 1.48 1.807 1.778 0 3.144-1.874 3.144-4.58 0-2.393-1.72-4.068-4.177-4.068-2.845 0-4.515 2.135-4.515 4.34 0 .859.331 1.781.745 2.281.082.1.094.187.069.288-.076.316-.245 1.002-.278 1.141-.044.183-.145.222-.335.134-1.249-.581-2.03-2.407-2.03-3.874 0-3.154 2.292-6.052 6.608-6.052 3.469 0 6.165 2.473 6.165 5.776 0 3.447-2.173 6.22-5.19 6.22-1.013 0-1.965-.527-2.292-1.148l-.623 2.378c-.226.869-.835 1.958-1.244 2.621.937.29 1.931.446 2.962.446 5.523 0 10-4.477 10-10S17.523 2 12 2z" fill="#E60023"/></svg>Pinterest</h3>
+                        <p style="color: #7DA3AF; margin-top: 0.5rem;">Visual Discovery</p>
+                        <p style="color: #A9C1CB; font-size: 0.9rem; margin-top: 0.5rem;">
+                            Standard Pin (2:3), Square, Long Pin
+                        </p>
+                    </div>
                 </div>
-                <div class="platform-card" onclick="togglePlatform('reddit', this)">
-                    <h3>🔴 Reddit</h3>
-                    <p style="color: #7DA3AF; margin-top: 0.5rem;">Community Ads</p>
-                    <p style="color: #A9C1CB; font-size: 0.9rem; margin-top: 0.5rem;">
-                        Feed, Sidebar, Banner
-                    </p>
-                </div>
-                <div class="platform-card" onclick="togglePlatform('pinterest', this)">
-                    <h3>📌 Pinterest</h3>
-                    <p style="color: #7DA3AF; margin-top: 0.5rem;">Visual Discovery</p>
-                    <p style="color: #A9C1CB; font-size: 0.9rem; margin-top: 0.5rem;">
-                        Standard Pin (2:3), Square, Long Pin
-                    </p>
+
+                <button class="btn-primary" id="continueBtn" onclick="nextStep()" disabled>
+                    Continue to Inspiration →
+                </button>
+            </div>
+        </div>
+
+        <!-- Past Projects Panel (Separate Card) -->
+        <div class="card" style="margin-top: 2rem; background: #466F88; padding: 2.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2 style="margin: 0; color: white;">Past Projects</h2>
+                <div style="display: flex; gap: 0.5rem;">
+                    <input type="text" id="projectSearch" placeholder="Search projects..."
+                           style="padding: 0.5rem 1rem; border: none; border-radius: 6px; font-size: 0.9rem; width: 200px; background: rgba(255,255,255,0.9);">
+                    <select id="projectFilter" style="padding: 0.5rem 1rem; border: none; border-radius: 6px; font-size: 0.9rem; background: rgba(255,255,255,0.9);">
+                        <option value="all">All Platforms</option>
+                        <option value="meta">Meta</option>
+                        <option value="reddit">Reddit</option>
+                        <option value="pinterest">Pinterest</option>
+                    </select>
                 </div>
             </div>
 
-            <button class="btn-primary" id="continueBtn" onclick="nextStep()" disabled>
-                Continue to Inspiration →
-            </button>
+            <!-- Project Grid (Mockup Data - 6 projects) -->
+            <div id="pastProjectsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
+
+                <!-- Sample Project 1 -->
+                <div class="past-project-card" onclick="loadProject('proj1')" style="border: 2px solid #E1E7EF; border-radius: 12px; overflow: hidden; cursor: pointer; transition: all 0.2s ease; background: white;" onmouseover="this.style.borderColor='#31D7CA'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(49,215,202,0.15)';" onmouseout="this.style.borderColor='#E1E7EF'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                    <div style="position: relative;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px; background: #E1E7EF;">
+                            <div style="aspect-ratio: 1; background: linear-gradient(135deg, #31D7CA 0%, #272D3F 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem;">📱</div>
+                            <div style="aspect-ratio: 1; background: linear-gradient(135deg, #FC883A 0%, #272D3F 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem;">💍</div>
+                        </div>
+                        <div style="position: absolute; top: 0.5rem; right: 0.5rem; display: flex; gap: 0.25rem;">
+                            <span style="background: #31D7CA; color: white; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600;">Meta</span>
+                            <span style="background: #E60023; color: white; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600;">Pinterest</span>
+                        </div>
+                    </div>
+                    <div style="padding: 1rem;">
+                        <h4 style="margin: 0 0 0.25rem 0; color: #272D3F; font-size: 1rem;">Valentine's Day Campaign</h4>
+                        <p style="margin: 0 0 0.5rem 0; color: #7DA3AF; font-size: 0.8rem;">Engagement ring protection for couples</p>
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: #A9C1CB;">
+                            <span>📅 Jan 10, 2026</span>
+                            <span>👤 Sarah M.</span>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem;">
+                            <span style="background: #F4F7FC; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.7rem; color: #7DA3AF;">12 ads</span>
+                            <span style="background: #F4F7FC; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.7rem; color: #7DA3AF;">3 GIFs</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sample Project 2 -->
+                <div class="past-project-card" onclick="loadProject('proj2')" style="border: 2px solid #E1E7EF; border-radius: 12px; overflow: hidden; cursor: pointer; transition: all 0.2s ease; background: white;" onmouseover="this.style.borderColor='#31D7CA'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(49,215,202,0.15)';" onmouseout="this.style.borderColor='#E1E7EF'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                    <div style="position: relative;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px; background: #E1E7EF;">
+                            <div style="aspect-ratio: 1; background: linear-gradient(135deg, #FF4500 0%, #272D3F 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem;">🔴</div>
+                            <div style="aspect-ratio: 1; background: linear-gradient(135deg, #272D3F 0%, #31D7CA 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem;">✨</div>
+                        </div>
+                        <div style="position: absolute; top: 0.5rem; right: 0.5rem; display: flex; gap: 0.25rem;">
+                            <span style="background: #FF4500; color: white; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600;">Reddit</span>
+                        </div>
+                    </div>
+                    <div style="padding: 1rem;">
+                        <h4 style="margin: 0 0 0.25rem 0; color: #272D3F; font-size: 1rem;">Reddit Q1 Push</h4>
+                        <p style="margin: 0 0 0.5rem 0; color: #7DA3AF; font-size: 0.8rem;">Community-focused jewelry insurance</p>
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: #A9C1CB;">
+                            <span>📅 Jan 5, 2026</span>
+                            <span>👤 Mike T.</span>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem;">
+                            <span style="background: #F4F7FC; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.7rem; color: #7DA3AF;">6 ads</span>
+                            <span style="background: #F4F7FC; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.7rem; color: #7DA3AF;">2 GIFs</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sample Project 3 -->
+                <div class="past-project-card" onclick="loadProject('proj3')" style="border: 2px solid #E1E7EF; border-radius: 12px; overflow: hidden; cursor: pointer; transition: all 0.2s ease; background: white;" onmouseover="this.style.borderColor='#31D7CA'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(49,215,202,0.15)';" onmouseout="this.style.borderColor='#E1E7EF'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                    <div style="position: relative;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px; background: #E1E7EF;">
+                            <div style="aspect-ratio: 1; background: linear-gradient(135deg, #31D7CA 0%, #FC883A 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem;">💎</div>
+                            <div style="aspect-ratio: 1; background: linear-gradient(135deg, #E60023 0%, #272D3F 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem;">📌</div>
+                        </div>
+                        <div style="position: absolute; top: 0.5rem; right: 0.5rem; display: flex; gap: 0.25rem;">
+                            <span style="background: #31D7CA; color: white; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600;">Meta</span>
+                            <span style="background: #E60023; color: white; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600;">Pinterest</span>
+                            <span style="background: #FF4500; color: white; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600;">Reddit</span>
+                        </div>
+                    </div>
+                    <div style="padding: 1rem;">
+                        <h4 style="margin: 0 0 0.25rem 0; color: #272D3F; font-size: 1rem;">Holiday 2025 Campaign</h4>
+                        <p style="margin: 0 0 0.5rem 0; color: #7DA3AF; font-size: 0.8rem;">Full multi-platform holiday push</p>
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: #A9C1CB;">
+                            <span>📅 Dec 15, 2025</span>
+                            <span>👤 Sarah M.</span>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem;">
+                            <span style="background: #F4F7FC; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.7rem; color: #7DA3AF;">18 ads</span>
+                            <span style="background: #F4F7FC; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.7rem; color: #7DA3AF;">5 GIFs</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sample Project 4 -->
+                <div class="past-project-card" onclick="loadProject('proj4')" style="border: 2px solid #E1E7EF; border-radius: 12px; overflow: hidden; cursor: pointer; transition: all 0.2s ease; background: white;" onmouseover="this.style.borderColor='#31D7CA'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(49,215,202,0.15)';" onmouseout="this.style.borderColor='#E1E7EF'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                    <div style="position: relative;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px; background: #E1E7EF;">
+                            <div style="aspect-ratio: 1; background: linear-gradient(135deg, #272D3F 0%, #31D7CA 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem;">👰</div>
+                            <div style="aspect-ratio: 1; background: linear-gradient(135deg, #FC883A 0%, #31D7CA 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem;">🤵</div>
+                        </div>
+                        <div style="position: absolute; top: 0.5rem; right: 0.5rem; display: flex; gap: 0.25rem;">
+                            <span style="background: #31D7CA; color: white; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600;">Meta</span>
+                        </div>
+                    </div>
+                    <div style="padding: 1rem;">
+                        <h4 style="margin: 0 0 0.25rem 0; color: #272D3F; font-size: 1rem;">Wedding Season 2025</h4>
+                        <p style="margin: 0 0 0.5rem 0; color: #7DA3AF; font-size: 0.8rem;">Summer wedding jewelry protection</p>
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: #A9C1CB;">
+                            <span>📅 Nov 28, 2025</span>
+                            <span>👤 Alex R.</span>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem;">
+                            <span style="background: #F4F7FC; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.7rem; color: #7DA3AF;">8 ads</span>
+                            <span style="background: #F4F7FC; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.7rem; color: #7DA3AF;">2 GIFs</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sample Project 5 -->
+                <div class="past-project-card" onclick="loadProject('proj5')" style="border: 2px solid #E1E7EF; border-radius: 12px; overflow: hidden; cursor: pointer; transition: all 0.2s ease; background: white;" onmouseover="this.style.borderColor='#31D7CA'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(49,215,202,0.15)';" onmouseout="this.style.borderColor='#E1E7EF'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                    <div style="position: relative;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px; background: #E1E7EF;">
+                            <div style="aspect-ratio: 1; background: linear-gradient(135deg, #E60023 0%, #FC883A 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem;">💐</div>
+                            <div style="aspect-ratio: 1; background: linear-gradient(135deg, #31D7CA 0%, #272D3F 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem;">💝</div>
+                        </div>
+                        <div style="position: absolute; top: 0.5rem; right: 0.5rem; display: flex; gap: 0.25rem;">
+                            <span style="background: #E60023; color: white; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600;">Pinterest</span>
+                        </div>
+                    </div>
+                    <div style="padding: 1rem;">
+                        <h4 style="margin: 0 0 0.25rem 0; color: #272D3F; font-size: 1rem;">Mother's Day Special</h4>
+                        <p style="margin: 0 0 0.5rem 0; color: #7DA3AF; font-size: 0.8rem;">Family heirloom protection campaign</p>
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: #A9C1CB;">
+                            <span>📅 Nov 15, 2025</span>
+                            <span>👤 Lisa K.</span>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem;">
+                            <span style="background: #F4F7FC; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.7rem; color: #7DA3AF;">10 ads</span>
+                            <span style="background: #F4F7FC; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.7rem; color: #7DA3AF;">4 GIFs</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sample Project 6 -->
+                <div class="past-project-card" onclick="loadProject('proj6')" style="border: 2px solid #E1E7EF; border-radius: 12px; overflow: hidden; cursor: pointer; transition: all 0.2s ease; background: white;" onmouseover="this.style.borderColor='#31D7CA'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(49,215,202,0.15)';" onmouseout="this.style.borderColor='#E1E7EF'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                    <div style="position: relative;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px; background: #E1E7EF;">
+                            <div style="aspect-ratio: 1; background: linear-gradient(135deg, #272D3F 0%, #FF4500 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem;">🎄</div>
+                            <div style="aspect-ratio: 1; background: linear-gradient(135deg, #FC883A 0%, #E60023 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem;">🎁</div>
+                        </div>
+                        <div style="position: absolute; top: 0.5rem; right: 0.5rem; display: flex; gap: 0.25rem;">
+                            <span style="background: #31D7CA; color: white; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600;">Meta</span>
+                            <span style="background: #FF4500; color: white; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600;">Reddit</span>
+                        </div>
+                    </div>
+                    <div style="padding: 1rem;">
+                        <h4 style="margin: 0 0 0.25rem 0; color: #272D3F; font-size: 1rem;">Black Friday Promo</h4>
+                        <p style="margin: 0 0 0.5rem 0; color: #7DA3AF; font-size: 0.8rem;">Limited time insurance deals</p>
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: #A9C1CB;">
+                            <span>📅 Nov 1, 2025</span>
+                            <span>👤 Mike T.</span>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem;">
+                            <span style="background: #F4F7FC; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.7rem; color: #7DA3AF;">14 ads</span>
+                            <span style="background: #F4F7FC; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.7rem; color: #7DA3AF;">6 GIFs</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Empty State (hidden by default, shown when no projects) -->
+            <div id="emptyProjectsState" style="display: none; text-align: center; padding: 3rem; background: rgba(255,255,255,0.1); border-radius: 12px;">
+                <p style="font-size: 3rem; margin-bottom: 1rem;">📂</p>
+                <h3 style="color: white; margin-bottom: 0.5rem;">No past projects yet</h3>
+                <p style="color: rgba(255,255,255,0.7);">Projects you create will appear here for easy access and editing.</p>
+            </div>
+
+            <!-- Load More Button -->
+            <div style="text-align: center; margin-top: 2rem;">
+                <button onclick="loadMoreProjects()" style="padding: 0.75rem 2rem; background: #31D7CA; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer;">
+                    Load More Projects
+                </button>
+            </div>
         </div>
 
         <!-- Step 2: Inspiration Input -->
@@ -574,27 +770,22 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                         </div>
                     </div>
 
-                    <div style="margin-bottom: 1rem;">
-                        <label style="display: block; font-size: 0.9rem; color: #7DA3AF; margin-bottom: 0.5rem;">
-                            <input type="checkbox" id="frameLogoCheckbox" onchange="toggleFrameLogo()" style="margin-right: 0.5rem;">
-                            Add Logo
+                    <div style="margin-bottom: 1rem; padding: 1rem; background: #F4F7FC; border-radius: 8px;">
+                        <label style="display: flex; align-items: center; font-size: 1.1rem; font-weight: 600; color: #272D3F; cursor: pointer;">
+                            <input type="checkbox" id="frameLogoCheckbox" onchange="toggleFrameLogo()"
+                                   style="width: 20px; height: 20px; margin-right: 0.75rem; cursor: pointer; accent-color: #31D7CA;">
+                            🏷️ Add Logo
                         </label>
-                        <div id="frameLogoControls" style="display: none; padding-top: 0.5rem;">
-                            <label style="display: block; font-size: 0.85rem; color: #7DA3AF; margin-bottom: 0.25rem;">Select Logo:</label>
-                            <div id="frameLogoSelector" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 0.75rem;"></div>
+                        <div id="frameLogoControls" style="display: none; padding-top: 1rem;">
+                            <label style="display: block; font-size: 0.85rem; color: #7DA3AF; margin-bottom: 0.5rem;">Select Logo:</label>
+                            <div id="frameLogoSelector" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 1rem;"></div>
 
-                            <label style="display: block; font-size: 0.85rem; color: #7DA3AF; margin-bottom: 0.25rem;">Logo Position:</label>
-                            <select id="frameLogoPosition" onchange="updateFramePreview()"
-                                    style="width: 100%; padding: 0.5rem; border: 1px solid #E1E7EF; border-radius: 6px; margin-bottom: 0.5rem;">
-                                <option value="top-left">Top Left</option>
-                                <option value="top-right">Top Right</option>
-                                <option value="bottom-left">Bottom Left</option>
-                                <option value="bottom-right" selected>Bottom Right</option>
-                            </select>
                             <label style="display: block; font-size: 0.85rem; color: #7DA3AF; margin-bottom: 0.25rem;">Logo Size: <span id="frameLogoSizeDisplay">15</span>%</label>
-                            <input type="range" id="frameLogoSize" min="8" max="25" value="15"
+                            <input type="range" id="frameLogoSize" min="8" max="30" value="15"
                                    oninput="document.getElementById('frameLogoSizeDisplay').textContent = this.value; updateFramePreview()"
-                                   style="width: 100%;">
+                                   style="width: 100%; margin-bottom: 0.75rem;">
+
+                            <p style="font-size: 0.8rem; color: #31D7CA; margin-top: 0.5rem;">💡 Click and drag the logo on the preview to position it</p>
                         </div>
                     </div>
 
@@ -1314,7 +1505,8 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             let startX, startY, startLeft, startTop;
 
             logoElement.addEventListener('mousedown', function(e) {
-                if (!logoSettings[index].enabled || !uploadedLogo) return;
+                const selectedLogoIndex = logoSettings[index].selectedLogoIndex || 0;
+                if (!logoSettings[index].enabled || !availableLogos[selectedLogoIndex]) return;
 
                 isDragging = true;
                 const rect = container.getBoundingClientRect();
@@ -2210,11 +2402,28 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
 
                 // Draw logo if enabled
                 const selectedLogo = availableLogos[logo.selectedLogoIndex || 0];
+                console.log('[DOWNLOAD] Logo settings:', logo);
+                console.log('[DOWNLOAD] Selected logo:', selectedLogo);
+
                 if (logo.enabled && selectedLogo) {
                     const logoImage = new Image();
                     logoImage.crossOrigin = 'anonymous';
 
+                    logoImage.onerror = function() {
+                        console.error('[DOWNLOAD] Failed to load logo, downloading without logo');
+                        // Download without logo on error
+                        canvas.toBlob(function(blob) {
+                            const url = URL.createObjectURL(blob);
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.download = `${capitalizePlatform(img.platform)}_${img.size}_final.jpg`;
+                            link.click();
+                            URL.revokeObjectURL(url);
+                        }, 'image/jpeg', 0.95);
+                    };
+
                     logoImage.onload = function() {
+                        console.log('[DOWNLOAD] Logo loaded successfully, drawing...');
                         const logoWidth = (logo.scale / 100) * img.width;
                         const logoHeight = (logoImage.height / logoImage.width) * logoWidth;
 
@@ -2251,6 +2460,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                         }, 'image/jpeg', 0.95);
                     };
 
+                    console.log('[DOWNLOAD] Loading logo from:', selectedLogo.url);
                     logoImage.src = selectedLogo.url;
                 } else {
                     // No logo, just download with text
@@ -2538,6 +2748,9 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
 
             renderFrameThumbnails();
             selectFrame(0);
+
+            // Setup logo drag handler after modal opens
+            setTimeout(() => setupFrameLogoDragHandler(), 100);
         }
 
         function closeFrameEditor() {
@@ -2658,11 +2871,13 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 const bgColor = gifData.frameOverlays[currentFrameIndex].bgColor;
                 const showLogo = document.getElementById('frameLogoCheckbox').checked;
                 const logoIndex = gifData.frameOverlays[currentFrameIndex].logoIndex || 0;
-                const logoPosition = showLogo ? document.getElementById('frameLogoPosition').value : '';
                 const logoSize = showLogo ? parseInt(document.getElementById('frameLogoSize').value) : 15;
+                // Preserve custom logo position if set, otherwise use undefined
+                const logoX = gifData.frameOverlays[currentFrameIndex].logoX;
+                const logoY = gifData.frameOverlays[currentFrameIndex].logoY;
 
-                // Update overlay in storage
-                gifData.frameOverlays[currentFrameIndex] = { text, position, font, size, color, bgColor, showLogo, logoIndex, logoPosition, logoSize };
+                // Update overlay in storage (preserve logoX and logoY for drag positioning)
+                gifData.frameOverlays[currentFrameIndex] = { text, position, font, size, color, bgColor, showLogo, logoIndex, logoX, logoY, logoSize };
 
                 // Draw text overlay if text exists
                 if (text) {
@@ -2708,24 +2923,28 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                         const logoWidth = (canvas.width * logoSize) / 100;
                         const logoHeight = (logoImg.height / logoImg.width) * logoWidth;
 
-                        let logoX, logoY;
+                        let drawX, drawY;
                         const margin = 15;
 
-                        if (logoPosition === 'top-left') {
-                            logoX = margin;
-                            logoY = margin;
-                        } else if (logoPosition === 'top-right') {
-                            logoX = canvas.width - logoWidth - margin;
-                            logoY = margin;
-                        } else if (logoPosition === 'bottom-left') {
-                            logoX = margin;
-                            logoY = canvas.height - logoHeight - margin;
-                        } else { // bottom-right
-                            logoX = canvas.width - logoWidth - margin;
-                            logoY = canvas.height - logoHeight - margin;
+                        // Use custom position if set via dragging, otherwise default to bottom-right
+                        if (logoX !== undefined && logoY !== undefined) {
+                            drawX = (logoX / 100) * canvas.width - logoWidth / 2;
+                            drawY = (logoY / 100) * canvas.height - logoHeight / 2;
+                        } else {
+                            // Default position: bottom-right
+                            drawX = canvas.width - logoWidth - margin;
+                            drawY = canvas.height - logoHeight - margin;
                         }
 
-                        ctx.drawImage(logoImg, logoX, logoY, logoWidth, logoHeight);
+                        // Store logo bounds for drag detection
+                        window.currentLogoBounds = {
+                            x: drawX,
+                            y: drawY,
+                            width: logoWidth,
+                            height: logoHeight
+                        };
+
+                        ctx.drawImage(logoImg, drawX, drawY, logoWidth, logoHeight);
                     };
                     logoImg.src = availableLogos[logoIndex].url;
                 }
@@ -2736,7 +2955,99 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
         function toggleFrameLogo() {
             const checked = document.getElementById('frameLogoCheckbox').checked;
             document.getElementById('frameLogoControls').style.display = checked ? 'block' : 'none';
+            if (checked) {
+                setupFrameLogoDragHandler();
+            }
             updateFramePreview();
+        }
+
+        // Setup drag handler for logo on canvas (GIF frame editor)
+        function setupFrameLogoDragHandler() {
+            const canvas = document.getElementById('framePreviewCanvas');
+            if (!canvas || canvas.logoDragSetup) return;
+
+            let isDragging = false;
+
+            canvas.addEventListener('mousedown', function(e) {
+                const gifData = gifResults[currentGifIndex];
+                if (!gifData || !gifData.frameOverlays[currentFrameIndex].showLogo) return;
+
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                const mouseX = (e.clientX - rect.left) * scaleX;
+                const mouseY = (e.clientY - rect.top) * scaleY;
+
+                // Check if click is on logo
+                const bounds = window.currentLogoBounds;
+                if (bounds &&
+                    mouseX >= bounds.x && mouseX <= bounds.x + bounds.width &&
+                    mouseY >= bounds.y && mouseY <= bounds.y + bounds.height) {
+                    isDragging = true;
+                    canvas.style.cursor = 'grabbing';
+                    e.preventDefault();
+                }
+            });
+
+            canvas.addEventListener('mousemove', function(e) {
+                if (!isDragging) return;
+
+                const gifData = gifResults[currentGifIndex];
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                const mouseX = (e.clientX - rect.left) * scaleX;
+                const mouseY = (e.clientY - rect.top) * scaleY;
+
+                // Convert to percentage
+                const percentX = (mouseX / canvas.width) * 100;
+                const percentY = (mouseY / canvas.height) * 100;
+
+                // Clamp values
+                gifData.frameOverlays[currentFrameIndex].logoX = Math.max(5, Math.min(95, percentX));
+                gifData.frameOverlays[currentFrameIndex].logoY = Math.max(5, Math.min(95, percentY));
+
+                updateFramePreview();
+            });
+
+            canvas.addEventListener('mouseup', function() {
+                if (isDragging) {
+                    isDragging = false;
+                    canvas.style.cursor = 'default';
+                }
+            });
+
+            canvas.addEventListener('mouseleave', function() {
+                if (isDragging) {
+                    isDragging = false;
+                    canvas.style.cursor = 'default';
+                }
+            });
+
+            // Update cursor on hover over logo
+            canvas.addEventListener('mousemove', function(e) {
+                if (isDragging) return;
+
+                const gifData = gifResults[currentGifIndex];
+                if (!gifData || !gifData.frameOverlays[currentFrameIndex].showLogo) return;
+
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                const mouseX = (e.clientX - rect.left) * scaleX;
+                const mouseY = (e.clientY - rect.top) * scaleY;
+
+                const bounds = window.currentLogoBounds;
+                if (bounds &&
+                    mouseX >= bounds.x && mouseX <= bounds.x + bounds.width &&
+                    mouseY >= bounds.y && mouseY <= bounds.y + bounds.height) {
+                    canvas.style.cursor = 'grab';
+                } else {
+                    canvas.style.cursor = 'default';
+                }
+            });
+
+            canvas.logoDragSetup = true;
         }
 
         function setFrameColor(color) {
@@ -2886,9 +3197,11 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                                 ctx.fillText(overlay.text, x, y);
                             }
 
-                            // Draw logo if enabled
-                            if (overlay.showLogo && uploadedLogo) {
+                            // Draw logo if enabled - use availableLogos array
+                            const logoIndex = overlay.logoIndex || 0;
+                            if (overlay.showLogo && availableLogos[logoIndex]) {
                                 const logoImg = new Image();
+                                logoImg.crossOrigin = 'anonymous';
                                 logoImg.onload = function() {
                                     const logoWidth = (canvas.width * overlay.logoSize) / 100;
                                     const logoHeight = (logoImg.height / logoImg.width) * logoWidth;
@@ -2896,7 +3209,11 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                                     let logoX, logoY;
                                     const margin = 15;
 
-                                    if (overlay.logoPosition === 'top-left') {
+                                    // Support custom position or preset positions
+                                    if (overlay.logoX !== undefined && overlay.logoY !== undefined) {
+                                        logoX = (overlay.logoX / 100) * canvas.width - logoWidth / 2;
+                                        logoY = (overlay.logoY / 100) * canvas.height - logoHeight / 2;
+                                    } else if (overlay.logoPosition === 'top-left') {
                                         logoX = margin;
                                         logoY = margin;
                                     } else if (overlay.logoPosition === 'top-right') {
@@ -2913,7 +3230,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                                     ctx.drawImage(logoImg, logoX, logoY, logoWidth, logoHeight);
                                     resolve(canvas.toDataURL('image/png'));
                                 };
-                                logoImg.src = uploadedLogo;
+                                logoImg.src = availableLogos[logoIndex].url;
                             } else {
                                 resolve(canvas.toDataURL('image/png'));
                             }
@@ -3151,6 +3468,55 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 window.scrollTo(0, 0);
             }
         }
+
+        // ========== PAST PROJECTS (MOCKUP) ==========
+        // These are placeholder functions for the archive library mockup
+        // Will be connected to actual storage (Google Cloud, etc.) in future version
+
+        function loadProject(projectId) {
+            // Mockup: Show alert with project info
+            const projectNames = {
+                'proj1': "Valentine's Day Campaign",
+                'proj2': 'Reddit Q1 Push',
+                'proj3': 'Holiday 2025 Campaign',
+                'proj4': 'Wedding Season 2025',
+                'proj5': "Mother's Day Special",
+                'proj6': 'Black Friday Promo'
+            };
+
+            const result = confirm(`Load "${projectNames[projectId]}"?\n\nThis will restore all images, ad copy, and settings from this project.\n\n(This is a mockup - actual loading will be available once connected to storage)`);
+
+            if (result) {
+                alert('📂 Project loading will be available in the next version!\n\nThis mockup shows the UI design. Once connected to Google Cloud or another storage solution, clicking a project will:\n\n• Load all generated images\n• Restore ad copy variations\n• Restore text overlays & logo settings\n• Restore GIF animations');
+            }
+        }
+
+        function loadMoreProjects() {
+            alert('📂 More projects will load here once connected to storage.\n\nThe archive will support:\n• Pagination for large libraries\n• Search by project name\n• Filter by platform\n• Sort by date or creator');
+        }
+
+        // Search and filter functionality (mockup)
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('projectSearch');
+            const filterSelect = document.getElementById('projectFilter');
+
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    // Mockup: Just show that search is working
+                    console.log('[MOCKUP] Searching for:', this.value);
+                });
+            }
+
+            if (filterSelect) {
+                filterSelect.addEventListener('change', function() {
+                    // Mockup: Just show that filter is working
+                    console.log('[MOCKUP] Filtering by:', this.value);
+                    if (this.value !== 'all') {
+                        alert(`Filtering by ${this.value.toUpperCase()} projects.\n\n(This is a mockup - filtering will work once connected to storage)`);
+                    }
+                });
+            }
+        });
     </script>
 </body>
 </html>

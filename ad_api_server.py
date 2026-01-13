@@ -427,8 +427,8 @@ def generate_animation():
         print(f"  Duration: {duration_seconds} seconds")
         print(f"  Dimensions: {width}x{height}")
 
-        # Generate 5 frames with slight variations
-        frame_count = min(duration_seconds, 5)  # Max 5 frames
+        # Generate frames based on requested count
+        frame_count = min(duration_seconds, 7)  # Max 7 frames
         frames = []
 
         # Define prompt variations for animation effect
@@ -437,7 +437,9 @@ def generate_animation():
             "Zoom in slightly to show more detail on the jewelry",
             "Pan slightly to the right to show the couple's connection",
             "Zoom out slightly for a wider view",
-            "Return to original composition"
+            "Different angle showing the couple's happy expressions",
+            "Close-up on the ring with couple softly blurred in background",
+            "Return to original composition with warm lighting"
         ]
 
         for i in range(frame_count):
