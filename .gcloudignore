@@ -1,0 +1,13 @@
+# Ignore files for Google Cloud deployment
+.git
+.gitignore
+__pycache__
+*.pyc
+*.pyo
+.env.local
+.env.development
+*.log
+node_modules
+.vscode
+*.md
+start_server.bat

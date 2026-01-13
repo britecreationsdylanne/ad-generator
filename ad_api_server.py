@@ -7,6 +7,8 @@ Uses same proven architecture as venue-newsletter-tool
 import os
 import sys
 import json
+import time
+import requests
 from datetime import datetime
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
@@ -14,6 +16,14 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
+
+# Runway API configuration
+RUNWAY_API_KEY = os.getenv('RUNWAY_API_KEY')
+RUNWAY_API_BASE = 'https://api.dev.runwayml.com/v1'
+
+# Google Veo API configuration
+GOOGLE_VEO_API_KEY = os.getenv('GOOGLE_VEO_API_KEY')
+VEO_API_BASE = 'https://generativelanguage.googleapis.com/v1beta'
 
 # Add venue-newsletter-tool backend to path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'venue-newsletter-tool', 'backend'))
@@ -68,6 +78,9 @@ PLATFORM_SIZES = {
     'pinterest': [
         {'name': 'Standard Pin', 'width': 1000, 'height': 1500},
         {'name': 'Square', 'width': 1000, 'height': 1000}
+    ],
+    'general': [
+        {'name': 'Portrait', 'width': 1080, 'height': 1920}
     ]
 }
 
@@ -76,6 +89,11 @@ def serve_index():
     """Serve the main HTML page"""
     return send_from_directory('.', 'index.html')
 
+@app.route('/video_generator.html')
+def serve_video_generator():
+    """Serve the video generator page"""
+    return send_from_directory('.', 'video_generator.html')
+
 @app.route('/logo file for claude.jpg')
 def serve_logo():
     """Serve the logo file"""
@@ -83,8 +101,15 @@ def serve_logo():
 
 @app.route('/logos/<filename>')
 def serve_logo_file(filename):
-    """Serve logo files dynamically"""
-    return send_from_directory('.', filename)
+    """Serve logo files from logos subdirectory"""
+    return send_from_directory('logos', filename)
+
+@app.route('/<filename>')
+def serve_root_file(filename):
+    """Serve logo files from root directory (PNG files)"""
+    if filename.endswith('.png') or filename.endswith('.jpg'):
+        return send_from_directory('.', filename)
+    return "Not found", 404
 
 @app.route('/api/generate-prompt', methods=['POST'])
 def generate_prompt():
@@ -418,17 +443,18 @@ def generate_animation():
         base_prompt = data.get('prompt', '')
         width = data.get('width', 1080)
         height = data.get('height', 1080)
-        duration_seconds = data.get('duration', 5)
+        frame_count = data.get('frame_count', 5)
+        fps = data.get('fps', 2)  # Frames per second (default: 2)
         platform = data.get('platform', 'Meta')
         size_name = data.get('sizeName', 'Square')
 
+        # Ensure frame_count is within limits
+        frame_count = min(max(frame_count, 3), 7)  # Between 3 and 7 frames
+
         print(f"\n[API] Generate Animation Request")
         print(f"  Platform: {platform}, Size: {size_name}")
-        print(f"  Duration: {duration_seconds} seconds")
+        print(f"  Frames: {frame_count}, FPS: {fps}")
         print(f"  Dimensions: {width}x{height}")
-
-        # Generate frames based on requested count
-        frame_count = min(duration_seconds, 7)  # Max 7 frames
         frames = []
 
         # Define prompt variations for animation effect
@@ -514,8 +540,10 @@ def generate_animation():
 
         gif_buffer = BytesIO()
 
-        # Calculate duration per frame in milliseconds
-        duration_ms = int((duration_seconds * 1000) / len(frames))
+        # Calculate duration per frame in milliseconds based on FPS
+        duration_ms = int(1000 / fps)
+
+        print(f"[API] Creating GIF with {len(frames)} frames at {fps} FPS ({duration_ms}ms per frame)")
 
         # Save as animated GIF
         frames[0].save(
@@ -530,14 +558,15 @@ def generate_animation():
 
         gif_data = base64.b64encode(gif_buffer.getvalue()).decode('utf-8')
 
-        print(f"[API] Animation created successfully ({len(gif_buffer.getvalue())} bytes)")
+        total_duration = len(frames) / fps
+        print(f"[API] Animation created successfully ({len(gif_buffer.getvalue())} bytes, {total_duration:.1f}s total)")
 
         return jsonify({
             'success': True,
             'animation': f"data:image/gif;base64,{gif_data}",
             'frames': frame_images,  # Individual frames for editing
             'frame_count': len(frames),
-            'duration': duration_seconds
+            'fps': fps
         })
 
     except Exception as e:
@@ -546,18 +575,465 @@ def generate_animation():
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
 
+
+# ============================================================================
+# VIDEO GENERATION (Veo API - Default, Runway API - Fallback)
+# ============================================================================
+
+@app.route('/api/generate-video', methods=['POST'])
+def generate_video():
+    """Generate video using Google Veo API (default) or Runway API"""
+    try:
+        data = request.json
+        prompt_text = data.get('prompt', '')
+        prompt_image = data.get('image')  # Base64 data URI or URL
+        duration = int(data.get('duration', 8))  # Must be 4, 6, or 8
+        aspect_ratio = data.get('ratio', '720:1280')  # Default 9:16 portrait
+        provider = data.get('provider', 'veo')  # 'veo' or 'runway'
+
+        print(f"\n[API] Generate Video Request")
+        print(f"  Provider: {provider}")
+        print(f"  Duration: {duration}s")
+        print(f"  Ratio: {aspect_ratio}")
+        print(f"  Prompt: {prompt_text[:100]}...")
+        print(f"  Has Image: {bool(prompt_image)}")
+
+        # Route to appropriate provider
+        if provider == 'veo':
+            return generate_video_veo(prompt_text, prompt_image, duration, aspect_ratio)
+        else:
+            return generate_video_runway(prompt_text, prompt_image, duration, aspect_ratio)
+
+    except Exception as e:
+        print(f"[API ERROR] {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+def generate_video_veo(prompt_text, prompt_image, duration, aspect_ratio):
+    """Generate video using Google Veo 3.1 API"""
+    if not GOOGLE_VEO_API_KEY:
+        return jsonify({'success': False, 'error': 'Google Veo API key not configured'}), 500
+
+    # Convert aspect ratio format (720:1280 -> 9:16)
+    ratio_map = {
+        '720:1280': '9:16',
+        '1280:720': '16:9',
+        '1080:1920': '9:16',
+        '1920:1080': '16:9'
+    }
+    veo_aspect_ratio = ratio_map.get(aspect_ratio, '9:16')
+
+    # Ensure duration is valid integer (4, 6, or 8)
+    valid_durations = [4, 6, 8]
+    if duration not in valid_durations:
+        duration = 8  # Default to 8 if invalid
+
+    # Veo API endpoint
+    model = 'veo-3.1-generate-preview'
+    endpoint = f'{VEO_API_BASE}/models/{model}:predictLongRunning'
+
+    headers = {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': GOOGLE_VEO_API_KEY
+    }
+
+    # Build payload for Veo API
+    # IMPORTANT: durationSeconds must be an integer, not a string
+    payload = {
+        'instances': [{
+            'prompt': prompt_text
+        }],
+        'parameters': {
+            'aspectRatio': veo_aspect_ratio,
+            'durationSeconds': duration,  # Integer, not string!
+            'resolution': '720p',
+            'sampleCount': 1
+        }
+    }
+
+    # Add image for image-to-video
+    if prompt_image:
+        # Extract base64 data and determine mime type
+        if ',' in prompt_image:
+            # Data URI format: data:image/jpeg;base64,xxxxx
+            header, base64_data = prompt_image.split(',', 1)
+            # Extract mime type from header
+            if 'png' in header.lower():
+                mime_type = 'image/png'
+            elif 'gif' in header.lower():
+                mime_type = 'image/gif'
+            else:
+                mime_type = 'image/jpeg'
+        else:
+            base64_data = prompt_image
+            mime_type = 'image/jpeg'
+
+        # Veo 3.1 image-to-video format
+        payload['instances'][0]['image'] = {
+            'bytesBase64Encoded': base64_data,
+            'mimeType': mime_type
+        }
+
+    print(f"[API] Calling Google Veo API: {endpoint}")
+    print(f"[API] Payload: {json.dumps({**payload, 'instances': [{'prompt': prompt_text[:50] + '...'}]}, indent=2)}")
+
+    # Create the task
+    response = requests.post(endpoint, headers=headers, json=payload)
+
+    print(f"[API] Veo Response Status: {response.status_code}")
+
+    if response.status_code != 200:
+        error_msg = response.text
+        print(f"[API ERROR] Veo API error: {error_msg}")
+        return jsonify({'success': False, 'error': f'Veo API error: {error_msg}'}), 500
+
+    task_data = response.json()
+    # Veo returns operation name like "operations/xxx"
+    operation_name = task_data.get('name', '')
+
+    print(f"[API] Veo Task created: {operation_name}")
+
+    return jsonify({
+        'success': True,
+        'task_id': operation_name,
+        'provider': 'veo',
+        'status': 'processing',
+        'message': 'Video generation started with Google Veo 3.1'
+    })
+
+
+def generate_video_runway(prompt_text, prompt_image, duration, aspect_ratio):
+    """Generate video using Runway API (fallback)"""
+    if not RUNWAY_API_KEY:
+        return jsonify({'success': False, 'error': 'Runway API key not configured'}), 500
+
+    headers = {
+        'Authorization': f'Bearer {RUNWAY_API_KEY}',
+        'Content-Type': 'application/json',
+        'X-Runway-Version': '2024-11-06'
+    }
+
+    # Add image if provided (for image-to-video)
+    if prompt_image:
+        payload = {
+            'model': 'gen4_turbo',
+            'promptText': prompt_text,
+            'promptImage': prompt_image,
+            'ratio': aspect_ratio,
+            'duration': duration
+        }
+        endpoint = f'{RUNWAY_API_BASE}/image_to_video'
+    else:
+        payload = {
+            'model': 'veo3.1',
+            'promptText': prompt_text,
+            'ratio': aspect_ratio,
+            'duration': 8
+        }
+        endpoint = f'{RUNWAY_API_BASE}/text_to_video'
+
+    print(f"[API] Calling Runway API: {endpoint}")
+    print(f"[API] Payload: {json.dumps(payload, indent=2)}")
+
+    response = requests.post(endpoint, headers=headers, json=payload)
+
+    if response.status_code != 200 and response.status_code != 201:
+        error_msg = response.text
+        print(f"[API ERROR] Runway API error: {error_msg}")
+        return jsonify({'success': False, 'error': f'Runway API error: {error_msg}'}), 500
+
+    task_data = response.json()
+    task_id = task_data.get('id')
+
+    print(f"[API] Runway Task created: {task_id}")
+
+    return jsonify({
+        'success': True,
+        'task_id': task_id,
+        'provider': 'runway',
+        'status': 'processing',
+        'message': 'Video generation started with Runway'
+    })
+
+
+@app.route('/api/video-status/<path:task_id>', methods=['GET'])
+def get_video_status(task_id):
+    """Check status of a video generation task (Veo or Runway)"""
+    try:
+        provider = request.args.get('provider', 'veo')
+
+        if provider == 'veo':
+            return get_veo_status(task_id)
+        else:
+            return get_runway_status(task_id)
+
+    except Exception as e:
+        print(f"[API ERROR] {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+def get_veo_status(operation_name):
+    """Check status of a Google Veo video generation task"""
+    if not GOOGLE_VEO_API_KEY:
+        return jsonify({'success': False, 'error': 'Google Veo API key not configured'}), 500
+
+    # Poll the operation status
+    endpoint = f'{VEO_API_BASE}/{operation_name}'
+
+    headers = {
+        'x-goog-api-key': GOOGLE_VEO_API_KEY
+    }
+
+    response = requests.get(endpoint, headers=headers)
+
+    if response.status_code != 200:
+        return jsonify({'success': False, 'error': f'Failed to get Veo task status: {response.text}'}), 500
+
+    task_data = response.json()
+    done = task_data.get('done', False)
+
+    result = {
+        'success': True,
+        'task_id': operation_name,
+        'provider': 'veo'
+    }
+
+    if done:
+        # Check for error
+        if 'error' in task_data:
+            result['status'] = 'FAILED'
+            result['error'] = task_data['error'].get('message', 'Unknown error')
+            print(f"[API] Veo video generation failed: {result['error']}")
+        else:
+            result['status'] = 'SUCCEEDED'
+            # Extract video URL from response
+            response_data = task_data.get('response', {})
+            generated_samples = response_data.get('generateVideoResponse', {}).get('generatedSamples', [])
+            if generated_samples:
+                video_uri = generated_samples[0].get('video', {}).get('uri', '')
+                # The Veo URL requires auth, so we proxy it through our server
+                # Extract the file ID from the URI and create a proxy URL
+                if 'files/' in video_uri:
+                    file_id = video_uri.split('files/')[1].split(':')[0]
+                    result['video_url'] = f'/api/veo-video/{file_id}'
+                    result['original_url'] = video_uri
+                else:
+                    result['video_url'] = video_uri
+            print(f"[API] Veo video generation complete: {result.get('video_url', 'no URL')}")
+    else:
+        result['status'] = 'RUNNING'
+        # Veo doesn't provide progress percentage, estimate based on time
+        metadata = task_data.get('metadata', {})
+        result['progress'] = 50  # Placeholder
+        print(f"[API] Veo video generation in progress...")
+
+    return jsonify(result)
+
+
+@app.route('/api/veo-video/<file_id>')
+def proxy_veo_video(file_id):
+    """Proxy endpoint to serve Veo-generated videos (requires API key auth)"""
+    try:
+        if not GOOGLE_VEO_API_KEY:
+            return jsonify({'success': False, 'error': 'Google Veo API key not configured'}), 500
+
+        # Build the download URL
+        download_url = f'{VEO_API_BASE}/files/{file_id}:download?alt=media'
+
+        headers = {
+            'x-goog-api-key': GOOGLE_VEO_API_KEY
+        }
+
+        print(f"[API] Proxying Veo video: {download_url}")
+
+        # Stream the video from Google
+        response = requests.get(download_url, headers=headers, stream=True)
+
+        if response.status_code != 200:
+            print(f"[API ERROR] Failed to download Veo video: {response.status_code} - {response.text[:200]}")
+            return jsonify({'success': False, 'error': f'Failed to download video: {response.status_code}'}), 500
+
+        # Get content type from response
+        content_type = response.headers.get('Content-Type', 'video/mp4')
+
+        print(f"[API] Streaming Veo video, Content-Type: {content_type}")
+
+        # Stream the response to the client
+        from flask import Response
+        return Response(
+            response.iter_content(chunk_size=8192),
+            content_type=content_type,
+            headers={
+                'Content-Disposition': f'inline; filename="veo_video_{file_id}.mp4"',
+                'Cache-Control': 'public, max-age=3600'
+            }
+        )
+
+    except Exception as e:
+        print(f"[API ERROR] Veo video proxy error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+def get_runway_status(task_id):
+    """Check status of a Runway video generation task"""
+    if not RUNWAY_API_KEY:
+        return jsonify({'success': False, 'error': 'Runway API key not configured'}), 500
+
+    headers = {
+        'Authorization': f'Bearer {RUNWAY_API_KEY}',
+        'X-Runway-Version': '2024-11-06'
+    }
+
+    response = requests.get(f'{RUNWAY_API_BASE}/tasks/{task_id}', headers=headers)
+
+    if response.status_code != 200:
+        return jsonify({'success': False, 'error': f'Failed to get task status: {response.text}'}), 500
+
+    task_data = response.json()
+    status = task_data.get('status', 'unknown')
+
+    result = {
+        'success': True,
+        'task_id': task_id,
+        'status': status,
+        'provider': 'runway'
+    }
+
+    # If complete, include the output URL
+    if status == 'SUCCEEDED':
+        output = task_data.get('output', [])
+        if output and len(output) > 0:
+            result['video_url'] = output[0]
+        print(f"[API] Runway video generation complete: {result.get('video_url', 'no URL')}")
+    elif status == 'FAILED':
+        result['error'] = task_data.get('failure', 'Unknown error')
+        print(f"[API] Runway video generation failed: {result['error']}")
+    else:
+        # Still processing
+        progress = task_data.get('progress', 0)
+        result['progress'] = progress
+        print(f"[API] Runway video generation progress: {progress}%")
+
+    return jsonify(result)
+
+
+@app.route('/api/generate-video-sync', methods=['POST'])
+def generate_video_sync():
+    """Generate video and wait for completion (synchronous)"""
+    try:
+        data = request.json
+        prompt_text = data.get('prompt', '')
+        prompt_image = data.get('image')
+        duration = int(data.get('duration', 6))  # Must be int: 4, 6, or 8 for veo3
+        aspect_ratio = data.get('ratio', '720:1280')
+
+        print(f"\n[API] Generate Video (Sync) Request")
+        print(f"  Duration: {duration}s")
+        print(f"  Ratio: {aspect_ratio}")
+
+        if not RUNWAY_API_KEY:
+            return jsonify({'success': False, 'error': 'Runway API key not configured'}), 500
+
+        headers = {
+            'Authorization': f'Bearer {RUNWAY_API_KEY}',
+            'Content-Type': 'application/json',
+            'X-Runway-Version': '2024-11-06'
+        }
+
+        if prompt_image:
+            # Image-to-video: supports gen4_turbo, gen3a_turbo, veo3, veo3.1, veo3.1_fast
+            payload = {
+                'model': 'gen4_turbo',
+                'promptText': prompt_text,
+                'promptImage': prompt_image,
+                'ratio': aspect_ratio,
+                'duration': duration
+            }
+            endpoint = f'{RUNWAY_API_BASE}/image_to_video'
+        else:
+            # Text-to-video: only supports veo3, veo3.1, veo3.1_fast
+            # Using veo3.1 with duration=8 (must be 4, 6, or 8)
+            payload = {
+                'model': 'veo3.1',
+                'promptText': prompt_text,
+                'ratio': aspect_ratio,
+                'duration': 8
+            }
+            endpoint = f'{RUNWAY_API_BASE}/text_to_video'
+
+        # Create the task
+        response = requests.post(endpoint, headers=headers, json=payload)
+
+        if response.status_code not in [200, 201]:
+            return jsonify({'success': False, 'error': f'Runway API error: {response.text}'}), 500
+
+        task_data = response.json()
+        task_id = task_data.get('id')
+        print(f"[API] Task created: {task_id}, polling for completion...")
+
+        # Poll for completion (max 5 minutes)
+        max_attempts = 60
+        for attempt in range(max_attempts):
+            time.sleep(5)  # Wait 5 seconds between polls
+
+            status_response = requests.get(f'{RUNWAY_API_BASE}/tasks/{task_id}', headers=headers)
+
+            if status_response.status_code != 200:
+                continue
+
+            status_data = status_response.json()
+            status = status_data.get('status', 'unknown')
+
+            if status == 'SUCCEEDED':
+                output = status_data.get('output', [])
+                video_url = output[0] if output else None
+                print(f"[API] Video complete: {video_url}")
+                return jsonify({
+                    'success': True,
+                    'video_url': video_url,
+                    'task_id': task_id
+                })
+            elif status == 'FAILED':
+                error = status_data.get('failure', 'Unknown error')
+                print(f"[API] Video failed: {error}")
+                return jsonify({'success': False, 'error': error}), 500
+
+            progress = status_data.get('progress', 0)
+            print(f"[API] Progress: {progress}% (attempt {attempt + 1}/{max_attempts})")
+
+        return jsonify({'success': False, 'error': 'Video generation timed out'}), 500
+
+    except Exception as e:
+        print(f"[API ERROR] {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 if __name__ == '__main__':
+    import os
+    port = int(os.environ.get('PORT', 3000))
+
     print("=" * 80)
     print("BriteCo Ad Generator - Python API Server")
     print("=" * 80)
     print(f"\nStarting server...")
-    print(f"URL: http://localhost:3000")
+    print(f"URL: http://localhost:{port}")
     print(f"\nAPIs:")
     print(f"  [OK] Claude (claude-sonnet-4-5-20250929)")
     print(f"  [OK] OpenAI (gpt-4o)")
     print(f"  [OK] Google Gemini (gemini-2.5-flash-image / Nano Banana)")
+    print(f"  [OK] Google Veo 3.1 (video generation - DEFAULT)" if GOOGLE_VEO_API_KEY else "  [--] Google Veo (not configured)")
+    print(f"  [OK] Runway (video generation - fallback)" if RUNWAY_API_KEY else "  [--] Runway (not configured)")
     print(f"\nPress Ctrl+C to stop")
     print("=" * 80)
     print()
 
-    app.run(debug=True, port=3000, host='0.0.0.0')
+    # Use PORT from environment (for Cloud Run) or default to 3000 for local dev
+    app.run(debug=os.environ.get('FLASK_DEBUG', 'true').lower() == 'true', port=port, host='0.0.0.0')

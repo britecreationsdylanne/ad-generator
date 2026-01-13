@@ -294,6 +294,13 @@
                             Standard Pin (2:3), Square, Long Pin
                         </p>
                     </div>
+                    <div class="platform-card" onclick="togglePlatform('general', this)">
+                        <h3><svg style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px;" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="2" stroke="#31D7CA" stroke-width="2" fill="none"/><circle cx="8.5" cy="8.5" r="1.5" fill="#31D7CA"/><path d="M21 15l-5-5-3 3-4-4-6 6" stroke="#31D7CA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>General Image</h3>
+                        <p style="color: #7DA3AF; margin-top: 0.5rem;">Custom Creation</p>
+                        <p style="color: #A9C1CB; font-size: 0.9rem; margin-top: 0.5rem;">
+                            2 Variations (9:16 Portrait)
+                        </p>
+                    </div>
                 </div>
 
                 <button class="btn-primary" id="continueBtn" onclick="nextStep()" disabled>
@@ -314,6 +321,7 @@
                         <option value="meta">Meta</option>
                         <option value="reddit">Reddit</option>
                         <option value="pinterest">Pinterest</option>
+                        <option value="general">General Image</option>
                     </select>
                 </div>
             </div>
@@ -607,7 +615,8 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
 
             <div class="button-group" style="margin-top: 2rem;">
                 <button class="btn-secondary" onclick="backToTextOverlay()">← Back to Text</button>
-                <button class="btn-primary" onclick="goToAdCopy()">Generate Ad Copy →</button>
+                <button class="btn-secondary" onclick="goToPreviewSkipCopy()" id="skipCopyBtn" style="display: none;">Preview & Download</button>
+                <button class="btn-primary" onclick="goToNextAfterLogo()" id="afterLogoBtn">Generate Ad Copy →</button>
             </div>
         </div>
 
@@ -652,7 +661,46 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             </div>
         </div>
 
-        <!-- Step 9: GIF Creation -->
+        <!-- Step 9: General Image Preview (for General Image platform only) -->
+        <div id="stepGeneralPreview" class="card hidden">
+            <h1>Preview & Download</h1>
+            <p style="color: #7DA3AF; font-size: 1.1rem; margin-bottom: 2rem;">
+                Your images are ready! Download them or create animated versions.
+            </p>
+
+            <div id="generalPreviewGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 2rem; margin-bottom: 2rem;"></div>
+
+            <div class="button-group" style="margin-top: 2rem;">
+                <button class="btn-secondary" onclick="backToLogoFromGeneral()">← Back to Logos</button>
+                <button class="btn-secondary" onclick="downloadAllGeneralImages()">Download All Images</button>
+                <button class="btn-primary" onclick="goToGifFromGeneral()">Create Animated GIFs →</button>
+            </div>
+        </div>
+
+        <!-- Preview & Download (Skip Copy option for Meta/Reddit/Pinterest) -->
+        <div id="stepPreview" class="card hidden">
+            <h1>Preview & Download</h1>
+            <p style="color: #7DA3AF; font-size: 1.1rem; margin-bottom: 2rem;">
+                Your images are ready! Download them, create animated versions, or go back to add ad copy.
+            </p>
+
+            <div id="previewGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 2rem; margin-bottom: 2rem;"></div>
+
+            <div class="button-group" style="margin-top: 2rem;">
+                <button class="btn-secondary" onclick="backToLogoFromPreview()">← Back to Logos</button>
+                <button class="btn-secondary" onclick="downloadAllPreviewImages()">Download All Images</button>
+                <button class="btn-primary" onclick="goToGifFromPreview()">Create Animated GIFs →</button>
+            </div>
+
+            <div style="margin-top: 2rem; padding: 1.5rem; background: #F4F7FC; border-radius: 12px; text-align: center;">
+                <p style="color: #7DA3AF; margin-bottom: 1rem;">Want to add ad copy (headlines, body text, CTAs)?</p>
+                <button class="btn-secondary" onclick="goToAdCopyFromPreview()" style="background: #31D7CA; color: white; border: none;">
+                    ✍️ Generate Ad Copy
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 10: GIF Creation -->
         <div id="step9" class="card hidden">
             <h1>🎬 Create Animated GIFs</h1>
             <p style="color: #7DA3AF; font-size: 1.1rem; margin-bottom: 2rem;">Select ads to animate and customize frames</p>
@@ -660,7 +708,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             <div id="gifSelectionGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;"></div>
 
             <div class="button-group" style="margin-top: 2rem;">
-                <button class="btn-secondary" onclick="backToFinalReview()">← Back to Review</button>
+                <button class="btn-secondary" onclick="backToFinalReview()" id="backFromGifBtn">← Back to Review</button>
                 <button class="btn-primary" onclick="generateSelectedGifs()" id="generate-gifs-btn">✨ Generate Selected GIFs</button>
             </div>
         </div>
@@ -803,11 +851,28 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 </div>
             </div>
 
-            <div style="margin-top: 2rem; padding-top: 2rem; border-top: 2px solid #E1E7EF; text-align: center;">
-                <button onclick="regenerateGifWithOverlays()" class="btn-primary" style="padding: 1rem 2rem; font-size: 1.1rem;">
-                    ✨ Regenerate GIF with Text Overlays
-                </button>
-                <p style="color: #7DA3AF; font-size: 0.85rem; margin-top: 0.5rem;">This will create a new GIF with your text overlays applied</p>
+            <div style="margin-top: 2rem; padding-top: 2rem; border-top: 2px solid #E1E7EF;">
+                <!-- Animation Speed Control -->
+                <div style="max-width: 400px; margin: 0 auto 1.5rem auto; text-align: left;">
+                    <label style="display: block; font-size: 1rem; font-weight: 600; color: #272D3F; margin-bottom: 0.5rem;">
+                        Animation Speed: <span id="animationSpeedDisplay">2</span> FPS
+                    </label>
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <span style="font-size: 0.85rem; color: #7DA3AF;">Slow</span>
+                        <input type="range" id="animationSpeedSlider" min="1" max="5" value="2" step="1"
+                               oninput="updateAnimationSpeed(this.value)"
+                               style="flex: 1;">
+                        <span style="font-size: 0.85rem; color: #7DA3AF;">Fast</span>
+                    </div>
+                    <p id="animationDurationDisplay" style="font-size: 0.8rem; color: #31D7CA; margin-top: 0.5rem; text-align: center;"></p>
+                </div>
+
+                <div style="text-align: center;">
+                    <button onclick="regenerateGifWithOverlays()" class="btn-primary" style="padding: 1rem 2rem; font-size: 1.1rem;">
+                        ✨ Regenerate GIF with Text Overlays
+                    </button>
+                    <p style="color: #7DA3AF; font-size: 0.85rem; margin-top: 0.5rem;">This will create a new GIF with your text overlays applied</p>
+                </div>
             </div>
         </div>
     </div>
@@ -834,21 +899,22 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
 
         // Available logos
         const availableLogos = [
-            { name: 'BriteCo Logo 1', url: 'http://localhost:3000/logos/Logo-BriteCo-Solid-Color-01.png' },
-            { name: 'BriteCo Logo 2', url: 'http://localhost:3000/logos/Logo-BriteCo-Solid-Color-02.png' },
-            { name: 'BriteCo Logo 3', url: 'http://localhost:3000/logos/Logo-BriteCo-Solid-Color-03.png' },
-            { name: 'BriteCo Logo 4', url: 'http://localhost:3000/logos/Logo-BriteCo-Solid-Color-04.png' },
-            { name: 'Emblem 1', url: 'http://localhost:3000/logos/Emblem-01.png' },
-            { name: 'Emblem 2', url: 'http://localhost:3000/logos/Emblem-02.png' },
-            { name: 'White & Teal', url: 'http://localhost:3000/logos/White and Teal-Jewelry-Watch-Insurance-RGB.png' },
-            { name: 'Blue & Teal', url: 'http://localhost:3000/logos/Blue and Teal-Jewelry-Watch-Insurance-RGB.png' },
-            { name: 'Blue & White', url: 'http://localhost:3000/logos/Blue and white-Jewelry-Watch-Insurance-RGB.png' },
-            { name: 'Blue RGB', url: 'http://localhost:3000/logos/Blue-Jewelry-Watch-Insurance-RGB.png' }
+            { name: 'BriteCo Logo 1', url: '/Logo-BriteCo-Solid-Color-01.png' },
+            { name: 'BriteCo Logo 2', url: '/Logo-BriteCo-Solid-Color-02.png' },
+            { name: 'BriteCo Logo 3', url: '/Logo-BriteCo-Solid-Color-03.png' },
+            { name: 'BriteCo Logo 4', url: '/Logo-BriteCo-Solid-Color-04.png' },
+            { name: 'Emblem 1', url: '/Emblem-01.png' },
+            { name: 'Emblem 2', url: '/Emblem-02.png' },
+            { name: 'White & Teal', url: '/White and Teal-Jewelry-Watch-Insurance-RGB.png' },
+            { name: 'Blue & Teal', url: '/Blue and Teal-Jewelry-Watch-Insurance-RGB.png' },
+            { name: 'Blue & White', url: '/Blue and white-Jewelry-Watch-Insurance-RGB.png' },
+            { name: 'Blue RGB', url: '/Blue-Jewelry-Watch-Insurance-RGB.png' }
         ];
 
         // Pre-loaded BriteCo logo - loaded from file (deprecated, using availableLogos now)
         let uploadedLogo = null;
         let currentStep = 1;
+        let skippedCopyFlow = false; // Track if user skipped the ad copy step
         let generatedImages = []; // Store generated images for use across steps
         let textOverlays = {}; // Store text overlay settings for each image
         let logoSettings = {}; // Store logo position (x, y), scale, and selectedLogoIndex for each image
@@ -858,9 +924,15 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             const platformMap = {
                 'meta': 'Meta',
                 'reddit': 'Reddit',
-                'pinterest': 'Pinterest'
+                'pinterest': 'Pinterest',
+                'general': 'General Image'
             };
             return platformMap[platform.toLowerCase()] || platform;
+        }
+
+        // Check if only General Image is selected (skip text generation)
+        function isGeneralImageOnly() {
+            return selectedPlatforms.size === 1 && selectedPlatforms.has('general');
         }
 
         function togglePlatform(platform, element) {
@@ -955,7 +1027,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 document.getElementById('loadingText').textContent = 'Generating Image Prompts';
                 document.getElementById('loadingStatus').textContent = `This may take a minute. ${providerName} is creating your custom image prompts.`;
 
-                const response = await fetch('http://localhost:3000/api/generate-prompt', {
+                const response = await fetch('/api/generate-prompt', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1006,7 +1078,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             document.getElementById('generatePromptBtn').textContent = 'Generating...';
 
             try {
-                const response = await fetch('http://localhost:3000/api/generate-prompt', {
+                const response = await fetch('/api/generate-prompt', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1051,7 +1123,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             document.getElementById('regeneratePromptBtn').textContent = 'Regenerating...';
 
             try {
-                const response = await fetch('http://localhost:3000/api/generate-prompt', {
+                const response = await fetch('/api/generate-prompt', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1095,7 +1167,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             document.getElementById('generateImagesBtn').textContent = 'Generating Images...';
 
             try {
-                const response = await fetch('http://localhost:3000/api/generate-images', {
+                const response = await fetch('/api/generate-images', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1213,6 +1285,20 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             document.getElementById('step6').classList.remove('hidden');
             currentStep = 6;
             window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // Update buttons based on platform type
+            const afterLogoBtn = document.getElementById('afterLogoBtn');
+            const skipCopyBtn = document.getElementById('skipCopyBtn');
+
+            if (isGeneralImageOnly()) {
+                // General Image: only show Preview & Download as primary
+                if (afterLogoBtn) afterLogoBtn.textContent = 'Preview & Download →';
+                if (skipCopyBtn) skipCopyBtn.style.display = 'none';
+            } else {
+                // Other platforms: show both options
+                if (afterLogoBtn) afterLogoBtn.textContent = 'Generate Ad Copy →';
+                if (skipCopyBtn) skipCopyBtn.style.display = 'inline-block';
+            }
         }
 
         function backToTextOverlay() {
@@ -1447,6 +1533,9 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                             </p>
                             <h4 style="margin-top: 1rem; color: #272D3F;">${capitalizePlatform(img.platform)} - ${img.size}</h4>
                             <p style="color: #7DA3AF; font-size: 0.9rem;">${img.width}x${img.height}</p>
+                            <button onclick="downloadAdImage(${index})" class="btn-secondary" style="width: 100%; margin-top: 1rem;">
+                                Download Ad
+                            </button>
                         </div>
 
                         <!-- Logo Controls -->
@@ -1617,12 +1706,328 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             }
         }
 
+        function goToNextAfterLogo() {
+            // For General Image only, skip ad copy and go directly to final preview
+            if (isGeneralImageOnly()) {
+                goToGeneralImagePreview();
+            } else {
+                goToAdCopy();
+            }
+        }
+
+        // Skip copy and go directly to preview (for Meta, Reddit, Pinterest)
+        function goToPreviewSkipCopy() {
+            skippedCopyFlow = true; // Track that user skipped copy
+            renderPreviewPage();
+            document.getElementById('step6').classList.add('hidden');
+            document.getElementById('stepPreview').classList.remove('hidden');
+            currentStep = 'preview';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function renderPreviewPage() {
+            const previewGrid = document.getElementById('previewGrid');
+            previewGrid.innerHTML = '';
+
+            generatedImages.forEach((img, index) => {
+                const overlay = textOverlays[index] || {};
+                const logo = logoSettings[index] || {};
+
+                const card = document.createElement('div');
+                card.style.cssText = 'border: 2px solid #E1E7EF; border-radius: 12px; padding: 1.5rem; background: white;';
+
+                card.innerHTML = `
+                    <h3 style="color: #272D3F; margin-bottom: 1rem;">${capitalizePlatform(img.platform)} - ${img.size}</h3>
+                    <div style="position: relative; background: #F4F7FC; border-radius: 12px; padding: 1rem; margin-bottom: 1rem;">
+                        <canvas id="preview-canvas-${index}" style="width: 100%; border-radius: 8px; display: block;"></canvas>
+                    </div>
+                    <p style="color: #7DA3AF; font-size: 0.9rem; margin-bottom: 1rem;">${img.width}x${img.height}</p>
+                    <button onclick="downloadPreviewImage(${index})" class="btn-primary" style="width: 100%;">
+                        Download Image
+                    </button>
+                `;
+
+                previewGrid.appendChild(card);
+
+                // Render canvas after adding to DOM
+                setTimeout(() => renderPreviewCanvas(index), 50);
+            });
+        }
+
+        function renderPreviewCanvas(index) {
+            const canvas = document.getElementById(`preview-canvas-${index}`);
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            const img = generatedImages[index];
+            const overlay = textOverlays[index] || {};
+            const logo = logoSettings[index] || {};
+
+            const image = new Image();
+            image.crossOrigin = 'anonymous';
+            image.onload = function() {
+                canvas.width = image.width;
+                canvas.height = image.height;
+                ctx.drawImage(image, 0, 0);
+
+                // Draw text overlay if present
+                if (overlay.text) {
+                    const fontSize = Math.round(overlay.fontSize * (image.width / 400));
+                    ctx.font = `bold ${fontSize}px ${overlay.fontFamily || 'Gilroy'}, Arial, sans-serif`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+
+                    const x = (overlay.x / 100) * canvas.width;
+                    const y = (overlay.y / 100) * canvas.height;
+
+                    // Background
+                    if (overlay.bgColor && overlay.bgColor !== 'none') {
+                        const metrics = ctx.measureText(overlay.text);
+                        const textWidth = metrics.width;
+                        const padding = 30;
+                        const bgHeight = fontSize + padding;
+
+                        ctx.fillStyle = overlay.bgColor;
+                        ctx.fillRect(x - textWidth / 2 - padding, y - bgHeight / 2, textWidth + padding * 2, bgHeight);
+                    }
+
+                    // Text
+                    ctx.fillStyle = overlay.textColor || '#FFFFFF';
+                    ctx.fillText(overlay.text, x, y);
+                }
+
+                // Draw logo if enabled
+                const selectedLogoIndex = logo.selectedLogoIndex || 0;
+                if (logo.enabled && availableLogos[selectedLogoIndex]) {
+                    const logoImg = new Image();
+                    logoImg.crossOrigin = 'anonymous';
+                    logoImg.onload = function() {
+                        const logoScale = (logo.scale || 15) / 100;
+                        const logoWidth = canvas.width * logoScale;
+                        const logoHeight = (logoImg.height / logoImg.width) * logoWidth;
+
+                        let logoX, logoY;
+                        if (logo.x !== undefined && logo.y !== undefined) {
+                            logoX = (logo.x / 100) * canvas.width - logoWidth / 2;
+                            logoY = (logo.y / 100) * canvas.height - logoHeight / 2;
+                        } else {
+                            logoX = canvas.width - logoWidth - 20;
+                            logoY = canvas.height - logoHeight - 20;
+                        }
+
+                        ctx.drawImage(logoImg, logoX, logoY, logoWidth, logoHeight);
+                    };
+                    logoImg.src = availableLogos[selectedLogoIndex].url;
+                }
+            };
+            image.src = img.url;
+        }
+
+        async function downloadPreviewImage(index) {
+            const canvas = document.getElementById(`preview-canvas-${index}`);
+            if (!canvas) return;
+
+            const img = generatedImages[index];
+            const link = document.createElement('a');
+            link.download = `${capitalizePlatform(img.platform)}_${img.size.replace(/\s+/g, '_')}_${img.width}x${img.height}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        function backToLogoFromPreview() {
+            document.getElementById('stepPreview').classList.add('hidden');
+            document.getElementById('step6').classList.remove('hidden');
+            currentStep = 6;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        async function downloadAllPreviewImages() {
+            for (let i = 0; i < generatedImages.length; i++) {
+                await downloadPreviewImage(i);
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
+        }
+
+        function goToGifFromPreview() {
+            renderGifSelection();
+            document.getElementById('stepPreview').classList.add('hidden');
+            document.getElementById('step9').classList.remove('hidden');
+            currentStep = 10;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // Update back button text
+            const backBtn = document.getElementById('backFromGifBtn');
+            if (backBtn) {
+                backBtn.textContent = '← Back to Preview';
+            }
+        }
+
+        function goToAdCopyFromPreview() {
+            renderAdCopyPage();
+            document.getElementById('stepPreview').classList.add('hidden');
+            document.getElementById('step7').classList.remove('hidden');
+            currentStep = 7;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
         function goToAdCopy() {
             renderAdCopyPage();
             document.getElementById('step6').classList.add('hidden');
             document.getElementById('step7').classList.remove('hidden');
             currentStep = 7;
             window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function goToGeneralImagePreview() {
+            renderGeneralImagePreview();
+            document.getElementById('step6').classList.add('hidden');
+            document.getElementById('stepGeneralPreview').classList.remove('hidden');
+            currentStep = 9;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function renderGeneralImagePreview() {
+            const previewGrid = document.getElementById('generalPreviewGrid');
+            previewGrid.innerHTML = '';
+
+            generatedImages.forEach((img, index) => {
+                const overlay = textOverlays[index] || {};
+                const logo = logoSettings[index] || {};
+                const selectedLogoIndex = logo.selectedLogoIndex || 0;
+
+                const card = document.createElement('div');
+                card.style.cssText = 'border: 2px solid #E1E7EF; border-radius: 12px; padding: 1.5rem; background: white;';
+
+                card.innerHTML = `
+                    <h3 style="color: #272D3F; margin-bottom: 1rem;">${capitalizePlatform(img.platform)} - ${img.size}</h3>
+                    <div style="position: relative; background: #F4F7FC; border-radius: 12px; padding: 1rem; margin-bottom: 1rem;">
+                        <canvas id="general-preview-canvas-${index}" style="width: 100%; border-radius: 8px; display: block;"></canvas>
+                    </div>
+                    <p style="color: #7DA3AF; font-size: 0.9rem; margin-bottom: 1rem;">${img.width}x${img.height}</p>
+                    <button onclick="downloadGeneralImage(${index})" class="btn-primary" style="width: 100%;">
+                        Download Image
+                    </button>
+                `;
+
+                previewGrid.appendChild(card);
+
+                // Render canvas after adding to DOM
+                setTimeout(() => renderGeneralPreviewCanvas(index), 50);
+            });
+        }
+
+        function renderGeneralPreviewCanvas(index) {
+            const canvas = document.getElementById(`general-preview-canvas-${index}`);
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            const img = generatedImages[index];
+            const overlay = textOverlays[index] || {};
+            const logo = logoSettings[index] || {};
+
+            const image = new Image();
+            image.crossOrigin = 'anonymous';
+            image.onload = function() {
+                canvas.width = image.width;
+                canvas.height = image.height;
+                ctx.drawImage(image, 0, 0);
+
+                // Draw text overlay if present
+                if (overlay.text) {
+                    const fontSize = Math.round(overlay.size * (image.width / 400));
+                    ctx.font = `bold ${fontSize}px ${overlay.font || 'Gilroy, Arial, sans-serif'}`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+
+                    let x = canvas.width / 2;
+                    let y;
+                    if (overlay.position === 'top') {
+                        y = fontSize + 40;
+                    } else if (overlay.position === 'center') {
+                        y = canvas.height / 2;
+                    } else {
+                        y = canvas.height - fontSize - 40;
+                    }
+
+                    // Background
+                    const metrics = ctx.measureText(overlay.text);
+                    const textWidth = metrics.width;
+                    const padding = 30;
+                    const bgHeight = fontSize + padding;
+
+                    ctx.fillStyle = overlay.bgColor || 'rgba(0, 0, 0, 0.7)';
+                    ctx.fillRect(x - textWidth / 2 - padding, y - bgHeight / 2, textWidth + padding * 2, bgHeight);
+
+                    // Text
+                    ctx.fillStyle = overlay.color || '#FFFFFF';
+                    ctx.fillText(overlay.text, x, y);
+                }
+
+                // Draw logo if enabled
+                const selectedLogoIndex = logo.selectedLogoIndex || 0;
+                if (logo.enabled && availableLogos[selectedLogoIndex]) {
+                    const logoImg = new Image();
+                    logoImg.crossOrigin = 'anonymous';
+                    logoImg.onload = function() {
+                        const logoScale = logo.scale || 0.15;
+                        const logoWidth = canvas.width * logoScale;
+                        const logoHeight = (logoImg.height / logoImg.width) * logoWidth;
+
+                        let logoX, logoY;
+                        if (logo.x !== undefined && logo.y !== undefined) {
+                            logoX = (logo.x / 100) * canvas.width - logoWidth / 2;
+                            logoY = (logo.y / 100) * canvas.height - logoHeight / 2;
+                        } else {
+                            logoX = canvas.width - logoWidth - 20;
+                            logoY = canvas.height - logoHeight - 20;
+                        }
+
+                        ctx.drawImage(logoImg, logoX, logoY, logoWidth, logoHeight);
+                    };
+                    logoImg.src = availableLogos[selectedLogoIndex].url;
+                }
+            };
+            image.src = img.url;
+        }
+
+        async function downloadGeneralImage(index) {
+            const canvas = document.getElementById(`general-preview-canvas-${index}`);
+            if (!canvas) return;
+
+            const img = generatedImages[index];
+            const link = document.createElement('a');
+            link.download = `${capitalizePlatform(img.platform)}_${img.size.replace(/\s+/g, '_')}_${img.width}x${img.height}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        function backToLogoFromGeneral() {
+            document.getElementById('stepGeneralPreview').classList.add('hidden');
+            document.getElementById('step6').classList.remove('hidden');
+            currentStep = 6;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        async function downloadAllGeneralImages() {
+            for (let i = 0; i < generatedImages.length; i++) {
+                await downloadGeneralImage(i);
+                // Small delay between downloads
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
+        }
+
+        function goToGifFromGeneral() {
+            renderGifSelection();
+            document.getElementById('stepGeneralPreview').classList.add('hidden');
+            document.getElementById('step9').classList.remove('hidden');
+            currentStep = 10;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // Update back button text
+            const backBtn = document.getElementById('backFromGifBtn');
+            if (backBtn) {
+                backBtn.textContent = '← Back to Preview';
+            }
         }
 
         function backToLogoPlacement() {
@@ -1730,7 +2135,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                     const variations = [];
                     for (let i = 0; i < 3; i++) {
                         console.log(`[DEBUG] API Call ${i + 1}/3 - Platform: "${capitalizePlatform(img.platform)}", SizeName: "${baseSizeName}"`);
-                        const response = await fetch('http://localhost:3000/api/generate-ad-copy', {
+                        const response = await fetch('/api/generate-ad-copy', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -1980,7 +2385,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 // Generate 3 new variations for headline only
                 const newVariations = [];
                 for (let i = 0; i < 3; i++) {
-                    const response = await fetch('http://localhost:3000/api/generate-ad-copy', {
+                    const response = await fetch('/api/generate-ad-copy', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -2033,7 +2438,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 // Generate 3 new variations for body only
                 const newVariations = [];
                 for (let i = 0; i < 3; i++) {
-                    const response = await fetch('http://localhost:3000/api/generate-ad-copy', {
+                    const response = await fetch('/api/generate-ad-copy', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -2086,7 +2491,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 // Generate 3 new variations for description only
                 const newVariations = [];
                 for (let i = 0; i < 3; i++) {
-                    const response = await fetch('http://localhost:3000/api/generate-ad-copy', {
+                    const response = await fetch('/api/generate-ad-copy', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -2334,6 +2739,11 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             URL.revokeObjectURL(url);
         }
 
+        // Download ad image (alias for downloadFinalImage - used in logo placement step)
+        async function downloadAdImage(index) {
+            await downloadFinalImage(index);
+        }
+
         async function downloadFinalImage(index) {
             const img = generatedImages[index];
             const overlay = textOverlays[index];
@@ -2499,12 +2909,30 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             currentStep = 9;
             window.scrollTo({ top: 0, behavior: 'smooth' });
             renderGifSelection();
+
+            // Update back button text
+            const backBtn = document.getElementById('backFromGifBtn');
+            if (backBtn) {
+                backBtn.textContent = '← Back to Review';
+            }
         }
 
         function backToFinalReview() {
             document.getElementById('step9').classList.add('hidden');
-            document.getElementById('step8').classList.remove('hidden');
-            currentStep = 8;
+            document.getElementById('step10').classList.add('hidden');
+
+            // For General Image flow, go back to General Preview
+            if (isGeneralImageOnly()) {
+                document.getElementById('stepGeneralPreview').classList.remove('hidden');
+                currentStep = 9;
+            } else if (skippedCopyFlow) {
+                // User skipped copy, go back to preview page
+                document.getElementById('stepPreview').classList.remove('hidden');
+                currentStep = 'preview';
+            } else {
+                document.getElementById('step8').classList.remove('hidden');
+                currentStep = 8;
+            }
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
@@ -2519,7 +2947,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 if (!gifSettings[index]) {
                     gifSettings[index] = {
                         frameCount: 5,
-                        duration: 5
+                        fps: 2  // 2 frames per second by default
                     };
                 }
 
@@ -2548,23 +2976,16 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                     <div class="gif-settings-${index}" style="display: ${isSelected ? 'block' : 'none'}; padding-top: 1rem; border-top: 1px solid #E1E7EF;">
                         <label style="display: block; font-size: 0.85rem; color: #7DA3AF; margin-bottom: 0.25rem;">Frame Count:</label>
                         <select id="frame-count-${index}" onchange="updateGifSetting(${index}, 'frameCount', this.value)"
-                                style="width: 100%; padding: 0.5rem; border: 1px solid #E1E7EF; border-radius: 6px; margin-bottom: 0.75rem;">
+                                style="width: 100%; padding: 0.5rem; border: 1px solid #E1E7EF; border-radius: 6px;">
                             <option value="3" ${gifSettings[index].frameCount === 3 ? 'selected' : ''}>3 frames</option>
                             <option value="4" ${gifSettings[index].frameCount === 4 ? 'selected' : ''}>4 frames</option>
                             <option value="5" ${gifSettings[index].frameCount === 5 ? 'selected' : ''}>5 frames (recommended)</option>
                             <option value="6" ${gifSettings[index].frameCount === 6 ? 'selected' : ''}>6 frames</option>
                             <option value="7" ${gifSettings[index].frameCount === 7 ? 'selected' : ''}>7 frames</option>
                         </select>
-
-                        <label style="display: block; font-size: 0.85rem; color: #7DA3AF; margin-bottom: 0.25rem;">Total Duration:</label>
-                        <select id="duration-${index}" onchange="updateGifSetting(${index}, 'duration', this.value)"
-                                style="width: 100%; padding: 0.5rem; border: 1px solid #E1E7EF; border-radius: 6px;">
-                            <option value="3" ${gifSettings[index].duration === 3 ? 'selected' : ''}>3 seconds</option>
-                            <option value="4" ${gifSettings[index].duration === 4 ? 'selected' : ''}>4 seconds</option>
-                            <option value="5" ${gifSettings[index].duration === 5 ? 'selected' : ''}>5 seconds</option>
-                            <option value="6" ${gifSettings[index].duration === 6 ? 'selected' : ''}>6 seconds</option>
-                            <option value="7" ${gifSettings[index].duration === 7 ? 'selected' : ''}>7 seconds</option>
-                        </select>
+                        <p style="font-size: 0.75rem; color: #7DA3AF; margin-top: 0.5rem;">
+                            💡 You can adjust animation speed in the editor after generation
+                        </p>
                     </div>
                 `;
 
@@ -2591,6 +3012,13 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
 
         function updateGifSetting(index, setting, value) {
             gifSettings[index][setting] = parseInt(value);
+            // Update duration display
+            const durationDisplay = document.getElementById(`duration-display-${index}`);
+            if (durationDisplay) {
+                const frameCount = gifSettings[index].frameCount || 5;
+                const fps = gifSettings[index].fps || 2;
+                durationDisplay.textContent = `Duration: ${(frameCount / fps).toFixed(1)}s`;
+            }
         }
 
         async function generateSelectedGifs() {
@@ -2614,31 +3042,45 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 const img = generatedImages[index];
                 const settings = gifSettings[index];
 
+                console.log(`[GIF] Generating animation for index ${index}:`);
+                console.log(`  - Frame count requested: ${settings.frameCount}`);
+                console.log(`  - FPS: ${settings.fps || 2}`);
+                console.log(`  - Dimensions: ${img.width}x${img.height}`);
+
                 try {
-                    const response = await fetch('http://localhost:3000/api/generate-animation', {
+                    const requestData = {
+                        prompt: basePrompt,
+                        width: img.width,
+                        height: img.height,
+                        frame_count: settings.frameCount,
+                        fps: settings.fps || 2,
+                        platform: img.platform,
+                        sizeName: img.size
+                    };
+                    console.log('[GIF] Request data:', JSON.stringify(requestData, null, 2));
+
+                    const response = await fetch('/api/generate-animation', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                         },
-                        body: JSON.stringify({
-                            prompt: basePrompt,
-                            width: img.width,
-                            height: img.height,
-                            duration: settings.frameCount, // Using frame count as duration
-                            platform: img.platform,
-                            sizeName: img.size
-                        })
+                        body: JSON.stringify(requestData)
                     });
 
                     const result = await response.json();
 
                     if (result.success) {
+                        console.log(`[GIF] Result received:`);
+                        console.log(`  - Frames returned: ${result.frames ? result.frames.length : 0}`);
+                        console.log(`  - Frame count from server: ${result.frame_count}`);
+                        console.log(`  - FPS from server: ${result.fps}`);
+
                         // Store result with frames for editing
                         gifResults.push({
                             animation: result.animation,
                             frames: result.frames || [],
                             frameCount: result.frame_count,
-                            duration: result.duration,
+                            fps: result.fps || settings.fps || 2,
                             platform: img.platform,
                             size: img.size,
                             width: img.width,
@@ -2748,11 +3190,37 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             document.getElementById('frameEditorModal').classList.remove('hidden');
             document.body.style.overflow = 'hidden';
 
+            // Set animation speed slider to current fps
+            const fps = gifData.fps || 2;
+            document.getElementById('animationSpeedSlider').value = fps;
+            document.getElementById('animationSpeedDisplay').textContent = fps;
+            updateAnimationDurationDisplay();
+
             renderFrameThumbnails();
             selectFrame(0);
 
             // Setup logo drag handler after modal opens
             setTimeout(() => setupFrameLogoDragHandler(), 100);
+        }
+
+        function updateAnimationSpeed(fps) {
+            document.getElementById('animationSpeedDisplay').textContent = fps;
+            const gifData = gifResults[currentGifIndex];
+            if (gifData) {
+                gifData.fps = parseInt(fps);
+            }
+            updateAnimationDurationDisplay();
+        }
+
+        function updateAnimationDurationDisplay() {
+            const gifData = gifResults[currentGifIndex];
+            if (gifData) {
+                const fps = gifData.fps || 2;
+                const frameCount = gifData.frames ? gifData.frames.length : 0;
+                const duration = (frameCount / fps).toFixed(1);
+                document.getElementById('animationDurationDisplay').textContent =
+                    `${frameCount} frames at ${fps} FPS = ${duration}s animation`;
+            }
         }
 
         function closeFrameEditor() {
@@ -3077,11 +3545,14 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 gifData.frameOverlays = gifData.frameOverlays.map(() => ({
                     text: currentOverlay.text,
                     position: currentOverlay.position,
+                    font: currentOverlay.font,
                     size: currentOverlay.size,
                     color: currentOverlay.color,
                     bgColor: currentOverlay.bgColor,
                     showLogo: currentOverlay.showLogo,
-                    logoPosition: currentOverlay.logoPosition,
+                    logoIndex: currentOverlay.logoIndex,
+                    logoX: currentOverlay.logoX,
+                    logoY: currentOverlay.logoY,
                     logoSize: currentOverlay.logoSize
                 }));
                 updateFramePreview();
@@ -3255,13 +3726,21 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                     gifData.processedFrames = processedFrames;
                     gifData.processedAnimation = newGifData;
 
-                    // For demo purposes, show cycling through frames
+                    // Clear any existing animation interval
+                    if (gifPreview.animationInterval) {
+                        clearInterval(gifPreview.animationInterval);
+                    }
+
+                    // Use the FPS setting for preview animation speed
+                    const fps = gifData.fps || 2;
+                    const intervalMs = Math.round(1000 / fps);
+
                     let frameIndex = 0;
                     const cycleFrames = () => {
                         gifPreview.src = processedFrames[frameIndex];
                         frameIndex = (frameIndex + 1) % processedFrames.length;
                     };
-                    gifPreview.animationInterval = setInterval(cycleFrames, 1000);
+                    gifPreview.animationInterval = setInterval(cycleFrames, intervalMs);
                     cycleFrames();
                 }
 
@@ -3466,6 +3945,13 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 finalAds = [];
                 selectedPlatforms = [];
                 gifResults = [];
+                skippedCopyFlow = false;
+
+                // Hide additional preview steps
+                const stepPreview = document.getElementById('stepPreview');
+                if (stepPreview) stepPreview.classList.add('hidden');
+                const stepGeneralPreview = document.getElementById('stepGeneralPreview');
+                if (stepGeneralPreview) stepGeneralPreview.classList.add('hidden');
 
                 // Scroll to top
                 window.scrollTo(0, 0);
