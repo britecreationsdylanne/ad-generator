@@ -2335,21 +2335,21 @@
         }
 
         // Drag text box positioning
-        let draggedBoxId = null;
-        let dragStartX, dragStartY, boxStartX, boxStartY;
+        let textBoxDragId = null;
+        let textBoxDragStartX = 0, textBoxDragStartY = 0, textBoxStartX = 0, textBoxStartY = 0;
 
         function startDragTextBox(e, boxId) {
             e.preventDefault();
             e.stopPropagation();
 
-            draggedBoxId = boxId;
+            textBoxDragId = boxId;
             const box = videoTextBoxes.find(b => b.id === boxId);
             if (!box) return;
 
-            dragStartX = e.clientX;
-            dragStartY = e.clientY;
-            boxStartX = box.x;
-            boxStartY = box.y;
+            textBoxDragStartX = e.clientX;
+            textBoxDragStartY = e.clientY;
+            textBoxStartX = box.x;
+            textBoxStartY = box.y;
 
             document.addEventListener('mousemove', dragTextBox);
             document.addEventListener('mouseup', stopDragTextBox);
@@ -2359,65 +2359,65 @@
         }
 
         function dragTextBox(e) {
-            if (!draggedBoxId) return;
+            if (!textBoxDragId) return;
 
             const container = document.getElementById('videoPreviewContainer');
             const rect = container.getBoundingClientRect();
-            const box = videoTextBoxes.find(b => b.id === draggedBoxId);
+            const box = videoTextBoxes.find(b => b.id === textBoxDragId);
             if (!box) return;
 
-            const deltaX = ((e.clientX - dragStartX) / rect.width) * 100;
-            const deltaY = ((e.clientY - dragStartY) / rect.height) * 100;
+            const deltaX = ((e.clientX - textBoxDragStartX) / rect.width) * 100;
+            const deltaY = ((e.clientY - textBoxDragStartY) / rect.height) * 100;
 
-            box.x = Math.max(5, Math.min(95, boxStartX + deltaX));
-            box.y = Math.max(5, Math.min(95, boxStartY + deltaY));
+            box.x = Math.max(5, Math.min(95, textBoxStartX + deltaX));
+            box.y = Math.max(5, Math.min(95, textBoxStartY + deltaY));
 
             renderVideoTextBoxes();
         }
 
         function stopDragTextBox() {
-            draggedBoxId = null;
+            textBoxDragId = null;
             document.removeEventListener('mousemove', dragTextBox);
             document.removeEventListener('mouseup', stopDragTextBox);
         }
 
         // Resize text box
-        let resizingBoxId = null;
-        let resizeStartX, resizeStartY, startFontSize;
+        let textBoxResizeId = null;
+        let textBoxResizeStartX = 0, textBoxResizeStartY = 0, textBoxStartFontSize = 24;
 
         function startResizeTextBox(e, boxId) {
             e.preventDefault();
             e.stopPropagation();
 
-            resizingBoxId = boxId;
+            textBoxResizeId = boxId;
             const box = videoTextBoxes.find(b => b.id === boxId);
             if (!box) return;
 
-            resizeStartX = e.clientX;
-            resizeStartY = e.clientY;
-            startFontSize = box.fontSize;
+            textBoxResizeStartX = e.clientX;
+            textBoxResizeStartY = e.clientY;
+            textBoxStartFontSize = box.fontSize;
 
             document.addEventListener('mousemove', resizeTextBox);
             document.addEventListener('mouseup', stopResizeTextBox);
         }
 
         function resizeTextBox(e) {
-            if (!resizingBoxId) return;
+            if (!textBoxResizeId) return;
 
-            const box = videoTextBoxes.find(b => b.id === resizingBoxId);
+            const box = videoTextBoxes.find(b => b.id === textBoxResizeId);
             if (!box) return;
 
-            const deltaX = e.clientX - resizeStartX;
-            const deltaY = e.clientY - resizeStartY;
+            const deltaX = e.clientX - textBoxResizeStartX;
+            const deltaY = e.clientY - textBoxResizeStartY;
             const delta = (deltaX + deltaY) / 4; // Diagonal movement controls size
 
-            box.fontSize = Math.max(12, Math.min(72, startFontSize + delta));
+            box.fontSize = Math.max(12, Math.min(72, textBoxStartFontSize + delta));
 
             renderVideoTextBoxes();
         }
 
         function stopResizeTextBox() {
-            resizingBoxId = null;
+            textBoxResizeId = null;
             document.removeEventListener('mousemove', resizeTextBox);
             document.removeEventListener('mouseup', stopResizeTextBox);
         }
