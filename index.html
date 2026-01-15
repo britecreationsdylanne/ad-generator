@@ -294,6 +294,20 @@
                             Standard Pin (2:3), Square, Long Pin
                         </p>
                     </div>
+                    <div class="platform-card" onclick="togglePlatform('demandgen', this)">
+                        <h3><svg style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px;" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>Demand Gen</h3>
+                        <p style="color: #7DA3AF; margin-top: 0.5rem;">YouTube, Discover, Gmail</p>
+                        <p style="color: #A9C1CB; font-size: 0.9rem; margin-top: 0.5rem;">
+                            1200x628, 1200x1200, 960x1200, 1080x1920
+                        </p>
+                    </div>
+                    <div class="platform-card" onclick="togglePlatform('pmax', this)">
+                        <h3><svg style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px;" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>Performance Max</h3>
+                        <p style="color: #7DA3AF; margin-top: 0.5rem;">All Google Inventory</p>
+                        <p style="color: #A9C1CB; font-size: 0.9rem; margin-top: 0.5rem;">
+                            1200x628, 1200x1200, 960x1200
+                        </p>
+                    </div>
                     <div class="platform-card" onclick="togglePlatform('general', this)">
                         <h3><svg style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px;" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="2" stroke="#31D7CA" stroke-width="2" fill="none"/><circle cx="8.5" cy="8.5" r="1.5" fill="#31D7CA"/><path d="M21 15l-5-5-3 3-4-4-6 6" stroke="#31D7CA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>General Image</h3>
                         <p style="color: #7DA3AF; margin-top: 0.5rem;">Custom Creation</p>
@@ -321,6 +335,8 @@
                         <option value="meta">Meta</option>
                         <option value="reddit">Reddit</option>
                         <option value="pinterest">Pinterest</option>
+                        <option value="demandgen">Demand Gen</option>
+                        <option value="pmax">Performance Max</option>
                         <option value="general">General Image</option>
                     </select>
                 </div>
@@ -925,6 +941,8 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 'meta': 'Meta',
                 'reddit': 'Reddit',
                 'pinterest': 'Pinterest',
+                'demandgen': 'Demand Gen',
+                'pmax': 'Performance Max',
                 'general': 'General Image'
             };
             return platformMap[platform.toLowerCase()] || platform;
@@ -933,6 +951,18 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
         // Check if only General Image is selected (skip text generation)
         function isGeneralImageOnly() {
             return selectedPlatforms.size === 1 && selectedPlatforms.has('general');
+        }
+
+        // Check if only Google Ads platforms are selected (skip copy generation)
+        function isGoogleAdsOnly() {
+            const googleAdsPlatforms = ['demandgen', 'pmax'];
+            const allGoogleAds = Array.from(selectedPlatforms).every(p => googleAdsPlatforms.includes(p));
+            return selectedPlatforms.size > 0 && allGoogleAds;
+        }
+
+        // Check if any platform should skip copy generation
+        function shouldSkipCopyGeneration() {
+            return isGeneralImageOnly() || isGoogleAdsOnly();
         }
 
         function togglePlatform(platform, element) {
@@ -1290,8 +1320,8 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             const afterLogoBtn = document.getElementById('afterLogoBtn');
             const skipCopyBtn = document.getElementById('skipCopyBtn');
 
-            if (isGeneralImageOnly()) {
-                // General Image: only show Preview & Download as primary
+            if (shouldSkipCopyGeneration()) {
+                // General Image or Google Ads: only show Preview & Download as primary
                 if (afterLogoBtn) afterLogoBtn.textContent = 'Preview & Download →';
                 if (skipCopyBtn) skipCopyBtn.style.display = 'none';
             } else {
@@ -1308,22 +1338,24 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
+        // Track which text box is currently selected for editing
+        let selectedTextBox = {};
+
         function renderTextOverlayPage() {
             const textOverlayGrid = document.getElementById('textOverlayGrid');
             textOverlayGrid.innerHTML = '';
 
             generatedImages.forEach((img, index) => {
-                // Initialize text overlay settings if not exists
-                if (!textOverlays[index]) {
-                    textOverlays[index] = {
-                        text: '',
-                        x: 50, // Percentage from left
-                        y: 85, // Percentage from top (default bottom)
-                        fontSize: 32,
-                        textColor: '#FFFFFF',
-                        bgColor: 'rgba(0, 0, 0, 0.7)',
-                        fontFamily: 'Gilroy'
-                    };
+                // Initialize text overlays array if not exists (support multiple text boxes)
+                if (!textOverlays[index] || !Array.isArray(textOverlays[index])) {
+                    // Convert old single object format to array format
+                    const oldData = textOverlays[index];
+                    textOverlays[index] = oldData && oldData.text ? [oldData] : [];
+                }
+
+                // Set default selected text box
+                if (selectedTextBox[index] === undefined) {
+                    selectedTextBox[index] = textOverlays[index].length > 0 ? 0 : -1;
                 }
 
                 const card = document.createElement('div');
@@ -1333,15 +1365,15 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
                         <!-- Image Preview -->
                         <div>
-                            <div id="preview-container-${index}" style="position: relative; border: 2px solid #E1E7EF; border-radius: 8px; overflow: hidden; cursor: move;">
+                            <div id="preview-container-${index}" style="position: relative; border: 2px solid #E1E7EF; border-radius: 8px; overflow: hidden;">
                                 <img id="preview-img-${index}" src="${img.url}" alt="${capitalizePlatform(img.platform)} ${img.size}"
                                      style="width: 100%; display: block;">
-                                <div id="text-preview-${index}" class="draggable-text" data-index="${index}"
-                                     style="position: absolute; top: ${textOverlays[index].y}%; left: ${textOverlays[index].x}%; transform: translate(-50%, -50%); cursor: move;">
+                                <div id="text-boxes-container-${index}" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none;">
+                                    <!-- Text boxes will be rendered here -->
                                 </div>
                             </div>
                             <p style="background: #F4F7FC; padding: 0.75rem; border-radius: 8px; margin-top: 0.75rem; color: #7DA3AF; font-size: 0.9rem; text-align: center;">
-                                💡 <strong>Drag the text</strong> to position it anywhere on the image
+                                💡 <strong>Drag to move</strong> • <strong>Drag corners to resize</strong> • <strong>Click to select</strong>
                             </p>
                             <h4 style="margin-top: 1rem; color: #272D3F;">${capitalizePlatform(img.platform)} - ${img.size}</h4>
                             <p style="color: #7DA3AF; font-size: 0.9rem;">${img.width}x${img.height}</p>
@@ -1351,152 +1383,279 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                         <div>
                             <h3 style="margin-bottom: 1rem; color: #272D3F;">Text Overlay Settings</h3>
 
-                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #272D3F;">Headline Text</label>
-                            <input type="text" id="overlay-text-${index}" value="${textOverlays[index].text}"
-                                   placeholder="Enter your headline..."
-                                   style="width: 100%; padding: 0.75rem; border: 2px solid #E1E7EF; border-radius: 8px; margin-bottom: 1rem; font-size: 1rem;"
-                                   oninput="updateTextOverlayPreview(${index})">
+                            <div id="text-box-controls-${index}">
+                                <!-- Controls will be rendered here based on selected text box -->
+                            </div>
 
-                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #272D3F;">Font Family</label>
-                            <select id="overlay-font-${index}" onchange="updateTextOverlayPreview(${index})"
-                                    style="width: 100%; padding: 0.75rem; border: 2px solid #E1E7EF; border-radius: 8px; margin-bottom: 1rem; font-size: 1rem;">
-                                <option value="Gilroy" ${textOverlays[index].fontFamily === 'Gilroy' ? 'selected' : ''}>Gilroy (Brand Font)</option>
-                                <option value="Arial" ${textOverlays[index].fontFamily === 'Arial' ? 'selected' : ''}>Arial</option>
-                                <option value="Helvetica" ${textOverlays[index].fontFamily === 'Helvetica' ? 'selected' : ''}>Helvetica</option>
-                                <option value="Georgia" ${textOverlays[index].fontFamily === 'Georgia' ? 'selected' : ''}>Georgia</option>
-                                <option value="Times New Roman" ${textOverlays[index].fontFamily === 'Times New Roman' ? 'selected' : ''}>Times New Roman</option>
-                            </select>
-
-                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #272D3F;">Font Size (${textOverlays[index].fontSize}px)</label>
-                            <input type="range" id="overlay-size-${index}" value="${textOverlays[index].fontSize}" min="16" max="72" step="2"
-                                   oninput="updateTextOverlayPreview(${index})"
-                                   style="width: 100%; margin-bottom: 1rem;">
-
-                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #272D3F;">Text Color</label>
-                            <input type="color" id="overlay-textcolor-${index}" value="${textOverlays[index].textColor}"
-                                   onchange="updateTextOverlayPreview(${index})"
-                                   style="width: 100%; height: 50px; padding: 0.25rem; border: 2px solid #E1E7EF; border-radius: 8px; margin-bottom: 1rem; cursor: pointer;">
-
-                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #272D3F;">Background</label>
-                            <select id="overlay-bg-${index}" onchange="updateTextOverlayPreview(${index})"
-                                    style="width: 100%; padding: 0.75rem; border: 2px solid #E1E7EF; border-radius: 8px; margin-bottom: 1rem; font-size: 1rem;">
-                                <option value="rgba(0, 0, 0, 0.7)">Dark (70% opacity)</option>
-                                <option value="rgba(0, 0, 0, 0.5)">Dark (50% opacity)</option>
-                                <option value="rgba(0, 0, 0, 0.3)">Dark (30% opacity)</option>
-                                <option value="rgba(49, 215, 202, 0.9)">Turquoise (Brand)</option>
-                                <option value="rgba(39, 45, 63, 0.9)">Navy (Brand)</option>
-                                <option value="rgba(252, 136, 58, 0.9)">Orange (Brand)</option>
-                                <option value="none">No Background</option>
-                            </select>
+                            <button onclick="addNewTextBox(${index})" class="btn-secondary" style="width: 100%; margin-top: 1rem; padding: 0.75rem; background: #31D7CA; color: white; border: none;">
+                                + New Text Box
+                            </button>
                         </div>
                     </div>
                 `;
 
                 textOverlayGrid.appendChild(card);
 
-                // Render initial preview and setup drag handler
+                // Render text boxes and controls
                 setTimeout(() => {
-                    updateTextOverlayPreview(index);
-                    setupDragHandler(index);
+                    renderAllTextBoxes(index);
+                    renderTextBoxControls(index);
                 }, 100);
             });
         }
 
-        function setupDragHandler(index) {
-            const textElement = document.getElementById(`text-preview-${index}`);
-            const container = document.getElementById(`preview-container-${index}`);
-
-            if (!textElement || !container) return;
-
-            let isDragging = false;
-            let startX, startY, startLeft, startTop;
-
-            textElement.addEventListener('mousedown', function(e) {
-                if (!textOverlays[index].text) return;
-
-                isDragging = true;
-                const rect = container.getBoundingClientRect();
-                const textRect = textElement.getBoundingClientRect();
-
-                startX = e.clientX;
-                startY = e.clientY;
-                startLeft = ((textRect.left + textRect.width / 2 - rect.left) / rect.width) * 100;
-                startTop = ((textRect.top + textRect.height / 2 - rect.top) / rect.height) * 100;
-
-                e.preventDefault();
-            });
-
-            document.addEventListener('mousemove', function(e) {
-                if (!isDragging) return;
-
-                const rect = container.getBoundingClientRect();
-                const deltaX = e.clientX - startX;
-                const deltaY = e.clientY - startY;
-
-                let newX = startLeft + (deltaX / rect.width) * 100;
-                let newY = startTop + (deltaY / rect.height) * 100;
-
-                // Constrain to image bounds
-                newX = Math.max(5, Math.min(95, newX));
-                newY = Math.max(5, Math.min(95, newY));
-
-                textOverlays[index].x = newX;
-                textOverlays[index].y = newY;
-
-                textElement.style.left = newX + '%';
-                textElement.style.top = newY + '%';
-
-                e.preventDefault();
-            });
-
-            document.addEventListener('mouseup', function() {
-                isDragging = false;
-            });
-        }
-
-        function updateTextOverlayPreview(index) {
-            const text = document.getElementById(`overlay-text-${index}`).value;
-            const fontSize = document.getElementById(`overlay-size-${index}`).value;
-            const textColor = document.getElementById(`overlay-textcolor-${index}`).value;
-            const fontFamily = document.getElementById(`overlay-font-${index}`).value;
-            const bgColor = document.getElementById(`overlay-bg-${index}`).value;
-
-            // Update font size label
-            const sizeLabel = document.getElementById(`overlay-size-${index}`)?.previousElementSibling;
-            if (sizeLabel) {
-                sizeLabel.textContent = `Font Size (${fontSize}px)`;
-            }
-
-            // Store settings (preserve x, y from drag or defaults)
-            if (!textOverlays[index].x) textOverlays[index].x = 50;
-            if (!textOverlays[index].y) textOverlays[index].y = 85;
-
-            textOverlays[index] = {
-                ...textOverlays[index],
-                text,
-                fontSize,
-                textColor,
-                fontFamily,
-                bgColor
+        function addNewTextBox(imageIndex) {
+            const newTextBox = {
+                text: 'New text',
+                x: 50,
+                y: 30 + (textOverlays[imageIndex].length * 20) % 60, // Stagger vertically
+                fontSize: 28,
+                textColor: '#FFFFFF',
+                bgColor: 'rgba(0, 0, 0, 0.7)',
+                fontFamily: 'Gilroy'
             };
 
-            // Update preview
-            const preview = document.getElementById(`text-preview-${index}`);
-            if (!text) {
-                preview.innerHTML = '';
-                preview.style.pointerEvents = 'none';
+            textOverlays[imageIndex].push(newTextBox);
+            selectedTextBox[imageIndex] = textOverlays[imageIndex].length - 1;
+
+            renderAllTextBoxes(imageIndex);
+            renderTextBoxControls(imageIndex);
+        }
+
+        function deleteTextBox(imageIndex, boxIndex) {
+            if (textOverlays[imageIndex].length <= 1) {
+                // Don't delete the last text box, just clear it
+                textOverlays[imageIndex][0].text = '';
+                selectedTextBox[imageIndex] = 0;
+            } else {
+                textOverlays[imageIndex].splice(boxIndex, 1);
+                if (selectedTextBox[imageIndex] >= textOverlays[imageIndex].length) {
+                    selectedTextBox[imageIndex] = textOverlays[imageIndex].length - 1;
+                }
+            }
+
+            renderAllTextBoxes(imageIndex);
+            renderTextBoxControls(imageIndex);
+        }
+
+        function selectTextBox(imageIndex, boxIndex) {
+            selectedTextBox[imageIndex] = boxIndex;
+            renderAllTextBoxes(imageIndex);
+            renderTextBoxControls(imageIndex);
+        }
+
+        function renderTextBoxControls(imageIndex) {
+            const controlsContainer = document.getElementById(`text-box-controls-${imageIndex}`);
+            const boxes = textOverlays[imageIndex];
+            const selectedIdx = selectedTextBox[imageIndex];
+
+            if (boxes.length === 0 || selectedIdx < 0 || selectedIdx >= boxes.length) {
+                controlsContainer.innerHTML = `
+                    <p style="color: #7DA3AF; text-align: center; padding: 2rem;">
+                        Click "New Text Box" to add text to your image
+                    </p>
+                `;
                 return;
             }
 
-            preview.style.pointerEvents = 'auto';
-            const bgStyle = bgColor === 'none' ? 'background: transparent;' : `background: ${bgColor};`;
+            const box = boxes[selectedIdx];
 
-            preview.innerHTML = `
-                <div style="display: inline-block; ${bgStyle} padding: 10px 20px; border-radius: 8px;">
-                    <p style="color: ${textColor}; font-family: '${fontFamily}', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: ${fontSize}px; font-weight: 700; margin: 0; line-height: 1.2; white-space: nowrap;">${text}</p>
+            controlsContainer.innerHTML = `
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;">
+                    ${boxes.map((b, i) => `
+                        <button onclick="selectTextBox(${imageIndex}, ${i})"
+                                style="padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; cursor: pointer;
+                                       background: ${i === selectedIdx ? '#31D7CA' : '#F4F7FC'};
+                                       color: ${i === selectedIdx ? 'white' : '#272D3F'};
+                                       border: 2px solid ${i === selectedIdx ? '#31D7CA' : '#E1E7EF'};">
+                            Text ${i + 1}
+                        </button>
+                    `).join('')}
                 </div>
+
+                <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #272D3F;">Text Content</label>
+                <textarea id="overlay-text-${imageIndex}"
+                       placeholder="Enter your text... (Press Enter for new line)"
+                       rows="3"
+                       style="width: 100%; padding: 0.75rem; border: 2px solid #E1E7EF; border-radius: 8px; margin-bottom: 1rem; font-size: 1rem; font-family: inherit; resize: vertical;"
+                       oninput="updateSelectedTextBox(${imageIndex})">${box.text}</textarea>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #272D3F; font-size: 0.9rem;">Font</label>
+                        <select id="overlay-font-${imageIndex}" onchange="updateSelectedTextBox(${imageIndex})"
+                                style="width: 100%; padding: 0.5rem; border: 2px solid #E1E7EF; border-radius: 8px; font-size: 0.9rem;">
+                            <option value="Gilroy" ${box.fontFamily === 'Gilroy' ? 'selected' : ''}>Gilroy</option>
+                            <option value="Arial" ${box.fontFamily === 'Arial' ? 'selected' : ''}>Arial</option>
+                            <option value="Helvetica" ${box.fontFamily === 'Helvetica' ? 'selected' : ''}>Helvetica</option>
+                            <option value="Georgia" ${box.fontFamily === 'Georgia' ? 'selected' : ''}>Georgia</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #272D3F; font-size: 0.9rem;">Color</label>
+                        <input type="color" id="overlay-textcolor-${imageIndex}" value="${box.textColor}"
+                               onchange="updateSelectedTextBox(${imageIndex})"
+                               style="width: 100%; height: 38px; padding: 0.25rem; border: 2px solid #E1E7EF; border-radius: 8px; cursor: pointer;">
+                    </div>
+                </div>
+
+                <label style="display: block; font-weight: 600; margin-top: 1rem; margin-bottom: 0.5rem; color: #272D3F; font-size: 0.9rem;">Background</label>
+                <select id="overlay-bg-${imageIndex}" onchange="updateSelectedTextBox(${imageIndex})"
+                        style="width: 100%; padding: 0.5rem; border: 2px solid #E1E7EF; border-radius: 8px; font-size: 0.9rem;">
+                    <option value="rgba(0, 0, 0, 0.7)" ${box.bgColor === 'rgba(0, 0, 0, 0.7)' ? 'selected' : ''}>Dark (70%)</option>
+                    <option value="rgba(0, 0, 0, 0.5)" ${box.bgColor === 'rgba(0, 0, 0, 0.5)' ? 'selected' : ''}>Dark (50%)</option>
+                    <option value="rgba(49, 215, 202, 0.9)" ${box.bgColor === 'rgba(49, 215, 202, 0.9)' ? 'selected' : ''}>Turquoise</option>
+                    <option value="rgba(39, 45, 63, 0.9)" ${box.bgColor === 'rgba(39, 45, 63, 0.9)' ? 'selected' : ''}>Navy</option>
+                    <option value="none" ${box.bgColor === 'none' ? 'selected' : ''}>None</option>
+                </select>
+
+                <button onclick="deleteTextBox(${imageIndex}, ${selectedIdx})" class="btn-secondary"
+                        style="width: 100%; margin-top: 1rem; padding: 0.5rem; color: #FF6B6B; border-color: #FF6B6B; font-size: 0.9rem;">
+                    Delete This Text Box
+                </button>
             `;
         }
+
+        function updateSelectedTextBox(imageIndex) {
+            const selectedIdx = selectedTextBox[imageIndex];
+            if (selectedIdx < 0 || selectedIdx >= textOverlays[imageIndex].length) return;
+
+            const box = textOverlays[imageIndex][selectedIdx];
+            box.text = document.getElementById(`overlay-text-${imageIndex}`).value;
+            box.fontFamily = document.getElementById(`overlay-font-${imageIndex}`).value;
+            box.textColor = document.getElementById(`overlay-textcolor-${imageIndex}`).value;
+            box.bgColor = document.getElementById(`overlay-bg-${imageIndex}`).value;
+
+            renderAllTextBoxes(imageIndex);
+        }
+
+        function renderAllTextBoxes(imageIndex) {
+            const container = document.getElementById(`text-boxes-container-${imageIndex}`);
+            const boxes = textOverlays[imageIndex];
+            const selectedIdx = selectedTextBox[imageIndex];
+
+            container.innerHTML = '';
+
+            boxes.forEach((box, boxIdx) => {
+                if (!box.text) return;
+
+                const isSelected = boxIdx === selectedIdx;
+                const bgStyle = box.bgColor === 'none' ? 'background: transparent;' : `background: ${box.bgColor};`;
+
+                const textBoxEl = document.createElement('div');
+                textBoxEl.className = 'resizable-text-box';
+                textBoxEl.dataset.imageIndex = imageIndex;
+                textBoxEl.dataset.boxIndex = boxIdx;
+                textBoxEl.style.cssText = `
+                    position: absolute;
+                    top: ${box.y}%;
+                    left: ${box.x}%;
+                    transform: translate(-50%, -50%);
+                    cursor: move;
+                    pointer-events: auto;
+                    ${isSelected ? 'outline: 2px dashed #31D7CA; outline-offset: 4px;' : ''}
+                `;
+
+                textBoxEl.innerHTML = `
+                    <div style="display: inline-block; ${bgStyle} padding: 10px 20px; border-radius: 8px; text-align: center; position: relative;">
+                        <p style="color: ${box.textColor}; font-family: '${box.fontFamily}', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: ${box.fontSize}px; font-weight: 700; margin: 0; line-height: 1.3; white-space: pre-line;">${box.text}</p>
+                        ${isSelected ? `
+                            <div class="resize-handle resize-handle-br" style="position: absolute; bottom: -6px; right: -6px; width: 12px; height: 12px; background: #31D7CA; border-radius: 50%; cursor: se-resize;"></div>
+                            <div class="resize-handle resize-handle-bl" style="position: absolute; bottom: -6px; left: -6px; width: 12px; height: 12px; background: #31D7CA; border-radius: 50%; cursor: sw-resize;"></div>
+                            <div class="resize-handle resize-handle-tr" style="position: absolute; top: -6px; right: -6px; width: 12px; height: 12px; background: #31D7CA; border-radius: 50%; cursor: ne-resize;"></div>
+                            <div class="resize-handle resize-handle-tl" style="position: absolute; top: -6px; left: -6px; width: 12px; height: 12px; background: #31D7CA; border-radius: 50%; cursor: nw-resize;"></div>
+                        ` : ''}
+                    </div>
+                `;
+
+                container.appendChild(textBoxEl);
+
+                // Setup drag and resize handlers
+                setupTextBoxHandlers(textBoxEl, imageIndex, boxIdx);
+            });
+        }
+
+        function setupTextBoxHandlers(element, imageIndex, boxIndex) {
+            const container = document.getElementById(`preview-container-${imageIndex}`);
+            let isDragging = false;
+            let isResizing = false;
+            let resizeDirection = '';
+            let startX, startY, startLeft, startTop, startFontSize;
+
+            // Click to select
+            element.addEventListener('click', (e) => {
+                if (!isResizing) {
+                    selectTextBox(imageIndex, boxIndex);
+                }
+            });
+
+            // Drag to move
+            element.addEventListener('mousedown', (e) => {
+                if (e.target.classList.contains('resize-handle')) {
+                    // Start resizing
+                    isResizing = true;
+                    resizeDirection = e.target.classList.contains('resize-handle-br') ? 'br' :
+                                     e.target.classList.contains('resize-handle-bl') ? 'bl' :
+                                     e.target.classList.contains('resize-handle-tr') ? 'tr' : 'tl';
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    startFontSize = textOverlays[imageIndex][boxIndex].fontSize;
+                } else {
+                    // Start dragging
+                    isDragging = true;
+                    const rect = container.getBoundingClientRect();
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    startLeft = textOverlays[imageIndex][boxIndex].x;
+                    startTop = textOverlays[imageIndex][boxIndex].y;
+                }
+                e.preventDefault();
+                e.stopPropagation();
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    const rect = container.getBoundingClientRect();
+                    const deltaX = e.clientX - startX;
+                    const deltaY = e.clientY - startY;
+
+                    let newX = startLeft + (deltaX / rect.width) * 100;
+                    let newY = startTop + (deltaY / rect.height) * 100;
+
+                    newX = Math.max(10, Math.min(90, newX));
+                    newY = Math.max(10, Math.min(90, newY));
+
+                    textOverlays[imageIndex][boxIndex].x = newX;
+                    textOverlays[imageIndex][boxIndex].y = newY;
+
+                    element.style.left = newX + '%';
+                    element.style.top = newY + '%';
+                } else if (isResizing) {
+                    const deltaY = e.clientY - startY;
+                    const deltaX = e.clientX - startX;
+
+                    // Calculate resize based on diagonal movement
+                    let delta = 0;
+                    if (resizeDirection === 'br') delta = (deltaX + deltaY) / 4;
+                    else if (resizeDirection === 'bl') delta = (-deltaX + deltaY) / 4;
+                    else if (resizeDirection === 'tr') delta = (deltaX - deltaY) / 4;
+                    else delta = (-deltaX - deltaY) / 4;
+
+                    const newFontSize = Math.max(12, Math.min(96, startFontSize + delta));
+                    textOverlays[imageIndex][boxIndex].fontSize = Math.round(newFontSize);
+
+                    renderAllTextBoxes(imageIndex);
+                }
+            });
+
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+                isResizing = false;
+            });
+        }
+
+        // Note: setupDragHandler and updateTextOverlayPreview have been replaced
+        // by the new multiple text box system (renderAllTextBoxes, setupTextBoxHandlers, etc.)
 
         function renderLogoPlacementPage() {
             const logoGrid = document.getElementById('logoGrid');
@@ -1542,15 +1701,12 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                         <div>
                             <h3 style="margin-bottom: 1rem; color: #272D3F;">Logo Settings</h3>
 
-                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #272D3F;">
-                                <input type="checkbox" id="logo-enabled-${index}"
-                                       ${logoSettings[index].enabled ? 'checked' : ''}
-                                       onchange="updateLogoPreview(${index})"
-                                       style="margin-right: 0.5rem;">
-                                Add Logo
-                            </label>
+                            <p style="color: #7DA3AF; font-size: 0.9rem; margin-bottom: 1rem;">Click a logo below to add it to your image. Click again to deselect.</p>
 
-                            <label style="display: block; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.5rem; color: #272D3F;">Select Logo/Emblem</label>
+                            <!-- Hidden checkbox for backwards compatibility -->
+                            <input type="checkbox" id="logo-enabled-${index}" ${logoSettings[index].enabled ? 'checked' : ''} style="display: none;">
+
+                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #272D3F;">Select Logo/Emblem</label>
                             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 1.5rem;">
                                 ${availableLogos.map((logo, logoIdx) => `
                                     <div onclick="selectLogo(${index}, ${logoIdx})"
@@ -1640,22 +1796,44 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
         }
 
         function selectLogo(index, logoIdx) {
-            // Update borders for all logo options
-            availableLogos.forEach((_, i) => {
-                const optionElement = document.getElementById(`logo-option-${index}-${i}`);
-                if (optionElement) {
-                    optionElement.style.border = i === logoIdx ? '3px solid #31D7CA' : '3px solid #E1E7EF';
-                }
-            });
+            const checkbox = document.getElementById(`logo-enabled-${index}`);
+            const currentlySelected = logoSettings[index].selectedLogoIndex;
+            const isCurrentlyEnabled = logoSettings[index].enabled;
 
-            // Update settings and preview
-            logoSettings[index].selectedLogoIndex = logoIdx;
+            // Toggle behavior: if clicking the same logo that's already enabled, disable it
+            if (currentlySelected === logoIdx && isCurrentlyEnabled) {
+                // Deselect - remove logo
+                logoSettings[index].enabled = false;
+                checkbox.checked = false;
+
+                // Remove highlight from all logos
+                availableLogos.forEach((_, i) => {
+                    const optionElement = document.getElementById(`logo-option-${index}-${i}`);
+                    if (optionElement) {
+                        optionElement.style.border = '3px solid #E1E7EF';
+                    }
+                });
+            } else {
+                // Select this logo and enable it
+                logoSettings[index].selectedLogoIndex = logoIdx;
+                logoSettings[index].enabled = true;
+                checkbox.checked = true;
+
+                // Update borders for all logo options
+                availableLogos.forEach((_, i) => {
+                    const optionElement = document.getElementById(`logo-option-${index}-${i}`);
+                    if (optionElement) {
+                        optionElement.style.border = i === logoIdx ? '3px solid #31D7CA' : '3px solid #E1E7EF';
+                    }
+                });
+            }
+
             updateLogoPreview(index);
         }
 
         function updateLogoPreview(index) {
             const img = generatedImages[index];
-            const overlay = textOverlays[index];
+            const overlays = textOverlays[index]; // Now an array
             const logoEnabled = document.getElementById(`logo-enabled-${index}`).checked;
             const logoScale = document.getElementById(`logo-scale-${index}`).value;
             const selectedLogoIndex = logoSettings[index].selectedLogoIndex || 0;
@@ -1665,16 +1843,35 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             logoSettings[index].scale = parseFloat(logoScale);
             logoSettings[index].selectedLogoIndex = selectedLogoIndex;
 
-            // Render text overlay
+            // Render all text overlays
             const textPreview = document.getElementById(`final-text-${index}`);
-            if (overlay && overlay.text) {
+            textPreview.innerHTML = '';
+
+            if (Array.isArray(overlays)) {
+                overlays.forEach(overlay => {
+                    if (overlay && overlay.text) {
+                        const positionStyles = `top: ${overlay.y || 85}%; left: ${overlay.x || 50}%; transform: translate(-50%, -50%);`;
+                        const bgStyle = overlay.bgColor === 'none' ? 'background: transparent;' : `background: ${overlay.bgColor};`;
+
+                        textPreview.innerHTML += `
+                            <div style="position: absolute; ${positionStyles}">
+                                <div style="display: inline-block; ${bgStyle} padding: 10px 20px; border-radius: 8px; text-align: center;">
+                                    <p style="color: ${overlay.textColor}; font-family: '${overlay.fontFamily}', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: ${overlay.fontSize}px; font-weight: 700; margin: 0; line-height: 1.3; white-space: pre-line;">${overlay.text}</p>
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+            } else if (overlays && overlays.text) {
+                // Backwards compatibility for old single-object format
+                const overlay = overlays;
                 const positionStyles = `top: ${overlay.y || 85}%; left: ${overlay.x || 50}%; transform: translate(-50%, -50%);`;
                 const bgStyle = overlay.bgColor === 'none' ? 'background: transparent;' : `background: ${overlay.bgColor};`;
 
                 textPreview.innerHTML = `
                     <div style="position: absolute; ${positionStyles}">
-                        <div style="display: inline-block; ${bgStyle} padding: 10px 20px; border-radius: 8px;">
-                            <p style="color: ${overlay.textColor}; font-family: '${overlay.fontFamily}', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: ${overlay.fontSize}px; font-weight: 700; margin: 0; line-height: 1.2; white-space: nowrap;">${overlay.text}</p>
+                        <div style="display: inline-block; ${bgStyle} padding: 10px 20px; border-radius: 8px; text-align: center;">
+                            <p style="color: ${overlay.textColor}; font-family: '${overlay.fontFamily}', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: ${overlay.fontSize}px; font-weight: 700; margin: 0; line-height: 1.3; white-space: pre-line;">${overlay.text}</p>
                         </div>
                     </div>
                 `;
@@ -1707,9 +1904,14 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
         }
 
         function goToNextAfterLogo() {
-            // For General Image only, skip ad copy and go directly to final preview
-            if (isGeneralImageOnly()) {
-                goToGeneralImagePreview();
+            // For General Image or Google Ads (Demand Gen, PMax), skip ad copy and go directly to preview
+            if (shouldSkipCopyGeneration()) {
+                if (isGeneralImageOnly()) {
+                    goToGeneralImagePreview();
+                } else {
+                    // Google Ads platforms - skip copy, go to preview
+                    goToPreviewSkipCopy();
+                }
             } else {
                 goToAdCopy();
             }
@@ -1760,7 +1962,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
 
             const ctx = canvas.getContext('2d');
             const img = generatedImages[index];
-            const overlay = textOverlays[index] || {};
+            const overlays = textOverlays[index];
             const logo = logoSettings[index] || {};
 
             const image = new Image();
@@ -1770,9 +1972,13 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 canvas.height = image.height;
                 ctx.drawImage(image, 0, 0);
 
-                // Draw text overlay if present
-                if (overlay.text) {
-                    const fontSize = Math.round(overlay.fontSize * (image.width / 400));
+                // Draw text overlays - handle both array and single object format
+                const overlayList = Array.isArray(overlays) ? overlays : (overlays && overlays.text ? [overlays] : []);
+
+                overlayList.forEach(overlay => {
+                    if (!overlay || !overlay.text) return;
+
+                    const fontSize = Math.round((overlay.fontSize || 28) * (image.width / 400));
                     ctx.font = `bold ${fontSize}px ${overlay.fontFamily || 'Gilroy'}, Arial, sans-serif`;
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
@@ -1780,21 +1986,32 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                     const x = (overlay.x / 100) * canvas.width;
                     const y = (overlay.y / 100) * canvas.height;
 
+                    // Handle multi-line text
+                    const lines = overlay.text.split('\n');
+                    const lineHeight = fontSize * 1.3;
+
                     // Background
                     if (overlay.bgColor && overlay.bgColor !== 'none') {
-                        const metrics = ctx.measureText(overlay.text);
-                        const textWidth = metrics.width;
+                        let maxWidth = 0;
+                        lines.forEach(line => {
+                            const metrics = ctx.measureText(line);
+                            if (metrics.width > maxWidth) maxWidth = metrics.width;
+                        });
                         const padding = 30;
-                        const bgHeight = fontSize + padding;
+                        const bgHeight = lineHeight * lines.length + padding;
 
                         ctx.fillStyle = overlay.bgColor;
-                        ctx.fillRect(x - textWidth / 2 - padding, y - bgHeight / 2, textWidth + padding * 2, bgHeight);
+                        ctx.fillRect(x - maxWidth / 2 - padding, y - bgHeight / 2, maxWidth + padding * 2, bgHeight);
                     }
 
-                    // Text
+                    // Text - draw each line
                     ctx.fillStyle = overlay.textColor || '#FFFFFF';
-                    ctx.fillText(overlay.text, x, y);
-                }
+                    const totalHeight = lineHeight * (lines.length - 1);
+                    lines.forEach((line, lineIdx) => {
+                        const lineY = y - totalHeight / 2 + lineIdx * lineHeight;
+                        ctx.fillText(line, x, lineY);
+                    });
+                });
 
                 // Draw logo if enabled
                 const selectedLogoIndex = logo.selectedLogoIndex || 0;
@@ -1922,7 +2139,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
 
             const ctx = canvas.getContext('2d');
             const img = generatedImages[index];
-            const overlay = textOverlays[index] || {};
+            const overlays = textOverlays[index];
             const logo = logoSettings[index] || {};
 
             const image = new Image();
@@ -1932,36 +2149,46 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 canvas.height = image.height;
                 ctx.drawImage(image, 0, 0);
 
-                // Draw text overlay if present
-                if (overlay.text) {
-                    const fontSize = Math.round(overlay.size * (image.width / 400));
-                    ctx.font = `bold ${fontSize}px ${overlay.font || 'Gilroy, Arial, sans-serif'}`;
+                // Draw text overlays - handle both array and single object format
+                const overlayList = Array.isArray(overlays) ? overlays : (overlays && overlays.text ? [overlays] : []);
+
+                overlayList.forEach(overlay => {
+                    if (!overlay || !overlay.text) return;
+
+                    const fontSize = Math.round((overlay.fontSize || overlay.size || 28) * (image.width / 400));
+                    ctx.font = `bold ${fontSize}px ${overlay.fontFamily || overlay.font || 'Gilroy'}, Arial, sans-serif`;
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
 
-                    let x = canvas.width / 2;
-                    let y;
-                    if (overlay.position === 'top') {
-                        y = fontSize + 40;
-                    } else if (overlay.position === 'center') {
-                        y = canvas.height / 2;
-                    } else {
-                        y = canvas.height - fontSize - 40;
-                    }
+                    const x = (overlay.x / 100) * canvas.width;
+                    const y = (overlay.y / 100) * canvas.height;
+
+                    // Handle multi-line text
+                    const lines = overlay.text.split('\n');
+                    const lineHeight = fontSize * 1.3;
 
                     // Background
-                    const metrics = ctx.measureText(overlay.text);
-                    const textWidth = metrics.width;
-                    const padding = 30;
-                    const bgHeight = fontSize + padding;
+                    if (overlay.bgColor && overlay.bgColor !== 'none') {
+                        let maxWidth = 0;
+                        lines.forEach(line => {
+                            const metrics = ctx.measureText(line);
+                            if (metrics.width > maxWidth) maxWidth = metrics.width;
+                        });
+                        const padding = 30;
+                        const bgHeight = lineHeight * lines.length + padding;
 
-                    ctx.fillStyle = overlay.bgColor || 'rgba(0, 0, 0, 0.7)';
-                    ctx.fillRect(x - textWidth / 2 - padding, y - bgHeight / 2, textWidth + padding * 2, bgHeight);
+                        ctx.fillStyle = overlay.bgColor;
+                        ctx.fillRect(x - maxWidth / 2 - padding, y - bgHeight / 2, maxWidth + padding * 2, bgHeight);
+                    }
 
-                    // Text
-                    ctx.fillStyle = overlay.color || '#FFFFFF';
-                    ctx.fillText(overlay.text, x, y);
-                }
+                    // Text - draw each line
+                    ctx.fillStyle = overlay.textColor || overlay.color || '#FFFFFF';
+                    const totalHeight = lineHeight * (lines.length - 1);
+                    lines.forEach((line, lineIdx) => {
+                        const lineY = y - totalHeight / 2 + lineIdx * lineHeight;
+                        ctx.fillText(line, x, lineY);
+                    });
+                });
 
                 // Draw logo if enabled
                 const selectedLogoIndex = logo.selectedLogoIndex || 0;
@@ -2128,7 +2355,9 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
 
                 const firstIndex = indices[0];
                 const img = generatedImages[firstIndex];
-                const overlay = textOverlays[firstIndex] || {};
+                const overlays = textOverlays[firstIndex];
+                const overlayList = Array.isArray(overlays) ? overlays : (overlays && overlays.text ? [overlays] : []);
+                const overlayText = overlayList.map(o => o.text).filter(Boolean).join(' | ');
 
                 try {
                     // Generate 3 variations by making 3 API calls
@@ -2144,7 +2373,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                                 platform: img.platform,
                                 sizeName: baseSizeName, // Use base size name without variation
                                 campaignText: campaignText,
-                                textOverlay: overlay.text || '',
+                                textOverlay: overlayText,
                                 provider: provider
                             })
                         });
@@ -2378,7 +2607,9 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             const campaignText = document.getElementById('campaignText').value;
             const provider = document.getElementById('aiProvider').value;
             const img = generatedImages[index];
-            const overlay = textOverlays[index] || {};
+            const overlays = textOverlays[index];
+            const overlayList = Array.isArray(overlays) ? overlays : (overlays && overlays.text ? [overlays] : []);
+            const overlayText = overlayList.map(o => o.text).filter(Boolean).join(' | ');
             const baseSizeName = img.size.replace(/\s*-\s*Variation\s+\d+/, '');
 
             try {
@@ -2394,7 +2625,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                             platform: img.platform,
                             sizeName: baseSizeName,
                             campaignText: campaignText,
-                            textOverlay: overlay.text || '',
+                            textOverlay: overlayText,
                             provider: provider
                         })
                     });
@@ -2431,7 +2662,9 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             const campaignText = document.getElementById('campaignText').value;
             const provider = document.getElementById('aiProvider').value;
             const img = generatedImages[index];
-            const overlay = textOverlays[index] || {};
+            const overlays = textOverlays[index];
+            const overlayList = Array.isArray(overlays) ? overlays : (overlays && overlays.text ? [overlays] : []);
+            const overlayText = overlayList.map(o => o.text).filter(Boolean).join(' | ');
             const baseSizeName = img.size.replace(/\s*-\s*Variation\s+\d+/, '');
 
             try {
@@ -2447,7 +2680,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                             platform: img.platform,
                             sizeName: baseSizeName,
                             campaignText: campaignText,
-                            textOverlay: overlay.text || '',
+                            textOverlay: overlayText,
                             provider: provider
                         })
                     });
@@ -2484,7 +2717,9 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             const campaignText = document.getElementById('campaignText').value;
             const provider = document.getElementById('aiProvider').value;
             const img = generatedImages[index];
-            const overlay = textOverlays[index] || {};
+            const overlays = textOverlays[index];
+            const overlayList = Array.isArray(overlays) ? overlays : (overlays && overlays.text ? [overlays] : []);
+            const overlayText = overlayList.map(o => o.text).filter(Boolean).join(' | ');
             const baseSizeName = img.size.replace(/\s*-\s*Variation\s+\d+/, '');
 
             try {
@@ -2500,7 +2735,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                             platform: img.platform,
                             sizeName: baseSizeName,
                             campaignText: campaignText,
-                            textOverlay: overlay.text || '',
+                            textOverlay: overlayText,
                             provider: provider
                         })
                     });
@@ -2624,22 +2859,30 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
         }
 
         function renderReviewPreview(index) {
-            const overlay = textOverlays[index];
+            const overlays = textOverlays[index];
             const logo = logoSettings[index];
 
-            // Render text overlay
+            // Render text overlays - handle both array and single object format
             const textPreview = document.getElementById(`review-text-${index}`);
-            if (overlay && overlay.text) {
-                const positionStyles = `top: ${overlay.y || 85}%; left: ${overlay.x || 50}%; transform: translate(-50%, -50%);`;
-                const bgStyle = overlay.bgColor === 'none' ? 'background: transparent;' : `background: ${overlay.bgColor};`;
+            const overlayList = Array.isArray(overlays) ? overlays : (overlays && overlays.text ? [overlays] : []);
 
-                textPreview.innerHTML = `
-                    <div style="position: absolute; ${positionStyles}">
-                        <div style="display: inline-block; ${bgStyle} padding: 10px 20px; border-radius: 8px;">
-                            <p style="color: ${overlay.textColor}; font-family: '${overlay.fontFamily}', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: ${overlay.fontSize}px; font-weight: 700; margin: 0; line-height: 1.2; white-space: nowrap;">${overlay.text}</p>
+            if (overlayList.length > 0) {
+                let html = '';
+                overlayList.forEach(overlay => {
+                    if (!overlay || !overlay.text) return;
+
+                    const positionStyles = `top: ${overlay.y || 85}%; left: ${overlay.x || 50}%; transform: translate(-50%, -50%);`;
+                    const bgStyle = overlay.bgColor === 'none' ? 'background: transparent;' : `background: ${overlay.bgColor};`;
+
+                    html += `
+                        <div style="position: absolute; ${positionStyles}">
+                            <div style="display: inline-block; ${bgStyle} padding: 10px 20px; border-radius: 8px; text-align: center;">
+                                <p style="color: ${overlay.textColor || '#FFFFFF'}; font-family: '${overlay.fontFamily || 'Gilroy'}', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: ${overlay.fontSize || 28}px; font-weight: 700; margin: 0; line-height: 1.3; white-space: pre-line;">${overlay.text}</p>
+                            </div>
                         </div>
-                    </div>
-                `;
+                    `;
+                });
+                textPreview.innerHTML = html;
             }
 
             // Render logo
@@ -2746,7 +2989,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
 
         async function downloadFinalImage(index) {
             const img = generatedImages[index];
-            const overlay = textOverlays[index];
+            const overlays = textOverlays[index];
             const logo = logoSettings[index] || { enabled: false, x: 10, y: 10, scale: 30 };
 
             // Create canvas
@@ -2763,23 +3006,33 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 // Draw base image
                 ctx.drawImage(baseImage, 0, 0, img.width, img.height);
 
-                // Draw text overlay if exists
-                if (overlay && overlay.text) {
+                // Draw text overlays - handle both array and single object format
+                const overlayList = Array.isArray(overlays) ? overlays : (overlays && overlays.text ? [overlays] : []);
+
+                overlayList.forEach(overlay => {
+                    if (!overlay || !overlay.text) return;
+
                     const x = (overlay.x / 100) * img.width;
                     const y = (overlay.y / 100) * img.height;
 
                     // Calculate font size proportional to image size
                     const scaleFactor = img.width / 1080; // Relative to standard width
-                    const fontSize = overlay.fontSize * scaleFactor;
+                    const fontSize = (overlay.fontSize || 28) * scaleFactor;
 
-                    ctx.font = `700 ${fontSize}px '${overlay.fontFamily}', Arial, sans-serif`;
+                    ctx.font = `700 ${fontSize}px '${overlay.fontFamily || 'Gilroy'}', Arial, sans-serif`;
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
 
-                    // Measure text for background
-                    const textMetrics = ctx.measureText(overlay.text);
-                    const textWidth = textMetrics.width;
-                    const textHeight = fontSize * 1.2;
+                    // Handle multi-line text
+                    const lines = overlay.text.split('\n');
+                    const lineHeight = fontSize * 1.3;
+
+                    // Measure max text width for background
+                    let maxWidth = 0;
+                    lines.forEach(line => {
+                        const metrics = ctx.measureText(line);
+                        if (metrics.width > maxWidth) maxWidth = metrics.width;
+                    });
 
                     const padding = 20 * scaleFactor;
 
@@ -2787,10 +3040,10 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                     if (overlay.bgColor && overlay.bgColor !== 'none') {
                         ctx.fillStyle = overlay.bgColor;
                         const borderRadius = 8 * scaleFactor;
-                        const bgX = x - textWidth / 2 - padding;
-                        const bgY = y - textHeight / 2 - padding / 2;
-                        const bgWidth = textWidth + padding * 2;
-                        const bgHeight = textHeight + padding;
+                        const bgHeight = lineHeight * lines.length + padding;
+                        const bgX = x - maxWidth / 2 - padding;
+                        const bgY = y - bgHeight / 2;
+                        const bgWidth = maxWidth + padding * 2;
 
                         // Draw rounded rectangle
                         ctx.beginPath();
@@ -2807,10 +3060,14 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                         ctx.fill();
                     }
 
-                    // Draw text
-                    ctx.fillStyle = overlay.textColor;
-                    ctx.fillText(overlay.text, x, y);
-                }
+                    // Draw text - each line
+                    ctx.fillStyle = overlay.textColor || '#FFFFFF';
+                    const totalHeight = lineHeight * (lines.length - 1);
+                    lines.forEach((line, lineIdx) => {
+                        const lineY = y - totalHeight / 2 + lineIdx * lineHeight;
+                        ctx.fillText(line, x, lineY);
+                    });
+                });
 
                 // Draw logo if enabled
                 const selectedLogo = availableLogos[logo.selectedLogoIndex || 0];
