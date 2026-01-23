@@ -601,7 +601,10 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
 
             <!-- Generated Prompt - Editable -->
             <div id="generatedPromptSection" class="hidden" style="background: #F4F7FC; padding: 2rem; border-radius: 12px; margin: 2rem 0;">
-                <h3 style="margin-bottom: 1rem;">Generated Prompt (You can edit this):</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h3 style="margin: 0;">Generated Prompt (You can edit this):</h3>
+                    <div id="inspirationStatusBadge" style="display: none;"></div>
+                </div>
                 <textarea id="promptText" style="width: 100%; min-height: 200px; padding: 1rem; border: 2px solid #E1E7EF; border-radius: 8px; font-size: 1rem; line-height: 1.6; font-family: inherit;"></textarea>
                 <p style="color: #7DA3AF; margin-top: 0.5rem; font-size: 0.9rem;">✏️ Edit the prompt above if you want to adjust the image style</p>
             </div>
@@ -1160,6 +1163,21 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                     document.getElementById('promptText').value = result.prompt;
                     document.getElementById('generatedPromptSection').classList.remove('hidden');
                     document.getElementById('loadingState').style.display = 'none';
+
+                    // Show inspiration status badge
+                    const statusBadge = document.getElementById('inspirationStatusBadge');
+                    if (statusBadge) {
+                        if (inspirationAnalysis) {
+                            statusBadge.innerHTML = `<span style="background: #31D7CA; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem;">✓ Inspiration images analyzed (${uploadedImages.length} image${uploadedImages.length > 1 ? 's' : ''})</span>`;
+                            statusBadge.style.display = 'block';
+                        } else if (uploadedImages.length > 0) {
+                            statusBadge.innerHTML = `<span style="background: #FC883A; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem;">⚠ ${uploadedImages.length} image${uploadedImages.length > 1 ? 's' : ''} uploaded but analysis failed</span>`;
+                            statusBadge.style.display = 'block';
+                        } else {
+                            statusBadge.innerHTML = `<span style="background: #A9C1CB; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem;">No inspiration images</span>`;
+                            statusBadge.style.display = 'block';
+                        }
+                    }
 
                     // Hide prompt button, show images button and regenerate button
                     document.getElementById('generatePromptBtn').classList.add('hidden');
