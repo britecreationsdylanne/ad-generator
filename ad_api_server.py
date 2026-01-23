@@ -215,11 +215,11 @@ def generate_prompt():
         inspiration_context = ""
         if inspiration_analysis:
             inspiration_context = f"""
-INSPIRATION STYLE REFERENCE:
-The following describes the visual style to match based on uploaded inspiration images:
+CRITICAL - USER'S INSPIRATION IMAGES (YOU MUST USE THIS):
+The user uploaded inspiration images and here is what they show:
 {inspiration_analysis}
 
-Use this style guidance to inform the image generation prompt. Match the lighting, composition, mood, and photographic techniques described above.
+YOUR PROMPT MUST incorporate the visual elements, style, subjects, and mood from this inspiration. The generated images should clearly reflect what was in the inspiration images. This takes priority over default brand imagery.
 """
 
         # Build platform-specific context
@@ -242,6 +242,8 @@ IMPORTANT FOR GOOGLE ADS:
 - Ensure the imagery works well at smaller mobile sizes
 - Use clear visual hierarchy with one strong focal point
 
+NEVER include hex color codes like #31D7CA in your prompt - just describe the colors by name (turquoise, navy, orange).
+
 Generate ONE detailed, creative prompt (200 words max) for Nano Banana (Google Gemini) image generator. Make it specific, visual, and actionable."""
         else:
             platform_context = f"""You are an expert at creating image generation prompts for AI models.
@@ -251,6 +253,8 @@ Create an image generation prompt for BriteCo jewelry insurance ads for {', '.jo
 Campaign context: {campaign_text}
 {inspiration_context}
 {BRAND_GUIDELINES}
+
+NEVER include hex color codes like #31D7CA in your prompt - just describe the colors by name (turquoise, navy, orange).
 
 Generate ONE detailed, creative prompt (200 words max) for Nano Banana (Google Gemini) image generator. Make it specific, visual, and actionable."""
 

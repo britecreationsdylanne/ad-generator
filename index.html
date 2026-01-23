@@ -1086,10 +1086,12 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 // If we have inspiration images, analyze them first
                 let inspirationAnalysis = '';
                 if (uploadedImages.length > 0) {
+                    console.log('[DEBUG] Found', uploadedImages.length, 'inspiration images to analyze');
                     document.getElementById('overlayMessage').textContent = 'Analyzing inspiration images...';
                     document.getElementById('loadingStatus').textContent = 'Analyzing inspiration images...';
 
                     try {
+                        console.log('[DEBUG] Calling /api/analyze-inspiration-images...');
                         const analysisResponse = await fetch('/api/analyze-inspiration-images', {
                             method: 'POST',
                             headers: {
@@ -1101,13 +1103,18 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                         });
 
                         const analysisResult = await analysisResponse.json();
+                        console.log('[DEBUG] Analysis API response:', analysisResult);
+
                         if (analysisResult.success && analysisResult.analysis) {
                             inspirationAnalysis = analysisResult.analysis;
-                            console.log('[DEBUG] Inspiration analysis:', inspirationAnalysis);
+                            console.log('[DEBUG] Inspiration analysis SUCCESS:', inspirationAnalysis);
+                        } else if (analysisResult.error) {
+                            console.error('[DEBUG] Inspiration analysis FAILED:', analysisResult.error);
+                            alert('Warning: Could not analyze inspiration images: ' + analysisResult.error);
                         }
                     } catch (analysisError) {
-                        console.error('Failed to analyze inspiration images:', analysisError);
-                        // Continue without analysis
+                        console.error('[DEBUG] Failed to analyze inspiration images:', analysisError);
+                        alert('Warning: Could not analyze inspiration images. Check console for details.');
                     }
 
                     document.getElementById('overlayMessage').textContent = `${providerName} is creating your custom image prompts.`;
