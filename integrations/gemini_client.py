@@ -225,9 +225,8 @@ class GeminiClient:
             if len(content_parts) < 2:
                 raise ValueError("No valid images to analyze")
 
-            # Use Gemini 2.0 Flash for vision analysis (known to work with images)
-            # Note: gemini-3-pro-preview may not be available or may have vision issues
-            vision_model = "gemini-2.0-flash"
+            # Use Gemini 3 Pro Preview for vision analysis
+            vision_model = "gemini-3-pro-preview"
             print(f"[GEMINI VISION] Using model: {vision_model}")
 
             response = self.client.models.generate_content(
@@ -255,20 +254,32 @@ class GeminiClient:
                 candidate = response.candidates[0]
                 print(f"[GEMINI VISION DEBUG] Candidate type: {type(candidate)}")
 
+                # Check for finish_reason which may indicate blocking
+                if hasattr(candidate, 'finish_reason'):
+                    print(f"[GEMINI VISION DEBUG] Finish reason: {candidate.finish_reason}")
+
+                # Check for safety_ratings
+                if hasattr(candidate, 'safety_ratings') and candidate.safety_ratings:
+                    print(f"[GEMINI VISION DEBUG] Safety ratings: {candidate.safety_ratings}")
+
                 if hasattr(candidate, 'content') and candidate.content is not None:
                     content = candidate.content
                     print(f"[GEMINI VISION DEBUG] Content type: {type(content)}")
+                    print(f"[GEMINI VISION DEBUG] Content attrs: {[a for a in dir(content) if not a.startswith('_')]}")
 
                     if hasattr(content, 'parts') and content.parts is not None:
                         print(f"[GEMINI VISION DEBUG] Parts count: {len(content.parts)}")
                         for i, part in enumerate(content.parts):
                             print(f"[GEMINI VISION DEBUG] Part {i} type: {type(part)}")
+                            print(f"[GEMINI VISION DEBUG] Part {i} attrs: {[a for a in dir(part) if not a.startswith('_')]}")
                             if hasattr(part, 'text') and part.text:
                                 analysis_text += part.text
                     else:
                         print(f"[GEMINI VISION DEBUG] content.parts is None or missing")
                 else:
                     print(f"[GEMINI VISION DEBUG] candidate.content is None or missing")
+                    # Try to inspect candidate attributes
+                    print(f"[GEMINI VISION DEBUG] Candidate attrs: {[a for a in dir(candidate) if not a.startswith('_')]}")
             else:
                 print(f"[GEMINI VISION DEBUG] No candidates in response")
                 # Try to get any useful info from response
