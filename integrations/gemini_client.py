@@ -184,25 +184,39 @@ class GeminiClient:
                 try:
                     # Extract base64 data from data URI
                     if ',' in img_data:
+                        header = img_data.split(',', 1)[0]
                         base64_data = img_data.split(',', 1)[1]
+                        # Determine mime type from header
+                        if 'png' in header.lower():
+                            mime_type = 'image/png'
+                        elif 'gif' in header.lower():
+                            mime_type = 'image/gif'
+                        elif 'webp' in header.lower():
+                            mime_type = 'image/webp'
+                        else:
+                            mime_type = 'image/jpeg'
                     else:
                         base64_data = img_data
+                        mime_type = 'image/jpeg'
 
-                    # Decode base64 to PIL Image
+                    # Decode base64 to get image bytes
                     image_bytes = base64.b64decode(base64_data)
+
+                    # Verify it's a valid image by opening with PIL
                     pil_image = Image.open(BytesIO(image_bytes))
-
-                    # Convert to RGB if necessary
-                    if pil_image.mode != 'RGB':
-                        pil_image = pil_image.convert('RGB')
-
                     print(f"[GEMINI VISION] Image {i+1}: {pil_image.size}, mode: {pil_image.mode}")
 
-                    # Add image to content parts
-                    content_parts.append(pil_image)
+                    # Use types.Part with inline_data for proper SDK format
+                    image_part = types.Part.from_bytes(
+                        data=image_bytes,
+                        mime_type=mime_type
+                    )
+                    content_parts.append(image_part)
 
                 except Exception as img_error:
                     print(f"[GEMINI VISION] Failed to process image {i+1}: {img_error}")
+                    import traceback
+                    traceback.print_exc()
                     continue
 
             # Add the text prompt
@@ -211,9 +225,12 @@ class GeminiClient:
             if len(content_parts) < 2:
                 raise ValueError("No valid images to analyze")
 
-            # Use Gemini Flash for vision analysis (fast and capable)
+            # Use Gemini 3 Pro Preview for vision analysis
+            vision_model = "gemini-3-pro-preview"
+            print(f"[GEMINI VISION] Using model: {vision_model}")
+
             response = self.client.models.generate_content(
-                model="gemini-2.0-flash",
+                model=vision_model,
                 contents=content_parts,
                 config=types.GenerateContentConfig(
                     temperature=temperature,
@@ -236,7 +253,7 @@ class GeminiClient:
 
             return {
                 "content": analysis_text,
-                "model": "gemini-2.0-flash"
+                "model": vision_model
             }
 
         except Exception as e:

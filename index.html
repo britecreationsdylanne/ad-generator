@@ -248,6 +248,10 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
     </style>
 </head>
 <body>
@@ -566,6 +570,12 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             <div id="uploadedImagesCount" style="margin-top: 0.5rem; display: none;">
                 <span style="background: #31D7CA; color: white; padding: 6px 14px; border-radius: 20px; font-size: 0.9rem; font-weight: 600;">
                     <span id="imageCountNumber">0</span> inspiration image(s) ready for Gemini Vision analysis
+                </span>
+            </div>
+            <div id="geminiAnalysisStatus" style="margin-top: 0.75rem; display: none;">
+                <span id="geminiStatusBadge" style="display: inline-flex; align-items: center; gap: 8px; background: #E8FAF9; border: 2px solid #31D7CA; color: #272D3F; padding: 8px 16px; border-radius: 8px; font-size: 0.9rem; font-weight: 600;">
+                    <span id="geminiStatusIcon">✓</span>
+                    <span id="geminiStatusText">Gemini Vision ready</span>
                 </span>
             </div>
             <div id="imagePreview" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; margin-top: 1rem;"></div>
@@ -1107,19 +1117,23 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
 
                 // If we have inspiration images, analyze them first
                 let inspirationAnalysis = '';
-
-                // DEBUG: Show alert with image count
-                alert('DEBUG: Found ' + uploadedImages.length + ' inspiration images in array');
+                console.log('[INSPIRATION DEBUG] Checking uploadedImages array...');
+                console.log('[INSPIRATION DEBUG] uploadedImages:', uploadedImages);
+                console.log('[INSPIRATION DEBUG] uploadedImages.length:', uploadedImages.length);
 
                 if (uploadedImages.length > 0) {
+                    console.log('[INSPIRATION DEBUG] Found', uploadedImages.length, 'inspiration images to analyze');
+                    console.log('[INSPIRATION DEBUG] Image names:', uploadedImages.map(img => img.name));
+                    console.log('[INSPIRATION DEBUG] Image data lengths:', uploadedImages.map(img => img.data ? img.data.length : 0));
+
                     document.getElementById('overlayMessage').textContent = 'Analyzing inspiration images with Gemini Vision...';
                     document.getElementById('loadingStatus').textContent = 'Analyzing inspiration images with Gemini Vision...';
+                    updateGeminiStatus('analyzing');
 
                     try {
                         const imagesToSend = uploadedImages.map(img => img.data);
-
-                        // DEBUG: Show what we're sending
-                        alert('DEBUG: Sending ' + imagesToSend.length + ' images to /api/analyze-inspiration-images');
+                        console.log('[INSPIRATION DEBUG] Sending', imagesToSend.length, 'images to API');
+                        console.log('[INSPIRATION DEBUG] First image data preview:', imagesToSend[0] ? imagesToSend[0].substring(0, 100) : 'no data');
 
                         const analysisResponse = await fetch('/api/analyze-inspiration-images', {
                             method: 'POST',
@@ -1132,31 +1146,36 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                         });
 
                         const analysisResult = await analysisResponse.json();
-
-                        // DEBUG: Show API response
-                        alert('DEBUG: API returned status=' + analysisResponse.status + ', success=' + analysisResult.success + ', analysis length=' + (analysisResult.analysis ? analysisResult.analysis.length : 0));
+                        console.log('[INSPIRATION DEBUG] Analysis API response status:', analysisResponse.status);
+                        console.log('[INSPIRATION DEBUG] Analysis API response:', analysisResult);
 
                         if (analysisResult.success && analysisResult.analysis) {
                             inspirationAnalysis = analysisResult.analysis;
-                            // DEBUG: Show analysis preview
-                            alert('DEBUG: Analysis SUCCESS! Preview: ' + inspirationAnalysis.substring(0, 200) + '...');
+                            console.log('[INSPIRATION DEBUG] Inspiration analysis SUCCESS!');
+                            console.log('[INSPIRATION DEBUG] Analysis text:', inspirationAnalysis);
+                            updateGeminiStatus('success');
                         } else if (analysisResult.error) {
-                            alert('ERROR: Analysis failed: ' + analysisResult.error);
+                            console.error('[INSPIRATION DEBUG] Inspiration analysis FAILED:', analysisResult.error);
+                            updateGeminiStatus('error');
+                            alert('Warning: Could not analyze inspiration images: ' + analysisResult.error);
                         } else {
-                            alert('WARNING: Analysis returned empty. Full response: ' + JSON.stringify(analysisResult));
+                            console.warn('[INSPIRATION DEBUG] Analysis returned but no analysis text found');
+                            console.warn('[INSPIRATION DEBUG] Full result:', JSON.stringify(analysisResult));
+                            updateGeminiStatus('error');
                         }
                     } catch (analysisError) {
-                        alert('ERROR: Exception during analysis: ' + analysisError.message);
+                        console.error('[INSPIRATION DEBUG] Failed to analyze inspiration images:', analysisError);
+                        updateGeminiStatus('error');
+                        alert('Warning: Could not analyze inspiration images. Check console for details.');
                     }
 
                     document.getElementById('overlayMessage').textContent = `${providerName} is creating your custom image prompts.`;
                     document.getElementById('loadingStatus').textContent = `${providerName} is creating your custom image prompts.`;
                 } else {
-                    alert('DEBUG: No inspiration images found - uploadedImages array is empty');
+                    console.log('[INSPIRATION DEBUG] No inspiration images found in uploadedImages array');
                 }
 
-                // DEBUG: Final status before sending to prompt generation
-                alert('DEBUG: Sending to generate-prompt with inspirationAnalysis=' + (inspirationAnalysis ? 'YES (' + inspirationAnalysis.length + ' chars)' : 'EMPTY'));
+                console.log('[INSPIRATION DEBUG] Final inspirationAnalysis being sent to generate-prompt:', inspirationAnalysis ? 'HAS CONTENT (' + inspirationAnalysis.length + ' chars)' : 'EMPTY');
 
                 const response = await fetch('/api/generate-prompt', {
                     method: 'POST',
@@ -4417,12 +4436,19 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             // Update the visible count badge
             const countContainer = document.getElementById('uploadedImagesCount');
             const countNumber = document.getElementById('imageCountNumber');
+            const geminiStatus = document.getElementById('geminiAnalysisStatus');
             if (countContainer && countNumber) {
                 if (uploadedImages.length > 0) {
                     countNumber.textContent = uploadedImages.length;
                     countContainer.style.display = 'block';
+                    // Show Gemini status when images are uploaded
+                    if (geminiStatus) {
+                        geminiStatus.style.display = 'block';
+                        updateGeminiStatus('ready');
+                    }
                 } else {
                     countContainer.style.display = 'none';
+                    if (geminiStatus) geminiStatus.style.display = 'none';
                 }
             }
 
@@ -4445,6 +4471,49 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
         function removeInspirationImage(index) {
             uploadedImages.splice(index, 1);
             renderInspirationPreviews();
+        }
+
+        // Update Gemini Vision status indicator
+        function updateGeminiStatus(status) {
+            const statusContainer = document.getElementById('geminiAnalysisStatus');
+            const statusIcon = document.getElementById('geminiStatusIcon');
+            const statusText = document.getElementById('geminiStatusText');
+            const statusBadge = document.getElementById('geminiStatusBadge');
+
+            if (!statusContainer || !statusIcon || !statusText || !statusBadge) return;
+
+            statusContainer.style.display = 'block';
+
+            switch(status) {
+                case 'ready':
+                    statusIcon.textContent = '🔍';
+                    statusText.textContent = 'Gemini Vision will analyze on generate';
+                    statusBadge.style.background = '#E8FAF9';
+                    statusBadge.style.borderColor = '#31D7CA';
+                    statusIcon.style.animation = 'none';
+                    break;
+                case 'analyzing':
+                    statusIcon.textContent = '⚡';
+                    statusText.textContent = 'Gemini Vision analyzing images...';
+                    statusBadge.style.background = '#FFF8E6';
+                    statusBadge.style.borderColor = '#FC883A';
+                    statusIcon.style.animation = 'pulse 1s infinite';
+                    break;
+                case 'success':
+                    statusIcon.textContent = '✓';
+                    statusText.textContent = 'Gemini Vision analysis complete';
+                    statusBadge.style.background = '#E6F9E6';
+                    statusBadge.style.borderColor = '#31D7CA';
+                    statusIcon.style.animation = 'none';
+                    break;
+                case 'error':
+                    statusIcon.textContent = '⚠';
+                    statusText.textContent = 'Gemini Vision analysis failed';
+                    statusBadge.style.background = '#FFE6E6';
+                    statusBadge.style.borderColor = '#D73D4F';
+                    statusIcon.style.animation = 'none';
+                    break;
+            }
         }
 
         // Drag and drop
