@@ -149,6 +149,79 @@ class GeminiClient:
             traceback.print_exc()
             raise
 
+    def generate_content(
+        self,
+        prompt: str,
+        system_prompt: Optional[str] = None,
+        model: Optional[str] = None,
+        max_tokens: int = 2000,
+        temperature: float = 0.7
+    ) -> Dict:
+        """
+        Generate text content using Gemini
+
+        Args:
+            prompt: User prompt
+            system_prompt: System instructions (will be prepended to prompt)
+            model: Model to use (default: gemini-3-pro-preview)
+            max_tokens: Maximum output tokens
+            temperature: Creativity setting
+
+        Returns:
+            {
+                "content": "generated text",
+                "model": "model-used"
+            }
+        """
+        try:
+            text_model = model or "gemini-3-pro-preview"
+            start_time = time.time()
+
+            # Combine system prompt and user prompt
+            full_prompt = prompt
+            if system_prompt:
+                full_prompt = f"{system_prompt}\n\n{prompt}"
+
+            print(f"[GEMINI TEXT] Using model: {text_model}")
+            print(f"[GEMINI TEXT] Prompt length: {len(full_prompt)} chars")
+
+            response = self.client.models.generate_content(
+                model=text_model,
+                contents=[full_prompt],
+                config=types.GenerateContentConfig(
+                    temperature=temperature,
+                    max_output_tokens=max_tokens
+                )
+            )
+
+            generation_time_ms = int((time.time() - start_time) * 1000)
+
+            # Extract text from response
+            content = ""
+            if hasattr(response, 'text') and response.text:
+                content = response.text
+            elif hasattr(response, 'candidates') and response.candidates:
+                candidate = response.candidates[0]
+                if hasattr(candidate, 'content') and candidate.content:
+                    if hasattr(candidate.content, 'parts') and candidate.content.parts:
+                        for part in candidate.content.parts:
+                            if hasattr(part, 'text') and part.text:
+                                content += part.text
+
+            print(f"[GEMINI TEXT] Generated {len(content)} chars in {generation_time_ms}ms")
+
+            return {
+                "content": content,
+                "model": text_model,
+                "generation_time_ms": generation_time_ms
+            }
+
+        except Exception as e:
+            print(f"[GEMINI TEXT ERROR] Content generation failed: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            raise
+
     def analyze_images(
         self,
         images: list,

@@ -189,10 +189,11 @@ Describe the following elements in detail:
 Be specific and detailed. Focus on what you actually see in the image - if it's a bear, describe the bear. If it's a landscape, describe the landscape. Your description will be used to guide AI image generation."""
 
         # Call Gemini with vision capability
+        # Note: Increased max_tokens to 2000 to avoid MAX_TOKENS finish reason
         result = gemini_client.analyze_images(
             images=images,
             prompt=analysis_prompt,
-            max_tokens=1000,
+            max_tokens=2000,
             temperature=0.3
         )
 
@@ -296,6 +297,14 @@ Generate ONE detailed, creative prompt (200 words max) for Nano Banana (Google G
         if provider == 'claude':
             print("[API] Using Claude...")
             result = claude_client.generate_content(
+                prompt=prompt_context,
+                max_tokens=500,
+                temperature=0.7
+            )
+            prompt = result.get('content', '')
+        elif provider == 'gemini':
+            print("[API] Using Gemini...")
+            result = gemini_client.generate_content(
                 prompt=prompt_context,
                 max_tokens=500,
                 temperature=0.7
