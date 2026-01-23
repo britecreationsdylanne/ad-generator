@@ -45,7 +45,7 @@ print("[OK] Claude initialized")
 # BriteCo brand guidelines
 BRAND_GUIDELINES = """
 BriteCo Brand Guidelines:
-- Colors: Turquoise (#31D7CA), Navy (#272D3F), Orange (#FC883A)
+- Colors: Turquoise, Navy, Orange (use these colors visually, NOT as text)
 - Style: Modern, clean, optimistic, trustworthy
 - Target: Millennials and Gen Z engaged couples
 - Photography: Warm lighting, diverse couples, genuine moments
@@ -60,6 +60,14 @@ Requirements for ads:
 - Professional photography quality
 - Authentic, candid moment (not too posed)
 - Diverse representation
+
+CRITICAL: NEVER write, render, display, or include ANY text on the image including:
+- Color codes (like #31D7CA, #272D3F, #FC883A)
+- Hex values or RGB values
+- Color names as visible text
+- Any watermarks, labels, or text overlays
+- Brand names or logos
+Colors should ONLY be used visually in the image composition, never as readable text.
 """
 
 # Platform specifications
@@ -136,6 +144,55 @@ def serve_root_file(filename):
         return send_from_directory('.', filename)
     return "Not found", 404
 
+@app.route('/api/analyze-inspiration-images', methods=['POST'])
+def analyze_inspiration_images():
+    """Analyze inspiration images using Claude Vision and return style descriptions"""
+    try:
+        data = request.json
+        images = data.get('images', [])  # Array of base64 image data URIs
+
+        if not images:
+            return jsonify({'success': True, 'analysis': ''})
+
+        print(f"\n[API] Analyze Inspiration Images Request")
+        print(f"  Number of images: {len(images)}")
+
+        # Use Claude to analyze the images
+        analysis_prompt = """Analyze these inspiration images for an advertising campaign. Describe in detail:
+
+1. **Visual Style**: Lighting (warm/cool/natural), color palette, contrast, saturation
+2. **Composition**: Framing, perspective, focal points, use of space
+3. **Mood/Atmosphere**: Emotional tone, energy level, feeling evoked
+4. **Subject Matter**: What's shown, how subjects are posed/positioned
+5. **Photography Technique**: Depth of field, focus style, any special effects
+
+Provide a concise but detailed description (150-200 words) that can be used to guide AI image generation to match this style. Focus on visual elements that can be replicated.
+
+IMPORTANT: Do NOT mention any text, logos, or brand elements. Only describe the photographic and artistic qualities."""
+
+        # Call Claude with vision capability
+        result = claude_client.generate_content_with_images(
+            prompt=analysis_prompt,
+            images=images,
+            max_tokens=500,
+            temperature=0.5
+        )
+
+        analysis = result.get('content', '')
+        print(f"[API] Image analysis complete ({len(analysis)} chars)")
+
+        return jsonify({
+            'success': True,
+            'analysis': analysis
+        })
+
+    except Exception as e:
+        print(f"[API ERROR] {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/api/generate-prompt', methods=['POST'])
 def generate_prompt():
     """Generate image prompt using Claude or OpenAI"""
@@ -144,13 +201,26 @@ def generate_prompt():
         campaign_text = data.get('campaignText', '')
         platforms = data.get('platforms', [])
         provider = data.get('provider', 'claude')
+        inspiration_analysis = data.get('inspirationAnalysis', '')  # Style analysis from inspiration images
 
         print(f"\n[API] Generate Prompt Request")
         print(f"  Provider: {provider}")
         print(f"  Platforms: {platforms}")
+        print(f"  Has inspiration analysis: {bool(inspiration_analysis)}")
 
         # Check if Google Ads platforms are selected
         is_google_ads = any(p.lower() in ['demandgen', 'pmax'] for p in platforms)
+
+        # Build inspiration context if available
+        inspiration_context = ""
+        if inspiration_analysis:
+            inspiration_context = f"""
+INSPIRATION STYLE REFERENCE:
+The following describes the visual style to match based on uploaded inspiration images:
+{inspiration_analysis}
+
+Use this style guidance to inform the image generation prompt. Match the lighting, composition, mood, and photographic techniques described above.
+"""
 
         # Build platform-specific context
         if is_google_ads:
@@ -159,7 +229,7 @@ def generate_prompt():
 Create an image generation prompt for BriteCo jewelry insurance ads for {', '.join(platforms)}.
 
 Campaign context: {campaign_text}
-
+{inspiration_context}
 {BRAND_GUIDELINES}
 
 {GOOGLE_ADS_BEST_PRACTICES}
@@ -179,7 +249,7 @@ Generate ONE detailed, creative prompt (200 words max) for Nano Banana (Google G
 Create an image generation prompt for BriteCo jewelry insurance ads for {', '.join(platforms)}.
 
 Campaign context: {campaign_text}
-
+{inspiration_context}
 {BRAND_GUIDELINES}
 
 Generate ONE detailed, creative prompt (200 words max) for Nano Banana (Google Gemini) image generator. Make it specific, visual, and actionable."""
@@ -266,7 +336,18 @@ def generate_images():
                             composition_hint = "full vertical composition from head to below waist, story-style framing"
 
                         # Enhance prompt with aspect ratio guidance
-                        enhanced_prompt = f"{prompt}\n\nIMPORTANT: Compose this image specifically for {aspect_hint}. Use {composition_hint}. Frame: {width}x{height}px.\n\nDo NOT include any company logos, brand marks, watermarks, or text overlays in the image. Generate photography only without any branding elements."
+                        enhanced_prompt = f"""{prompt}
+
+CRITICAL COMPOSITION REQUIREMENTS:
+1. Generate this image EXACTLY for {aspect_hint} at {width}x{height}px dimensions.
+2. Use {composition_hint}.
+3. Ensure ALL important subjects (people, jewelry, faces) are fully visible and NOT cropped.
+4. Keep subjects centered with safe margins (at least 10% from all edges).
+5. For portrait/story formats: frame subjects from head to mid-torso, NOT full body.
+6. For landscape formats: use horizontal composition with subjects filling the frame width.
+7. For square formats: center subjects with equal padding on all sides.
+
+NEVER include any text, logos, watermarks, color codes, hex values, or brand marks in the image. Generate photography only."""
 
                         # Generate with Gemini (Nano Banana) with aspect-specific prompt
                         result = gemini_client.generate_image(
@@ -331,6 +412,108 @@ def generate_images():
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/generate-single-image', methods=['POST'])
+def generate_single_image():
+    """Generate a single image for a specific platform/size - used for regenerating individual images"""
+    try:
+        data = request.json
+        prompt = data.get('prompt', '')
+        platform = data.get('platform', '')
+        width = data.get('width', 1080)
+        height = data.get('height', 1080)
+        size_name = data.get('sizeName', 'Image')
+
+        print(f"\n[API] Generate Single Image Request")
+        print(f"  Platform: {platform}")
+        print(f"  Size: {size_name} ({width}x{height})")
+
+        # Calculate aspect ratio for prompt enhancement
+        aspect_ratio = width / height
+
+        if aspect_ratio > 1.5:
+            aspect_hint = "wide landscape format (16:9 or wider)"
+            composition_hint = "horizontal composition with subjects positioned to fill the wide frame"
+        elif aspect_ratio > 1.2:
+            aspect_hint = "landscape format"
+            composition_hint = "horizontal composition"
+        elif aspect_ratio > 0.85:
+            aspect_hint = "square format (1:1)"
+            composition_hint = "centered composition with subjects filling the square frame"
+        elif aspect_ratio > 0.6:
+            aspect_hint = "portrait format (4:5)"
+            composition_hint = "vertical composition with more headroom"
+        else:
+            aspect_hint = "tall portrait format (9:16 story)"
+            composition_hint = "full vertical composition from head to below waist, story-style framing"
+
+        # Enhance prompt with aspect ratio guidance
+        enhanced_prompt = f"""{prompt}
+
+CRITICAL COMPOSITION REQUIREMENTS:
+1. Generate this image EXACTLY for {aspect_hint} at {width}x{height}px dimensions.
+2. Use {composition_hint}.
+3. Ensure ALL important subjects (people, jewelry, faces) are fully visible and NOT cropped.
+4. Keep subjects centered with safe margins (at least 10% from all edges).
+5. For portrait/story formats: frame subjects from head to mid-torso, NOT full body.
+6. For landscape formats: use horizontal composition with subjects filling the frame width.
+7. For square formats: center subjects with equal padding on all sides.
+
+NEVER include any text, logos, watermarks, color codes, hex values, or brand marks in the image. Generate photography only."""
+
+        # Generate with Gemini
+        result = gemini_client.generate_image(
+            prompt=enhanced_prompt,
+            model="gemini-2.5-flash-image"
+        )
+
+        image_data = result.get('image_data', '')
+
+        if image_data:
+            # Resize and compress image
+            try:
+                import base64
+                from PIL import Image, ImageOps
+                from io import BytesIO
+
+                image_bytes = base64.b64decode(image_data)
+                pil_image = Image.open(BytesIO(image_bytes))
+
+                print(f"[API] Original image: {pil_image.size}")
+
+                # Resize to target dimensions
+                pil_image = ImageOps.fit(pil_image, (width, height), Image.Resampling.LANCZOS, centering=(0.5, 0.5))
+
+                # Compress
+                buffer = BytesIO()
+                pil_image.convert('RGB').save(buffer, format='JPEG', quality=85, optimize=True)
+                compressed_bytes = buffer.getvalue()
+                image_data = base64.b64encode(compressed_bytes).decode('utf-8')
+
+                print(f"[API] Final: {pil_image.size}")
+            except Exception as resize_error:
+                print(f"[API] WARNING - Resize failed, using original: {resize_error}")
+
+            return jsonify({
+                'success': True,
+                'image': {
+                    'platform': platform,
+                    'size': size_name,
+                    'width': width,
+                    'height': height,
+                    'url': f"data:image/jpeg;base64,{image_data}"
+                }
+            })
+        else:
+            return jsonify({'success': False, 'error': 'No image generated'}), 500
+
+    except Exception as e:
+        print(f"[API ERROR] {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 
 @app.route('/api/generate-ad-copy', methods=['POST'])
 def generate_ad_copy():

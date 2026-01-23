@@ -672,6 +672,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
 
             <div class="button-group" style="margin-top: 2rem;">
                 <button class="btn-secondary" onclick="backToLogoPlacement()">← Back to Logos</button>
+                <button class="btn-secondary" onclick="regenerateAllAdCopy()" id="regenerateAllCopyBtn">🔄 Regenerate All Copy</button>
                 <button class="btn-secondary" onclick="exportAllCopyOptions()">📋 Export All Copy Options</button>
                 <button class="btn-primary" onclick="goToFinalReview()">Review & Download →</button>
             </div>
@@ -1082,6 +1083,37 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 document.getElementById('loadingText').textContent = 'Generating Image Prompts';
                 document.getElementById('loadingStatus').textContent = `This may take a minute. ${providerName} is creating your custom image prompts.`;
 
+                // If we have inspiration images, analyze them first
+                let inspirationAnalysis = '';
+                if (uploadedImages.length > 0) {
+                    document.getElementById('overlayMessage').textContent = 'Analyzing inspiration images...';
+                    document.getElementById('loadingStatus').textContent = 'Analyzing inspiration images...';
+
+                    try {
+                        const analysisResponse = await fetch('/api/analyze-inspiration-images', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                images: uploadedImages.map(img => img.data)
+                            })
+                        });
+
+                        const analysisResult = await analysisResponse.json();
+                        if (analysisResult.success && analysisResult.analysis) {
+                            inspirationAnalysis = analysisResult.analysis;
+                            console.log('[DEBUG] Inspiration analysis:', inspirationAnalysis);
+                        }
+                    } catch (analysisError) {
+                        console.error('Failed to analyze inspiration images:', analysisError);
+                        // Continue without analysis
+                    }
+
+                    document.getElementById('overlayMessage').textContent = `${providerName} is creating your custom image prompts.`;
+                    document.getElementById('loadingStatus').textContent = `${providerName} is creating your custom image prompts.`;
+                }
+
                 const response = await fetch('/api/generate-prompt', {
                     method: 'POST',
                     headers: {
@@ -1090,7 +1122,8 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                     body: JSON.stringify({
                         campaignText,
                         platforms,
-                        provider
+                        provider,
+                        inspirationAnalysis
                     })
                 });
 
@@ -1133,6 +1166,33 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             document.getElementById('generatePromptBtn').textContent = 'Generating...';
 
             try {
+                // If we have inspiration images, analyze them first
+                let inspirationAnalysis = '';
+                if (uploadedImages.length > 0) {
+                    document.getElementById('loadingStatus').textContent = 'Analyzing inspiration images...';
+
+                    try {
+                        const analysisResponse = await fetch('/api/analyze-inspiration-images', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                images: uploadedImages.map(img => img.data)
+                            })
+                        });
+
+                        const analysisResult = await analysisResponse.json();
+                        if (analysisResult.success && analysisResult.analysis) {
+                            inspirationAnalysis = analysisResult.analysis;
+                        }
+                    } catch (analysisError) {
+                        console.error('Failed to analyze inspiration images:', analysisError);
+                    }
+
+                    document.getElementById('loadingStatus').textContent = 'Creating image generation prompt...';
+                }
+
                 const response = await fetch('/api/generate-prompt', {
                     method: 'POST',
                     headers: {
@@ -1141,7 +1201,8 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                     body: JSON.stringify({
                         campaignText,
                         platforms,
-                        provider
+                        provider,
+                        inspirationAnalysis
                     })
                 });
 
@@ -1289,19 +1350,79 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 // Render images in this group
                 items.forEach(({ img, index }) => {
                     const card = document.createElement('div');
+                    card.id = `image-card-${index}`;
                     card.style.cssText = 'border: 2px solid #E1E7EF; border-radius: 12px; padding: 1rem; background: white;';
 
                     const variationNumber = img.size.match(/Variation\s+(\d+)/)?.[1] || '';
                     card.innerHTML = `
-                        <img src="${img.url}" alt="${capitalizePlatform(img.platform)} ${img.size}"
+                        <img id="image-preview-${index}" src="${img.url}" alt="${capitalizePlatform(img.platform)} ${img.size}"
                              style="width: 100%; max-width: 100%; border-radius: 8px; display: block; margin-bottom: 1rem;">
-                        <p style="color: #7DA3AF; font-size: 0.9rem; font-weight: 600;">Variation ${variationNumber}</p>
-                        <p style="color: #A9C1CB; font-size: 0.85rem;">${img.width}x${img.height}</p>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <p style="color: #7DA3AF; font-size: 0.9rem; font-weight: 600; margin: 0;">Variation ${variationNumber}</p>
+                                <p style="color: #A9C1CB; font-size: 0.85rem; margin: 0.25rem 0 0 0;">${img.width}x${img.height}</p>
+                            </div>
+                            <button onclick="regenerateSingleImage(${index})" id="regen-btn-${index}"
+                                    style="padding: 0.5rem 1rem; border: 2px solid #31D7CA; border-radius: 6px;
+                                           background: white; color: #31D7CA; cursor: pointer; font-size: 0.85rem; font-weight: 600;">
+                                🔄 Regenerate
+                            </button>
+                        </div>
                     `;
 
                     imagesGrid.appendChild(card);
                 });
             });
+        }
+
+        async function regenerateSingleImage(index) {
+            const img = generatedImages[index];
+            const prompt = document.getElementById('promptText').value;
+            const btn = document.getElementById(`regen-btn-${index}`);
+            const imgEl = document.getElementById(`image-preview-${index}`);
+
+            // Update button to show loading
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Generating...';
+            btn.style.opacity = '0.7';
+            imgEl.style.opacity = '0.5';
+
+            try {
+                const response = await fetch('/api/generate-single-image', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        prompt: prompt,
+                        platform: img.platform,
+                        width: img.width,
+                        height: img.height,
+                        sizeName: img.size
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success && result.image) {
+                    // Update the image in our array
+                    generatedImages[index].url = result.image.url;
+                    // Update the displayed image
+                    imgEl.src = result.image.url;
+                    console.log(`[DEBUG] Regenerated image ${index} successfully`);
+                } else {
+                    alert('Failed to regenerate image: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error regenerating image:', error);
+                alert('Error regenerating image: ' + error.message);
+            } finally {
+                // Restore button
+                btn.disabled = false;
+                btn.innerHTML = '🔄 Regenerate';
+                btn.style.opacity = '1';
+                imgEl.style.opacity = '1';
+            }
         }
 
         function backToPromptEdit() {
@@ -1517,10 +1638,25 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                         </select>
                     </div>
                     <div>
-                        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #272D3F; font-size: 0.9rem;">Color</label>
-                        <input type="color" id="overlay-textcolor-${imageIndex}" value="${box.textColor}"
-                               onchange="updateSelectedTextBox(${imageIndex})"
-                               style="width: 100%; height: 38px; padding: 0.25rem; border: 2px solid #E1E7EF; border-radius: 8px; cursor: pointer;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #272D3F; font-size: 0.9rem;">Text Color</label>
+                        <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                            <div style="display: flex; gap: 0.25rem;">
+                                <button type="button" onclick="setTextColor(${imageIndex}, '#FFFFFF')" title="White #FFFFFF"
+                                        style="width: 28px; height: 28px; border-radius: 4px; border: 2px solid ${box.textColor === '#FFFFFF' ? '#31D7CA' : '#E1E7EF'}; background: #FFFFFF; cursor: pointer;"></button>
+                                <button type="button" onclick="setTextColor(${imageIndex}, '#31D7CA')" title="Turquoise #31D7CA"
+                                        style="width: 28px; height: 28px; border-radius: 4px; border: 2px solid ${box.textColor === '#31D7CA' ? '#272D3F' : '#E1E7EF'}; background: #31D7CA; cursor: pointer;"></button>
+                                <button type="button" onclick="setTextColor(${imageIndex}, '#272D3F')" title="Navy #272D3F"
+                                        style="width: 28px; height: 28px; border-radius: 4px; border: 2px solid ${box.textColor === '#272D3F' ? '#31D7CA' : '#E1E7EF'}; background: #272D3F; cursor: pointer;"></button>
+                                <button type="button" onclick="setTextColor(${imageIndex}, '#FC883A')" title="Orange #FC883A"
+                                        style="width: 28px; height: 28px; border-radius: 4px; border: 2px solid ${box.textColor === '#FC883A' ? '#272D3F' : '#E1E7EF'}; background: #FC883A; cursor: pointer;"></button>
+                                <button type="button" onclick="setTextColor(${imageIndex}, '#000000')" title="Black #000000"
+                                        style="width: 28px; height: 28px; border-radius: 4px; border: 2px solid ${box.textColor === '#000000' ? '#31D7CA' : '#E1E7EF'}; background: #000000; cursor: pointer;"></button>
+                            </div>
+                            <input type="color" id="overlay-textcolor-${imageIndex}" value="${box.textColor}"
+                                   onchange="updateSelectedTextBox(${imageIndex})"
+                                   style="width: 38px; height: 28px; padding: 0; border: 2px solid #E1E7EF; border-radius: 4px; cursor: pointer;"
+                                   title="Custom color">
+                        </div>
                     </div>
                 </div>
 
@@ -1539,6 +1675,21 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                     Delete This Text Box
                 </button>
             `;
+        }
+
+        function setTextColor(imageIndex, color) {
+            const selectedIdx = selectedTextBox[imageIndex];
+            if (selectedIdx < 0 || selectedIdx >= textOverlays[imageIndex].length) return;
+
+            // Update the color picker input
+            document.getElementById(`overlay-textcolor-${imageIndex}`).value = color;
+
+            // Update the text box
+            textOverlays[imageIndex][selectedIdx].textColor = color;
+
+            // Re-render
+            renderAllTextBoxes(imageIndex);
+            renderTextBoxControls(imageIndex);
         }
 
         function updateSelectedTextBox(imageIndex) {
@@ -2446,6 +2597,22 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 // Delay between size groups
                 await new Promise(resolve => setTimeout(resolve, 500));
             }
+        }
+
+        async function regenerateAllAdCopy() {
+            const btn = document.getElementById('regenerateAllCopyBtn');
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Regenerating...';
+
+            // Clear existing variations
+            adCopyVariations = {};
+            selectedAdCopy = {};
+
+            // Re-render the page with loading states
+            renderAdCopyPage();
+
+            btn.disabled = false;
+            btn.innerHTML = '🔄 Regenerate All Copy';
         }
 
         function renderAdCopyUI(index, variations) {
@@ -4163,23 +4330,44 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
         }
 
         function handleFiles(files) {
-            const preview = document.getElementById('imagePreview');
-
             for (let file of files) {
                 if (file.type.startsWith('image/')) {
                     const reader = new FileReader();
                     reader.onload = function(e) {
-                        const div = document.createElement('div');
-                        div.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 150px; object-fit: cover; border-radius: 8px; border: 2px solid #E1E7EF;">`;
-                        preview.appendChild(div);
                         uploadedImages.push({
                             name: file.name,
                             data: e.target.result
                         });
+                        renderInspirationPreviews();
                     };
                     reader.readAsDataURL(file);
                 }
             }
+        }
+
+        function renderInspirationPreviews() {
+            const preview = document.getElementById('imagePreview');
+            preview.innerHTML = '';
+
+            uploadedImages.forEach((img, index) => {
+                const div = document.createElement('div');
+                div.style.cssText = 'position: relative;';
+                div.innerHTML = `
+                    <img src="${img.data}" style="width: 100%; height: 150px; object-fit: cover; border-radius: 8px; border: 2px solid #E1E7EF;">
+                    <button onclick="removeInspirationImage(${index})"
+                            style="position: absolute; top: 5px; right: 5px; width: 28px; height: 28px; border-radius: 50%;
+                                   background: rgba(215, 61, 79, 0.9); border: none; color: white; font-size: 16px;
+                                   cursor: pointer; display: flex; align-items: center; justify-content: center;
+                                   box-shadow: 0 2px 4px rgba(0,0,0,0.2);"
+                            title="Remove image">×</button>
+                `;
+                preview.appendChild(div);
+            });
+        }
+
+        function removeInspirationImage(index) {
+            uploadedImages.splice(index, 1);
+            renderInspirationPreviews();
         }
 
         // Drag and drop

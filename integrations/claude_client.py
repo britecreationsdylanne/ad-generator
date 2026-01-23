@@ -102,6 +102,105 @@ class ClaudeClient:
 
         return input_cost + output_cost
 
+    def generate_content_with_images(
+        self,
+        prompt: str,
+        images: list,
+        system_prompt: str = None,
+        temperature: float = 0.7,
+        max_tokens: int = 2000,
+        model: str = None
+    ) -> dict:
+        """
+        Generate content using Claude Vision with image inputs
+
+        Args:
+            prompt: User prompt
+            images: List of base64 image data URIs (data:image/jpeg;base64,...)
+            system_prompt: System instructions
+            temperature: Creativity (0-1)
+            max_tokens: Max response length
+            model: Model to use (defaults to claude-3-5-sonnet)
+
+        Returns:
+            dict with content, model, tokens, cost_estimate, latency_ms
+        """
+        start_time = time.time()
+
+        model_name = model or self.default_model
+
+        # Build message content with images
+        content = []
+
+        # Add images first
+        for img_data in images:
+            if ',' in img_data:
+                # Extract base64 data and media type from data URI
+                header, base64_data = img_data.split(',', 1)
+                # Extract media type (e.g., image/jpeg, image/png)
+                if 'png' in header.lower():
+                    media_type = 'image/png'
+                elif 'gif' in header.lower():
+                    media_type = 'image/gif'
+                elif 'webp' in header.lower():
+                    media_type = 'image/webp'
+                else:
+                    media_type = 'image/jpeg'
+            else:
+                # Assume raw base64 is JPEG
+                base64_data = img_data
+                media_type = 'image/jpeg'
+
+            content.append({
+                "type": "image",
+                "source": {
+                    "type": "base64",
+                    "media_type": media_type,
+                    "data": base64_data
+                }
+            })
+
+        # Add text prompt
+        content.append({
+            "type": "text",
+            "text": prompt
+        })
+
+        messages = [{"role": "user", "content": content}]
+
+        # Call Claude API
+        response = self.client.messages.create(
+            model=model_name,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            system=system_prompt if system_prompt else "",
+            messages=messages
+        )
+
+        end_time = time.time()
+        latency_ms = int((end_time - start_time) * 1000)
+
+        # Extract content
+        response_content = response.content[0].text
+
+        # Calculate tokens
+        input_tokens = response.usage.input_tokens
+        output_tokens = response.usage.output_tokens
+        total_tokens = input_tokens + output_tokens
+
+        # Estimate cost
+        cost_estimate = self._estimate_cost(model_name, input_tokens, output_tokens)
+
+        return {
+            "content": response_content,
+            "model": model_name,
+            "tokens": total_tokens,
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "cost_estimate": f"${cost_estimate:.4f}",
+            "latency_ms": latency_ms
+        }
+
     def search_web(self, query: str, max_results: int = 5) -> list:
         """
         Search web using Claude's native web search tool
