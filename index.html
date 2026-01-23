@@ -580,6 +580,26 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             </div>
             <div id="imagePreview" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; margin-top: 1rem;"></div>
 
+            <!-- Image Description Box - Shows after Gemini Vision analyzes -->
+            <div id="imageDescriptionSection" style="display: none; margin-top: 1.5rem;">
+                <div style="background: #F4F7FC; border: 2px solid #31D7CA; border-radius: 12px; padding: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <label style="font-weight: 600; color: #272D3F; font-size: 1.1rem;">
+                            🔍 Gemini Vision Analysis
+                        </label>
+                        <span id="imageDescriptionStatus" style="background: #31D7CA; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem;">
+                            Ready
+                        </span>
+                    </div>
+                    <textarea id="imageDescription"
+                        style="width: 100%; min-height: 200px; padding: 1rem; border: 2px solid #E1E7EF; border-radius: 8px; font-size: 0.95rem; font-family: inherit; resize: vertical; line-height: 1.5;"
+                        placeholder="Upload an image above to see the Gemini Vision analysis here. You can edit this description before generating your prompt."></textarea>
+                    <p style="color: #7DA3AF; font-size: 0.85rem; margin-top: 0.75rem; margin-bottom: 0;">
+                        This is what Gemini Vision sees in your image. Edit if needed - this will be combined with your campaign text to generate the prompt.
+                    </p>
+                </div>
+            </div>
+
             <h2 style="margin-top: 2rem;">AI Providers</h2>
             <div style="background: #F4F7FC; padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem;">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
@@ -1111,73 +1131,47 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
 
             try {
                 // Update loading overlay status
-                const providerName = provider === 'claude' ? 'Claude' : 'OpenAI';
+                const providerName = provider === 'claude' ? 'Claude' : provider === 'gemini' ? 'Gemini' : 'OpenAI';
                 document.getElementById('overlayTitle').textContent = 'Generating Image Prompts';
                 document.getElementById('overlayMessage').textContent = `This may take a minute. ${providerName} is creating your custom image prompts.`;
                 document.getElementById('loadingText').textContent = 'Generating Image Prompts';
                 document.getElementById('loadingStatus').textContent = `This may take a minute. ${providerName} is creating your custom image prompts.`;
 
-                // If we have inspiration images, analyze them first
+                // NEW FLOW: Get inspiration analysis from the visible textarea (already analyzed on upload)
+                // instead of re-analyzing the images
                 let inspirationAnalysis = '';
-                console.log('[INSPIRATION DEBUG] Checking uploadedImages array...');
-                console.log('[INSPIRATION DEBUG] uploadedImages:', uploadedImages);
-                console.log('[INSPIRATION DEBUG] uploadedImages.length:', uploadedImages.length);
+                const descriptionTextarea = document.getElementById('imageDescription');
 
-                if (uploadedImages.length > 0) {
-                    console.log('[INSPIRATION DEBUG] Found', uploadedImages.length, 'inspiration images to analyze');
-                    console.log('[INSPIRATION DEBUG] Image names:', uploadedImages.map(img => img.name));
-                    console.log('[INSPIRATION DEBUG] Image data lengths:', uploadedImages.map(img => img.data ? img.data.length : 0));
+                if (descriptionTextarea && descriptionTextarea.value.trim()) {
+                    // Use the visible description from the textarea (user may have edited it)
+                    inspirationAnalysis = descriptionTextarea.value.trim();
+                    console.log('[INSPIRATION] Using description from visible textarea:', inspirationAnalysis.length, 'chars');
 
-                    document.getElementById('overlayMessage').textContent = 'Analyzing inspiration images with Gemini Vision...';
-                    document.getElementById('loadingStatus').textContent = 'Analyzing inspiration images with Gemini Vision...';
-                    updateGeminiStatus('analyzing');
-
-                    try {
-                        const imagesToSend = uploadedImages.map(img => img.data);
-                        console.log('[INSPIRATION DEBUG] Sending', imagesToSend.length, 'images to API');
-                        console.log('[INSPIRATION DEBUG] First image data preview:', imagesToSend[0] ? imagesToSend[0].substring(0, 100) : 'no data');
-
-                        const analysisResponse = await fetch('/api/analyze-inspiration-images', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({
-                                images: imagesToSend
-                            })
-                        });
-
-                        const analysisResult = await analysisResponse.json();
-                        console.log('[INSPIRATION DEBUG] Analysis API response status:', analysisResponse.status);
-                        console.log('[INSPIRATION DEBUG] Analysis API response:', analysisResult);
-
-                        if (analysisResult.success && analysisResult.analysis) {
-                            inspirationAnalysis = analysisResult.analysis;
-                            console.log('[INSPIRATION DEBUG] Inspiration analysis SUCCESS!');
-                            console.log('[INSPIRATION DEBUG] Analysis text:', inspirationAnalysis);
-                            updateGeminiStatus('success');
-                        } else if (analysisResult.error) {
-                            console.error('[INSPIRATION DEBUG] Inspiration analysis FAILED:', analysisResult.error);
-                            updateGeminiStatus('error');
-                            alert('Warning: Could not analyze inspiration images: ' + analysisResult.error);
-                        } else {
-                            console.warn('[INSPIRATION DEBUG] Analysis returned but no analysis text found');
-                            console.warn('[INSPIRATION DEBUG] Full result:', JSON.stringify(analysisResult));
-                            updateGeminiStatus('error');
-                        }
-                    } catch (analysisError) {
-                        console.error('[INSPIRATION DEBUG] Failed to analyze inspiration images:', analysisError);
-                        updateGeminiStatus('error');
-                        alert('Warning: Could not analyze inspiration images. Check console for details.');
+                    // Don't use error messages or placeholder text
+                    if (inspirationAnalysis.startsWith('Error analyzing') ||
+                        inspirationAnalysis.startsWith('Failed to analyze') ||
+                        inspirationAnalysis.startsWith('Analyzing your image')) {
+                        console.log('[INSPIRATION] Textarea contains error/placeholder, ignoring');
+                        inspirationAnalysis = '';
                     }
-
-                    document.getElementById('overlayMessage').textContent = `${providerName} is creating your custom image prompts.`;
-                    document.getElementById('loadingStatus').textContent = `${providerName} is creating your custom image prompts.`;
-                } else {
-                    console.log('[INSPIRATION DEBUG] No inspiration images found in uploadedImages array');
+                } else if (uploadedImages.length > 0) {
+                    // Fallback: if textarea is empty but images exist, wait for analysis or warn
+                    console.log('[INSPIRATION] Images uploaded but no description in textarea');
+                    // Check if analysis is still in progress
+                    if (analysisInProgress) {
+                        document.getElementById('overlayMessage').textContent = 'Waiting for image analysis to complete...';
+                        // Wait a bit for analysis to finish
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        // Try again
+                        if (descriptionTextarea && descriptionTextarea.value.trim() &&
+                            !descriptionTextarea.value.startsWith('Error') &&
+                            !descriptionTextarea.value.startsWith('Analyzing')) {
+                            inspirationAnalysis = descriptionTextarea.value.trim();
+                        }
+                    }
                 }
 
-                console.log('[INSPIRATION DEBUG] Final inspirationAnalysis being sent to generate-prompt:', inspirationAnalysis ? 'HAS CONTENT (' + inspirationAnalysis.length + ' chars)' : 'EMPTY');
+                console.log('[INSPIRATION] Final inspirationAnalysis being sent:', inspirationAnalysis ? 'HAS CONTENT (' + inspirationAnalysis.length + ' chars)' : 'EMPTY');
 
                 const response = await fetch('/api/generate-prompt', {
                     method: 'POST',
@@ -4439,6 +4433,8 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             const countContainer = document.getElementById('uploadedImagesCount');
             const countNumber = document.getElementById('imageCountNumber');
             const geminiStatus = document.getElementById('geminiAnalysisStatus');
+            const descriptionSection = document.getElementById('imageDescriptionSection');
+
             if (countContainer && countNumber) {
                 if (uploadedImages.length > 0) {
                     countNumber.textContent = uploadedImages.length;
@@ -4447,6 +4443,12 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                     if (geminiStatus) {
                         geminiStatus.style.display = 'block';
                         updateGeminiStatus('ready');
+                    }
+                    // Show the description section and trigger analysis
+                    if (descriptionSection) {
+                        descriptionSection.style.display = 'block';
+                        // Trigger Gemini Vision analysis immediately
+                        analyzeInspirationImagesNow();
                     }
                     // Auto-select Gemini as provider when inspiration images are uploaded
                     // This ensures the best results since Gemini Vision analyzes the images
@@ -4458,6 +4460,11 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 } else {
                     countContainer.style.display = 'none';
                     if (geminiStatus) geminiStatus.style.display = 'none';
+                    // Hide the description section when no images
+                    if (descriptionSection) {
+                        descriptionSection.style.display = 'none';
+                        document.getElementById('imageDescription').value = '';
+                    }
                 }
             }
 
@@ -4522,6 +4529,95 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                     statusBadge.style.borderColor = '#D73D4F';
                     statusIcon.style.animation = 'none';
                     break;
+            }
+        }
+
+        // Analyze inspiration images immediately when uploaded
+        // This shows the description in the visible box so user can see/edit it
+        let analysisInProgress = false;
+        async function analyzeInspirationImagesNow() {
+            if (analysisInProgress) {
+                console.log('[INSPIRATION] Analysis already in progress, skipping...');
+                return;
+            }
+
+            if (uploadedImages.length === 0) {
+                console.log('[INSPIRATION] No images to analyze');
+                return;
+            }
+
+            analysisInProgress = true;
+            const descriptionTextarea = document.getElementById('imageDescription');
+            const descriptionStatus = document.getElementById('imageDescriptionStatus');
+
+            // Update status indicators
+            updateGeminiStatus('analyzing');
+            if (descriptionStatus) {
+                descriptionStatus.textContent = 'Analyzing...';
+                descriptionStatus.style.background = '#FC883A';
+            }
+            if (descriptionTextarea) {
+                descriptionTextarea.value = 'Analyzing your image with Gemini Vision... Please wait.';
+                descriptionTextarea.disabled = true;
+            }
+
+            try {
+                console.log('[INSPIRATION] Starting immediate analysis of', uploadedImages.length, 'images');
+                const imagesToSend = uploadedImages.map(img => img.data);
+
+                const analysisResponse = await fetch('/api/analyze-inspiration-images', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        images: imagesToSend
+                    })
+                });
+
+                const analysisResult = await analysisResponse.json();
+                console.log('[INSPIRATION] Analysis API response:', analysisResult);
+
+                if (analysisResult.success && analysisResult.analysis) {
+                    // Success! Show the analysis in the textarea
+                    if (descriptionTextarea) {
+                        descriptionTextarea.value = analysisResult.analysis;
+                        descriptionTextarea.disabled = false;
+                    }
+                    if (descriptionStatus) {
+                        descriptionStatus.textContent = 'Analysis Complete';
+                        descriptionStatus.style.background = '#31D7CA';
+                    }
+                    updateGeminiStatus('success');
+                    console.log('[INSPIRATION] Analysis displayed in textarea:', analysisResult.analysis.length, 'chars');
+                } else {
+                    // Error from API
+                    const errorMsg = analysisResult.error || 'Unknown error occurred';
+                    if (descriptionTextarea) {
+                        descriptionTextarea.value = 'Error analyzing image: ' + errorMsg + '\n\nYou can manually describe the image here, or try uploading again.';
+                        descriptionTextarea.disabled = false;
+                    }
+                    if (descriptionStatus) {
+                        descriptionStatus.textContent = 'Error';
+                        descriptionStatus.style.background = '#D73D4F';
+                    }
+                    updateGeminiStatus('error');
+                    console.error('[INSPIRATION] Analysis failed:', errorMsg);
+                }
+            } catch (error) {
+                // Network or other error
+                console.error('[INSPIRATION] Analysis fetch error:', error);
+                if (descriptionTextarea) {
+                    descriptionTextarea.value = 'Failed to analyze image: ' + error.message + '\n\nYou can manually describe the image here, or try uploading again.';
+                    descriptionTextarea.disabled = false;
+                }
+                if (descriptionStatus) {
+                    descriptionStatus.textContent = 'Error';
+                    descriptionStatus.style.background = '#D73D4F';
+                }
+                updateGeminiStatus('error');
+            } finally {
+                analysisInProgress = false;
             }
         }
 
