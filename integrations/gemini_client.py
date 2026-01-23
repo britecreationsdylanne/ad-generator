@@ -238,18 +238,47 @@ class GeminiClient:
                 )
             )
 
-            # Extract text response
+            # Extract text response with robust null checking
             analysis_text = ""
+            print(f"[GEMINI VISION DEBUG] Response type: {type(response)}")
+            print(f"[GEMINI VISION DEBUG] Response has text attr: {hasattr(response, 'text')}")
+            print(f"[GEMINI VISION DEBUG] Response has candidates attr: {hasattr(response, 'candidates')}")
+
+            # Try direct text attribute first
             if hasattr(response, 'text') and response.text:
                 analysis_text = response.text
-            elif hasattr(response, 'candidates') and response.candidates:
+                print(f"[GEMINI VISION DEBUG] Got text directly from response.text")
+            # Then try candidates path with careful null checking
+            elif hasattr(response, 'candidates') and response.candidates is not None and len(response.candidates) > 0:
                 candidate = response.candidates[0]
-                if hasattr(candidate, 'content') and hasattr(candidate.content, 'parts'):
-                    for part in candidate.content.parts:
-                        if hasattr(part, 'text') and part.text:
-                            analysis_text += part.text
+                print(f"[GEMINI VISION DEBUG] Candidate type: {type(candidate)}")
+
+                if hasattr(candidate, 'content') and candidate.content is not None:
+                    content = candidate.content
+                    print(f"[GEMINI VISION DEBUG] Content type: {type(content)}")
+
+                    if hasattr(content, 'parts') and content.parts is not None:
+                        print(f"[GEMINI VISION DEBUG] Parts count: {len(content.parts)}")
+                        for i, part in enumerate(content.parts):
+                            print(f"[GEMINI VISION DEBUG] Part {i} type: {type(part)}")
+                            if hasattr(part, 'text') and part.text:
+                                analysis_text += part.text
+                    else:
+                        print(f"[GEMINI VISION DEBUG] content.parts is None or missing")
+                else:
+                    print(f"[GEMINI VISION DEBUG] candidate.content is None or missing")
+            else:
+                print(f"[GEMINI VISION DEBUG] No candidates in response")
+                # Try to get any useful info from response
+                if hasattr(response, '__dict__'):
+                    print(f"[GEMINI VISION DEBUG] Response attrs: {list(response.__dict__.keys())}")
 
             print(f"[GEMINI VISION] Analysis complete: {len(analysis_text)} chars")
+
+            # Return result even if empty (let caller handle it)
+            if not analysis_text:
+                print(f"[GEMINI VISION WARNING] No analysis text extracted from response")
+                analysis_text = "Image analyzed but no description was generated."
 
             return {
                 "content": analysis_text,
