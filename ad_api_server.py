@@ -146,7 +146,7 @@ def serve_root_file(filename):
 
 @app.route('/api/analyze-inspiration-images', methods=['POST'])
 def analyze_inspiration_images():
-    """Analyze inspiration images using Claude Vision and return style descriptions"""
+    """Analyze inspiration images using Gemini Vision and return style descriptions"""
     try:
         data = request.json
         images = data.get('images', [])  # Array of base64 image data URIs
@@ -154,10 +154,10 @@ def analyze_inspiration_images():
         if not images:
             return jsonify({'success': True, 'analysis': ''})
 
-        print(f"\n[API] Analyze Inspiration Images Request")
+        print(f"\n[API] Analyze Inspiration Images Request (using Gemini Vision)")
         print(f"  Number of images: {len(images)}")
 
-        # Use Claude to analyze the images
+        # Use Gemini to analyze the images
         analysis_prompt = """Analyze these inspiration images for an advertising campaign. Describe in detail:
 
 1. **Visual Style**: Lighting (warm/cool/natural), color palette, contrast, saturation
@@ -170,10 +170,10 @@ Provide a concise but detailed description (150-200 words) that can be used to g
 
 IMPORTANT: Do NOT mention any text, logos, or brand elements. Only describe the photographic and artistic qualities."""
 
-        # Call Claude with vision capability
-        result = claude_client.generate_content_with_images(
-            prompt=analysis_prompt,
+        # Call Gemini with vision capability
+        result = gemini_client.analyze_images(
             images=images,
+            prompt=analysis_prompt,
             max_tokens=500,
             temperature=0.5
         )

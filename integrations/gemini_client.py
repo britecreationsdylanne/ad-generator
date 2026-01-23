@@ -149,6 +149,102 @@ class GeminiClient:
             traceback.print_exc()
             raise
 
+    def analyze_images(
+        self,
+        images: list,
+        prompt: str,
+        max_tokens: int = 500,
+        temperature: float = 0.5
+    ) -> Dict:
+        """
+        Analyze images using Gemini Vision
+
+        Args:
+            images: List of base64 image data URIs (data:image/jpeg;base64,...)
+            prompt: Analysis prompt
+            max_tokens: Maximum output tokens
+            temperature: Creativity setting
+
+        Returns:
+            {
+                "content": "analysis text",
+                "model": "model-used"
+            }
+        """
+        try:
+            from PIL import Image
+            from io import BytesIO
+
+            print(f"[GEMINI VISION] Analyzing {len(images)} images")
+
+            # Build content parts with images and prompt
+            content_parts = []
+
+            for i, img_data in enumerate(images):
+                try:
+                    # Extract base64 data from data URI
+                    if ',' in img_data:
+                        base64_data = img_data.split(',', 1)[1]
+                    else:
+                        base64_data = img_data
+
+                    # Decode base64 to PIL Image
+                    image_bytes = base64.b64decode(base64_data)
+                    pil_image = Image.open(BytesIO(image_bytes))
+
+                    # Convert to RGB if necessary
+                    if pil_image.mode != 'RGB':
+                        pil_image = pil_image.convert('RGB')
+
+                    print(f"[GEMINI VISION] Image {i+1}: {pil_image.size}, mode: {pil_image.mode}")
+
+                    # Add image to content parts
+                    content_parts.append(pil_image)
+
+                except Exception as img_error:
+                    print(f"[GEMINI VISION] Failed to process image {i+1}: {img_error}")
+                    continue
+
+            # Add the text prompt
+            content_parts.append(prompt)
+
+            if len(content_parts) < 2:
+                raise ValueError("No valid images to analyze")
+
+            # Use Gemini Flash for vision analysis (fast and capable)
+            response = self.client.models.generate_content(
+                model="gemini-2.0-flash",
+                contents=content_parts,
+                config=types.GenerateContentConfig(
+                    temperature=temperature,
+                    max_output_tokens=max_tokens
+                )
+            )
+
+            # Extract text response
+            analysis_text = ""
+            if hasattr(response, 'text') and response.text:
+                analysis_text = response.text
+            elif hasattr(response, 'candidates') and response.candidates:
+                candidate = response.candidates[0]
+                if hasattr(candidate, 'content') and hasattr(candidate.content, 'parts'):
+                    for part in candidate.content.parts:
+                        if hasattr(part, 'text') and part.text:
+                            analysis_text += part.text
+
+            print(f"[GEMINI VISION] Analysis complete: {len(analysis_text)} chars")
+
+            return {
+                "content": analysis_text,
+                "model": "gemini-2.0-flash"
+            }
+
+        except Exception as e:
+            print(f"[GEMINI VISION ERROR] Image analysis failed: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            raise
+
     def search_web(self, query: str, max_results: int = 5) -> list:
         """
         Search web using Gemini with Google Search grounding
