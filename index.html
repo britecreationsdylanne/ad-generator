@@ -580,6 +580,16 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             </div>
             <div id="imagePreview" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; margin-top: 1rem;"></div>
 
+            <!-- Analyze Button - Shows after image upload -->
+            <div id="analyzeButtonSection" style="display: none; margin-top: 1rem;">
+                <button id="analyzeWithGeminiBtn" onclick="analyzeInspirationImagesNow()"
+                    style="background: linear-gradient(135deg, #31D7CA 0%, #2BC4B8 100%); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: transform 0.2s, box-shadow 0.2s;"
+                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(49, 215, 202, 0.4)';"
+                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                    <span>🔍</span> Analyze Image with Gemini Vision
+                </button>
+            </div>
+
             <!-- Image Description Box - Shows after Gemini Vision analyzes -->
             <div id="imageDescriptionSection" style="display: none; margin-top: 1.5rem;">
                 <div style="background: #F4F7FC; border: 2px solid #31D7CA; border-radius: 12px; padding: 1.5rem;">
@@ -593,7 +603,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                     </div>
                     <textarea id="imageDescription"
                         style="width: 100%; min-height: 200px; padding: 1rem; border: 2px solid #E1E7EF; border-radius: 8px; font-size: 0.95rem; font-family: inherit; resize: vertical; line-height: 1.5;"
-                        placeholder="Upload an image above to see the Gemini Vision analysis here. You can edit this description before generating your prompt."></textarea>
+                        placeholder="Click 'Analyze Image with Gemini Vision' above to analyze your uploaded image. You can edit the description before generating your prompt."></textarea>
                     <p style="color: #7DA3AF; font-size: 0.85rem; margin-top: 0.75rem; margin-bottom: 0;">
                         This is what Gemini Vision sees in your image. Edit if needed - this will be combined with your campaign text to generate the prompt.
                     </p>
@@ -4434,6 +4444,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             const countNumber = document.getElementById('imageCountNumber');
             const geminiStatus = document.getElementById('geminiAnalysisStatus');
             const descriptionSection = document.getElementById('imageDescriptionSection');
+            const analyzeButtonSection = document.getElementById('analyzeButtonSection');
 
             if (countContainer && countNumber) {
                 if (uploadedImages.length > 0) {
@@ -4444,11 +4455,12 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                         geminiStatus.style.display = 'block';
                         updateGeminiStatus('ready');
                     }
-                    // Show the description section and trigger analysis
+                    // Show the analyze button and description section when images are uploaded
+                    if (analyzeButtonSection) {
+                        analyzeButtonSection.style.display = 'block';
+                    }
                     if (descriptionSection) {
                         descriptionSection.style.display = 'block';
-                        // Trigger Gemini Vision analysis immediately
-                        analyzeInspirationImagesNow();
                     }
                     // Auto-select Gemini as provider when inspiration images are uploaded
                     // This ensures the best results since Gemini Vision analyzes the images
@@ -4460,7 +4472,10 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 } else {
                     countContainer.style.display = 'none';
                     if (geminiStatus) geminiStatus.style.display = 'none';
-                    // Hide the description section when no images
+                    // Hide the analyze button and description section when no images
+                    if (analyzeButtonSection) {
+                        analyzeButtonSection.style.display = 'none';
+                    }
                     if (descriptionSection) {
                         descriptionSection.style.display = 'none';
                         document.getElementById('imageDescription').value = '';
