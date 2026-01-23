@@ -556,21 +556,40 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             <div class="char-count" id="charCount">0 / 500 characters</div>
 
             <h2 style="margin-top: 2rem;">Inspiration Images (Optional)</h2>
+            <p style="color: #7DA3AF; margin-bottom: 1rem;">Upload images to guide the visual style. <strong>Gemini Vision</strong> will analyze them.</p>
             <div class="image-upload-area" onclick="document.getElementById('fileInput').click()">
                 <p style="font-size: 3rem; margin-bottom: 1rem;">📸</p>
                 <p style="font-weight: 600; font-size: 1.2rem; margin-bottom: 0.5rem;">Upload Inspiration Images</p>
                 <p style="color: #A9C1CB;">Click to browse or drag and drop</p>
                 <input type="file" id="fileInput" multiple accept="image/*" style="display: none;" onchange="handleFiles(this.files)">
             </div>
+            <div id="uploadedImagesCount" style="margin-top: 0.5rem; display: none;">
+                <span style="background: #31D7CA; color: white; padding: 6px 14px; border-radius: 20px; font-size: 0.9rem; font-weight: 600;">
+                    <span id="imageCountNumber">0</span> inspiration image(s) ready for Gemini Vision analysis
+                </span>
+            </div>
             <div id="imagePreview" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; margin-top: 1rem;"></div>
 
-            <h2 style="margin-top: 2rem;">AI Provider</h2>
-            <div style="margin-bottom: 2rem;">
-                <label style="font-weight: 600; margin-bottom: 0.5rem; display: block;">Choose AI provider for prompt generation:</label>
-                <select id="aiProviderStep2" style="padding: 0.75rem; border: 2px solid #E1E7EF; border-radius: 8px; font-size: 1rem; width: 100%;">
-                    <option value="claude">Claude (Anthropic) - Recommended</option>
-                    <option value="openai">OpenAI (GPT-4)</option>
-                </select>
+            <h2 style="margin-top: 2rem;">AI Providers</h2>
+            <div style="background: #F4F7FC; padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                    <div>
+                        <label style="font-weight: 600; margin-bottom: 0.5rem; display: block; color: #272D3F;">📝 Prompt Generation:</label>
+                        <select id="aiProviderStep2" style="padding: 0.75rem; border: 2px solid #E1E7EF; border-radius: 8px; font-size: 1rem; width: 100%; background: white;">
+                            <option value="claude">Claude (Anthropic) - Recommended</option>
+                            <option value="openai">OpenAI (GPT-4)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-weight: 600; margin-bottom: 0.5rem; display: block; color: #272D3F;">🖼️ Image Analysis:</label>
+                        <div style="padding: 0.75rem; border: 2px solid #31D7CA; border-radius: 8px; font-size: 1rem; background: #E8FAF9; color: #272D3F;">
+                            <strong>Gemini Vision</strong> (Google AI)
+                        </div>
+                    </div>
+                </div>
+                <p style="color: #7DA3AF; font-size: 0.85rem; margin-top: 1rem; margin-bottom: 0;">
+                    💡 Prompt generation creates the text description. Image analysis extracts style from your inspiration photos.
+                </p>
             </div>
 
             <div class="button-group">
@@ -4398,6 +4417,18 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
         function renderInspirationPreviews() {
             const preview = document.getElementById('imagePreview');
             preview.innerHTML = '';
+
+            // Update the visible count badge
+            const countContainer = document.getElementById('uploadedImagesCount');
+            const countNumber = document.getElementById('imageCountNumber');
+            if (countContainer && countNumber) {
+                if (uploadedImages.length > 0) {
+                    countNumber.textContent = uploadedImages.length;
+                    countContainer.style.display = 'block';
+                } else {
+                    countContainer.style.display = 'none';
+                }
+            }
 
             uploadedImages.forEach((img, index) => {
                 const div = document.createElement('div');
