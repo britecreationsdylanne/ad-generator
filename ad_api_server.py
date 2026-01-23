@@ -165,25 +165,35 @@ def analyze_inspiration_images():
             else:
                 print(f"[API] Image {i+1}: EMPTY/NULL")
 
-        # Use Gemini to analyze the images
-        analysis_prompt = """Analyze these inspiration images for an advertising campaign. Describe in detail:
+        # Use Gemini to analyze the images with structured creative brief format
+        analysis_prompt = """Analyze this inspiration image and create a detailed creative brief for AI image generation.
 
-1. **Visual Style**: Lighting (warm/cool/natural), color palette, contrast, saturation
-2. **Composition**: Framing, perspective, focal points, use of space
-3. **Mood/Atmosphere**: Emotional tone, energy level, feeling evoked
-4. **Subject Matter**: What's shown, how subjects are posed/positioned
-5. **Photography Technique**: Depth of field, focus style, any special effects
+Describe the following elements in detail:
 
-Provide a concise but detailed description (150-200 words) that can be used to guide AI image generation to match this style. Focus on visual elements that can be replicated.
+**SUBJECT MATTER**: What is depicted in this image? Describe the main subjects, objects, characters, animals, or scenes shown. Be specific about what you actually see.
 
-IMPORTANT: Do NOT mention any text, logos, or brand elements. Only describe the photographic and artistic qualities."""
+**COMPOSITION**: How is the image framed? Describe the layout, perspective, use of negative space, focal points, and visual hierarchy.
+
+**STYLE CUES**: Is this photographic or illustrative? What era or aesthetic does it reference? Describe textures, rendering style, and artistic approach.
+
+**COLOR PALETTE**: List the dominant colors (3-7 key colors). Describe the overall color mood (warm, cool, muted, vibrant, etc.).
+
+**LIGHTING**: Describe the lighting quality - soft or hard, direction, mood it creates, shadows and highlights.
+
+**MOOD/ATMOSPHERE**: What emotional tone does this image convey? What feelings does it evoke?
+
+**TRANSFERABLE ATTRIBUTES**: List specific visual elements that can be safely incorporated into new images (poses, compositions, color schemes, lighting setups, etc.).
+
+**PROMPT SNIPPETS**: Provide 3-5 short descriptive phrases that capture the essence of this image and could be directly used in an image generation prompt.
+
+Be specific and detailed. Focus on what you actually see in the image - if it's a bear, describe the bear. If it's a landscape, describe the landscape. Your description will be used to guide AI image generation."""
 
         # Call Gemini with vision capability
         result = gemini_client.analyze_images(
             images=images,
             prompt=analysis_prompt,
-            max_tokens=500,
-            temperature=0.5
+            max_tokens=1000,
+            temperature=0.3
         )
 
         analysis = result.get('content', '')
@@ -229,11 +239,19 @@ def generate_prompt():
         inspiration_context = ""
         if inspiration_analysis:
             inspiration_context = f"""
-CRITICAL - USER'S INSPIRATION IMAGES (YOU MUST USE THIS):
-The user uploaded inspiration images and here is what they show:
+=== CRITICAL: INSPIRATION IMAGE ANALYSIS (HIGHEST PRIORITY) ===
+The user uploaded an inspiration image. Here is the detailed analysis:
+
 {inspiration_analysis}
 
-YOUR PROMPT MUST incorporate the visual elements, style, subjects, and mood from this inspiration. The generated images should clearly reflect what was in the inspiration images. This takes priority over default brand imagery.
+=== MANDATORY REQUIREMENTS ===
+1. Your generated prompt MUST incorporate the SUBJECT MATTER from the inspiration (if it shows a bear, your prompt must include a bear; if it shows a landscape, include that landscape, etc.)
+2. Use the STYLE CUES, COLOR PALETTE, and LIGHTING described above
+3. Incorporate the PROMPT SNIPPETS provided
+4. Match the MOOD/ATMOSPHERE of the inspiration
+5. The inspiration image takes PRIORITY over default BriteCo brand imagery - adapt the brand message to work WITH the inspiration, not against it
+
+DO NOT ignore the inspiration image. DO NOT default to generic "happy couple with ring" if the inspiration shows something different.
 """
 
         # Build platform-specific context
