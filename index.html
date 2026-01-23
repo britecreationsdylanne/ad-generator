@@ -1085,41 +1085,60 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
 
                 // If we have inspiration images, analyze them first
                 let inspirationAnalysis = '';
+                console.log('[INSPIRATION DEBUG] Checking uploadedImages array...');
+                console.log('[INSPIRATION DEBUG] uploadedImages:', uploadedImages);
+                console.log('[INSPIRATION DEBUG] uploadedImages.length:', uploadedImages.length);
+
                 if (uploadedImages.length > 0) {
-                    console.log('[DEBUG] Found', uploadedImages.length, 'inspiration images to analyze');
-                    document.getElementById('overlayMessage').textContent = 'Analyzing inspiration images...';
-                    document.getElementById('loadingStatus').textContent = 'Analyzing inspiration images...';
+                    console.log('[INSPIRATION DEBUG] Found', uploadedImages.length, 'inspiration images to analyze');
+                    console.log('[INSPIRATION DEBUG] Image names:', uploadedImages.map(img => img.name));
+                    console.log('[INSPIRATION DEBUG] Image data lengths:', uploadedImages.map(img => img.data ? img.data.length : 0));
+
+                    document.getElementById('overlayMessage').textContent = 'Analyzing inspiration images with Gemini Vision...';
+                    document.getElementById('loadingStatus').textContent = 'Analyzing inspiration images with Gemini Vision...';
 
                     try {
-                        console.log('[DEBUG] Calling /api/analyze-inspiration-images...');
+                        const imagesToSend = uploadedImages.map(img => img.data);
+                        console.log('[INSPIRATION DEBUG] Sending', imagesToSend.length, 'images to API');
+                        console.log('[INSPIRATION DEBUG] First image data preview:', imagesToSend[0] ? imagesToSend[0].substring(0, 100) : 'no data');
+
                         const analysisResponse = await fetch('/api/analyze-inspiration-images', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
                             },
                             body: JSON.stringify({
-                                images: uploadedImages.map(img => img.data)
+                                images: imagesToSend
                             })
                         });
 
                         const analysisResult = await analysisResponse.json();
-                        console.log('[DEBUG] Analysis API response:', analysisResult);
+                        console.log('[INSPIRATION DEBUG] Analysis API response status:', analysisResponse.status);
+                        console.log('[INSPIRATION DEBUG] Analysis API response:', analysisResult);
 
                         if (analysisResult.success && analysisResult.analysis) {
                             inspirationAnalysis = analysisResult.analysis;
-                            console.log('[DEBUG] Inspiration analysis SUCCESS:', inspirationAnalysis);
+                            console.log('[INSPIRATION DEBUG] Inspiration analysis SUCCESS!');
+                            console.log('[INSPIRATION DEBUG] Analysis text:', inspirationAnalysis);
                         } else if (analysisResult.error) {
-                            console.error('[DEBUG] Inspiration analysis FAILED:', analysisResult.error);
+                            console.error('[INSPIRATION DEBUG] Inspiration analysis FAILED:', analysisResult.error);
                             alert('Warning: Could not analyze inspiration images: ' + analysisResult.error);
+                        } else {
+                            console.warn('[INSPIRATION DEBUG] Analysis returned but no analysis text found');
+                            console.warn('[INSPIRATION DEBUG] Full result:', JSON.stringify(analysisResult));
                         }
                     } catch (analysisError) {
-                        console.error('[DEBUG] Failed to analyze inspiration images:', analysisError);
+                        console.error('[INSPIRATION DEBUG] Failed to analyze inspiration images:', analysisError);
                         alert('Warning: Could not analyze inspiration images. Check console for details.');
                     }
 
                     document.getElementById('overlayMessage').textContent = `${providerName} is creating your custom image prompts.`;
                     document.getElementById('loadingStatus').textContent = `${providerName} is creating your custom image prompts.`;
+                } else {
+                    console.log('[INSPIRATION DEBUG] No inspiration images found in uploadedImages array');
                 }
+
+                console.log('[INSPIRATION DEBUG] Final inspirationAnalysis being sent to generate-prompt:', inspirationAnalysis ? 'HAS CONTENT (' + inspirationAnalysis.length + ' chars)' : 'EMPTY');
 
                 const response = await fetch('/api/generate-prompt', {
                     method: 'POST',
@@ -4337,14 +4356,20 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
         }
 
         function handleFiles(files) {
+            console.log('[INSPIRATION] handleFiles called with', files.length, 'files');
             for (let file of files) {
+                console.log('[INSPIRATION] Processing file:', file.name, 'type:', file.type);
                 if (file.type.startsWith('image/')) {
                     const reader = new FileReader();
                     reader.onload = function(e) {
+                        const imageData = e.target.result;
+                        console.log('[INSPIRATION] Image loaded:', file.name, 'data length:', imageData.length);
+                        console.log('[INSPIRATION] Data URI starts with:', imageData.substring(0, 50));
                         uploadedImages.push({
                             name: file.name,
-                            data: e.target.result
+                            data: imageData
                         });
+                        console.log('[INSPIRATION] Total uploaded images now:', uploadedImages.length);
                         renderInspirationPreviews();
                     };
                     reader.readAsDataURL(file);

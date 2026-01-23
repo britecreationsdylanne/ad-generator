@@ -151,11 +151,19 @@ def analyze_inspiration_images():
         data = request.json
         images = data.get('images', [])  # Array of base64 image data URIs
 
+        print(f"\n[API] ========== INSPIRATION IMAGE ANALYSIS ==========")
+        print(f"[API] Number of images received: {len(images)}")
+
         if not images:
+            print(f"[API] WARNING: No images in request!")
             return jsonify({'success': True, 'analysis': ''})
 
-        print(f"\n[API] Analyze Inspiration Images Request (using Gemini Vision)")
-        print(f"  Number of images: {len(images)}")
+        # Log info about each image
+        for i, img in enumerate(images):
+            if img:
+                print(f"[API] Image {i+1}: data length = {len(img)}, starts with = {img[:50]}...")
+            else:
+                print(f"[API] Image {i+1}: EMPTY/NULL")
 
         # Use Gemini to analyze the images
         analysis_prompt = """Analyze these inspiration images for an advertising campaign. Describe in detail:
@@ -203,10 +211,16 @@ def generate_prompt():
         provider = data.get('provider', 'claude')
         inspiration_analysis = data.get('inspirationAnalysis', '')  # Style analysis from inspiration images
 
-        print(f"\n[API] Generate Prompt Request")
-        print(f"  Provider: {provider}")
-        print(f"  Platforms: {platforms}")
-        print(f"  Has inspiration analysis: {bool(inspiration_analysis)}")
+        print(f"\n[API] ========== GENERATE PROMPT REQUEST ==========")
+        print(f"[API] Provider: {provider}")
+        print(f"[API] Platforms: {platforms}")
+        print(f"[API] Campaign text length: {len(campaign_text)}")
+        print(f"[API] Has inspiration analysis: {bool(inspiration_analysis)}")
+        if inspiration_analysis:
+            print(f"[API] Inspiration analysis length: {len(inspiration_analysis)}")
+            print(f"[API] Inspiration analysis preview: {inspiration_analysis[:200]}...")
+        else:
+            print(f"[API] WARNING: No inspiration analysis received!")
 
         # Check if Google Ads platforms are selected
         is_google_ads = any(p.lower() in ['demandgen', 'pmax'] for p in platforms)
