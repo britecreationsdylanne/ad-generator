@@ -225,8 +225,9 @@ class GeminiClient:
             if len(content_parts) < 2:
                 raise ValueError("No valid images to analyze")
 
-            # Use Gemini 3 Pro Preview for vision analysis
-            vision_model = "gemini-3-pro-preview"
+            # Use Gemini 2.0 Flash for vision analysis (known to work with images)
+            # Note: gemini-3-pro-preview may not be available or may have vision issues
+            vision_model = "gemini-2.0-flash"
             print(f"[GEMINI VISION] Using model: {vision_model}")
 
             response = self.client.models.generate_content(
@@ -242,6 +243,7 @@ class GeminiClient:
             analysis_text = ""
             print(f"[GEMINI VISION DEBUG] Response type: {type(response)}")
             print(f"[GEMINI VISION DEBUG] Response has text attr: {hasattr(response, 'text')}")
+            print(f"[GEMINI VISION DEBUG] Response.text value: {repr(response.text) if hasattr(response, 'text') else 'N/A'}")
             print(f"[GEMINI VISION DEBUG] Response has candidates attr: {hasattr(response, 'candidates')}")
 
             # Try direct text attribute first
