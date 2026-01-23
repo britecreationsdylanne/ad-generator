@@ -219,7 +219,7 @@ def generate_prompt():
         data = request.json
         campaign_text = data.get('campaignText', '')
         platforms = data.get('platforms', [])
-        provider = data.get('provider', 'claude')
+        provider = data.get('provider', 'claude') or 'claude'  # Fallback if empty string
         inspiration_analysis = data.get('inspirationAnalysis', '')  # Style analysis from inspiration images
 
         print(f"\n[API] ========== GENERATE PROMPT REQUEST ==========")
