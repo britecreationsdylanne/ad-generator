@@ -1107,22 +1107,19 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
 
                 // If we have inspiration images, analyze them first
                 let inspirationAnalysis = '';
-                console.log('[INSPIRATION DEBUG] Checking uploadedImages array...');
-                console.log('[INSPIRATION DEBUG] uploadedImages:', uploadedImages);
-                console.log('[INSPIRATION DEBUG] uploadedImages.length:', uploadedImages.length);
+
+                // DEBUG: Show alert with image count
+                alert('DEBUG: Found ' + uploadedImages.length + ' inspiration images in array');
 
                 if (uploadedImages.length > 0) {
-                    console.log('[INSPIRATION DEBUG] Found', uploadedImages.length, 'inspiration images to analyze');
-                    console.log('[INSPIRATION DEBUG] Image names:', uploadedImages.map(img => img.name));
-                    console.log('[INSPIRATION DEBUG] Image data lengths:', uploadedImages.map(img => img.data ? img.data.length : 0));
-
                     document.getElementById('overlayMessage').textContent = 'Analyzing inspiration images with Gemini Vision...';
                     document.getElementById('loadingStatus').textContent = 'Analyzing inspiration images with Gemini Vision...';
 
                     try {
                         const imagesToSend = uploadedImages.map(img => img.data);
-                        console.log('[INSPIRATION DEBUG] Sending', imagesToSend.length, 'images to API');
-                        console.log('[INSPIRATION DEBUG] First image data preview:', imagesToSend[0] ? imagesToSend[0].substring(0, 100) : 'no data');
+
+                        // DEBUG: Show what we're sending
+                        alert('DEBUG: Sending ' + imagesToSend.length + ' images to /api/analyze-inspiration-images');
 
                         const analysisResponse = await fetch('/api/analyze-inspiration-images', {
                             method: 'POST',
@@ -1135,32 +1132,31 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                         });
 
                         const analysisResult = await analysisResponse.json();
-                        console.log('[INSPIRATION DEBUG] Analysis API response status:', analysisResponse.status);
-                        console.log('[INSPIRATION DEBUG] Analysis API response:', analysisResult);
+
+                        // DEBUG: Show API response
+                        alert('DEBUG: API returned status=' + analysisResponse.status + ', success=' + analysisResult.success + ', analysis length=' + (analysisResult.analysis ? analysisResult.analysis.length : 0));
 
                         if (analysisResult.success && analysisResult.analysis) {
                             inspirationAnalysis = analysisResult.analysis;
-                            console.log('[INSPIRATION DEBUG] Inspiration analysis SUCCESS!');
-                            console.log('[INSPIRATION DEBUG] Analysis text:', inspirationAnalysis);
+                            // DEBUG: Show analysis preview
+                            alert('DEBUG: Analysis SUCCESS! Preview: ' + inspirationAnalysis.substring(0, 200) + '...');
                         } else if (analysisResult.error) {
-                            console.error('[INSPIRATION DEBUG] Inspiration analysis FAILED:', analysisResult.error);
-                            alert('Warning: Could not analyze inspiration images: ' + analysisResult.error);
+                            alert('ERROR: Analysis failed: ' + analysisResult.error);
                         } else {
-                            console.warn('[INSPIRATION DEBUG] Analysis returned but no analysis text found');
-                            console.warn('[INSPIRATION DEBUG] Full result:', JSON.stringify(analysisResult));
+                            alert('WARNING: Analysis returned empty. Full response: ' + JSON.stringify(analysisResult));
                         }
                     } catch (analysisError) {
-                        console.error('[INSPIRATION DEBUG] Failed to analyze inspiration images:', analysisError);
-                        alert('Warning: Could not analyze inspiration images. Check console for details.');
+                        alert('ERROR: Exception during analysis: ' + analysisError.message);
                     }
 
                     document.getElementById('overlayMessage').textContent = `${providerName} is creating your custom image prompts.`;
                     document.getElementById('loadingStatus').textContent = `${providerName} is creating your custom image prompts.`;
                 } else {
-                    console.log('[INSPIRATION DEBUG] No inspiration images found in uploadedImages array');
+                    alert('DEBUG: No inspiration images found - uploadedImages array is empty');
                 }
 
-                console.log('[INSPIRATION DEBUG] Final inspirationAnalysis being sent to generate-prompt:', inspirationAnalysis ? 'HAS CONTENT (' + inspirationAnalysis.length + ' chars)' : 'EMPTY');
+                // DEBUG: Final status before sending to prompt generation
+                alert('DEBUG: Sending to generate-prompt with inspirationAnalysis=' + (inspirationAnalysis ? 'YES (' + inspirationAnalysis.length + ' chars)' : 'EMPTY'));
 
                 const response = await fetch('/api/generate-prompt', {
                     method: 'POST',
