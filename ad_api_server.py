@@ -423,10 +423,11 @@ NEVER include any text, logos, watermarks, color codes, hex values, or brand mar
 
                                 print(f"[API] Original image: {pil_image.size}")
 
-                                # Use ImageOps.fit to crop/resize maintaining aspect ratio with centering
+                                # Use ImageOps.pad to resize while keeping entire image visible (no cropping)
+                                # This adds padding if needed to reach exact dimensions
                                 target_width = size['width']
                                 target_height = size['height']
-                                pil_image = ImageOps.fit(pil_image, (target_width, target_height), Image.Resampling.LANCZOS, centering=(0.5, 0.5))
+                                pil_image = ImageOps.pad(pil_image, (target_width, target_height), Image.Resampling.LANCZOS, color=(255, 255, 255), centering=(0.5, 0.5))
 
                                 # Convert to JPEG with compression to reduce size
                                 buffer = BytesIO()
@@ -535,8 +536,8 @@ NEVER include any text, logos, watermarks, color codes, hex values, or brand mar
 
                 print(f"[API] Original image: {pil_image.size}")
 
-                # Resize to target dimensions
-                pil_image = ImageOps.fit(pil_image, (width, height), Image.Resampling.LANCZOS, centering=(0.5, 0.5))
+                # Resize to target dimensions (pad to keep entire image visible, no cropping)
+                pil_image = ImageOps.pad(pil_image, (width, height), Image.Resampling.LANCZOS, color=(255, 255, 255), centering=(0.5, 0.5))
 
                 # Compress
                 buffer = BytesIO()
@@ -800,8 +801,8 @@ def generate_animation():
                     image_bytes = base64.b64decode(image_data)
                     pil_image = Image.open(BytesIO(image_bytes))
 
-                    # Resize to exact dimensions
-                    pil_image = ImageOps.fit(pil_image, (width, height), Image.Resampling.LANCZOS, centering=(0.5, 0.5))
+                    # Resize to exact dimensions (pad to keep entire image visible, no cropping)
+                    pil_image = ImageOps.pad(pil_image, (width, height), Image.Resampling.LANCZOS, color=(255, 255, 255), centering=(0.5, 0.5))
 
                     frames.append(pil_image.convert('RGB'))
                     print(f"[API] Frame {i+1} generated successfully")
