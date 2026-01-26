@@ -614,7 +614,27 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                         style="width: 100%; min-height: 200px; padding: 1rem; border: 2px solid #E1E7EF; border-radius: 8px; font-size: 0.95rem; font-family: inherit; resize: vertical; line-height: 1.5;"
                         placeholder="Click 'Analyze Image with Gemini Vision' above to analyze your uploaded image. You can edit the description before generating your prompt."></textarea>
                     <p style="color: #7DA3AF; font-size: 0.85rem; margin-top: 0.75rem; margin-bottom: 0;">
-                        This is what Gemini Vision sees in your image. Edit if needed - this will be combined with your campaign text to generate the prompt.
+                        This is what Gemini Vision sees in your image. Edit if needed.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Combined Brief - Auto-generated from Campaign + Image Analysis -->
+            <div id="combinedBriefSection" style="margin-top: 1.5rem;">
+                <div style="background: linear-gradient(135deg, #E8FAF9 0%, #F4F7FC 100%); border: 2px solid #31D7CA; border-radius: 12px; padding: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <label style="font-weight: 600; color: #272D3F; font-size: 1.1rem;">
+                            📋 Combined Creative Brief
+                        </label>
+                        <button onclick="updateCombinedBrief()" style="background: #31D7CA; color: white; border: none; padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; cursor: pointer;">
+                            🔄 Refresh
+                        </button>
+                    </div>
+                    <textarea id="combinedBrief"
+                        style="width: 100%; min-height: 250px; padding: 1rem; border: 2px solid #31D7CA; border-radius: 8px; font-size: 0.95rem; font-family: inherit; resize: vertical; line-height: 1.5; background: white;"
+                        placeholder="Your combined brief will appear here. It combines your Campaign Concept text with the Gemini Vision image analysis."></textarea>
+                    <p style="color: #272D3F; font-size: 0.9rem; margin-top: 0.75rem; margin-bottom: 0; font-weight: 500;">
+                        ⚡ This is what gets sent to the AI for prompt generation. Edit freely to customize your creative direction.
                     </p>
                 </div>
             </div>
@@ -1144,9 +1164,11 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
         // Step 1: Generate prompt only
         // Generate prompt with loading overlay (called from Step 2)
         async function generatePromptOnlyWithLoading() {
-            const campaignText = document.getElementById('campaignText').value;
             const provider = document.getElementById('aiProvider').value;
             const platforms = Array.from(selectedPlatforms);
+
+            // SIMPLIFIED: Use the Combined Brief which already merges campaign + image analysis
+            const combinedBrief = document.getElementById('combinedBrief').value.trim();
 
             try {
                 // Update loading overlay status
@@ -1156,41 +1178,8 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 document.getElementById('loadingText').textContent = 'Generating Image Prompts';
                 document.getElementById('loadingStatus').textContent = `This may take a minute. ${providerName} is creating your custom image prompts.`;
 
-                // NEW FLOW: Get inspiration analysis from the visible textarea (already analyzed on upload)
-                // instead of re-analyzing the images
-                let inspirationAnalysis = '';
-                const descriptionTextarea = document.getElementById('imageDescription');
-
-                if (descriptionTextarea && descriptionTextarea.value.trim()) {
-                    // Use the visible description from the textarea (user may have edited it)
-                    inspirationAnalysis = descriptionTextarea.value.trim();
-                    console.log('[INSPIRATION] Using description from visible textarea:', inspirationAnalysis.length, 'chars');
-
-                    // Don't use error messages or placeholder text
-                    if (inspirationAnalysis.startsWith('Error analyzing') ||
-                        inspirationAnalysis.startsWith('Failed to analyze') ||
-                        inspirationAnalysis.startsWith('Analyzing your image')) {
-                        console.log('[INSPIRATION] Textarea contains error/placeholder, ignoring');
-                        inspirationAnalysis = '';
-                    }
-                } else if (uploadedImages.length > 0) {
-                    // Fallback: if textarea is empty but images exist, wait for analysis or warn
-                    console.log('[INSPIRATION] Images uploaded but no description in textarea');
-                    // Check if analysis is still in progress
-                    if (analysisInProgress) {
-                        document.getElementById('overlayMessage').textContent = 'Waiting for image analysis to complete...';
-                        // Wait a bit for analysis to finish
-                        await new Promise(resolve => setTimeout(resolve, 2000));
-                        // Try again
-                        if (descriptionTextarea && descriptionTextarea.value.trim() &&
-                            !descriptionTextarea.value.startsWith('Error') &&
-                            !descriptionTextarea.value.startsWith('Analyzing')) {
-                            inspirationAnalysis = descriptionTextarea.value.trim();
-                        }
-                    }
-                }
-
-                console.log('[INSPIRATION] Final inspirationAnalysis being sent:', inspirationAnalysis ? 'HAS CONTENT (' + inspirationAnalysis.length + ' chars)' : 'EMPTY');
+                console.log('[GENERATE-PROMPT] Using Combined Brief:', combinedBrief.length, 'chars');
+                console.log('[GENERATE-PROMPT] Combined Brief preview:', combinedBrief.substring(0, 200));
 
                 const response = await fetch('/api/generate-prompt', {
                     method: 'POST',
@@ -1198,10 +1187,9 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        campaignText,
+                        combinedBrief,  // Send the already-combined brief
                         platforms,
-                        provider,
-                        inspirationAnalysis
+                        provider
                     })
                 });
 
@@ -1213,17 +1201,15 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                     document.getElementById('generatedPromptSection').classList.remove('hidden');
                     document.getElementById('loadingState').style.display = 'none';
 
-                    // Show inspiration status badge
+                    // Show status badge based on what was included in the combined brief
                     const statusBadge = document.getElementById('inspirationStatusBadge');
+                    const hasImageAnalysis = combinedBrief.includes('INSPIRATION IMAGE ANALYSIS');
                     if (statusBadge) {
-                        if (inspirationAnalysis) {
-                            statusBadge.innerHTML = `<span style="background: #31D7CA; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem;">✓ Inspiration images analyzed (${uploadedImages.length} image${uploadedImages.length > 1 ? 's' : ''})</span>`;
-                            statusBadge.style.display = 'block';
-                        } else if (uploadedImages.length > 0) {
-                            statusBadge.innerHTML = `<span style="background: #FC883A; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem;">⚠ ${uploadedImages.length} image${uploadedImages.length > 1 ? 's' : ''} uploaded but analysis failed</span>`;
+                        if (hasImageAnalysis) {
+                            statusBadge.innerHTML = `<span style="background: #31D7CA; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem;">✓ Combined brief includes image analysis</span>`;
                             statusBadge.style.display = 'block';
                         } else {
-                            statusBadge.innerHTML = `<span style="background: #A9C1CB; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem;">No inspiration images</span>`;
+                            statusBadge.innerHTML = `<span style="background: #A9C1CB; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem;">Campaign concept only</span>`;
                             statusBadge.style.display = 'block';
                         }
                     }
@@ -4642,8 +4628,58 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 updateGeminiStatus('error');
             } finally {
                 analysisInProgress = false;
+                // Update combined brief after analysis completes
+                updateCombinedBrief();
             }
         }
+
+        // Update the Combined Brief textarea by merging Campaign Concept + Image Analysis
+        function updateCombinedBrief() {
+            const campaignText = document.getElementById('campaignText').value.trim();
+            const imageAnalysis = document.getElementById('imageDescription').value.trim();
+            const combinedBrief = document.getElementById('combinedBrief');
+
+            // Skip if image analysis contains error messages
+            const isValidAnalysis = imageAnalysis &&
+                !imageAnalysis.startsWith('Error analyzing') &&
+                !imageAnalysis.startsWith('Failed to analyze') &&
+                !imageAnalysis.startsWith('Analyzing your image') &&
+                !imageAnalysis.startsWith('Click');
+
+            let combined = '';
+
+            if (campaignText) {
+                combined += `=== CAMPAIGN CONCEPT ===\n${campaignText}\n\n`;
+            }
+
+            if (isValidAnalysis) {
+                combined += `=== INSPIRATION IMAGE ANALYSIS ===\n${imageAnalysis}\n\n`;
+                combined += `=== INSTRUCTIONS ===\n`;
+                combined += `Create an image prompt that incorporates BOTH the campaign concept AND the visual elements from the inspiration image analysis above.\n`;
+                combined += `The inspiration image should inform the style, composition, and visual approach.`;
+            } else if (campaignText) {
+                combined += `=== INSTRUCTIONS ===\n`;
+                combined += `Create an image prompt based on the campaign concept above.`;
+            }
+
+            if (combinedBrief) {
+                combinedBrief.value = combined;
+                console.log('[COMBINED BRIEF] Updated:', combined.length, 'chars');
+            }
+        }
+
+        // Add listeners to auto-update combined brief when inputs change
+        document.getElementById('campaignText').addEventListener('input', function() {
+            // Debounce the update
+            clearTimeout(this.updateTimeout);
+            this.updateTimeout = setTimeout(updateCombinedBrief, 500);
+        });
+
+        document.getElementById('imageDescription').addEventListener('input', function() {
+            // Debounce the update
+            clearTimeout(this.updateTimeout);
+            this.updateTimeout = setTimeout(updateCombinedBrief, 500);
+        });
 
         // Drag and drop
         const uploadArea = document.querySelector('.image-upload-area');

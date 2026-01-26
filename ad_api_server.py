@@ -217,53 +217,43 @@ def generate_prompt():
     """Generate image prompt using Claude or OpenAI"""
     try:
         data = request.json
-        campaign_text = data.get('campaignText', '')
+        # NEW: Accept combinedBrief (pre-merged campaign + image analysis from frontend)
+        combined_brief = data.get('combinedBrief', '')
         platforms = data.get('platforms', [])
         provider = data.get('provider', 'claude') or 'claude'  # Fallback if empty string
-        inspiration_analysis = data.get('inspirationAnalysis', '')  # Style analysis from inspiration images
 
         print(f"\n[API] ========== GENERATE PROMPT REQUEST ==========")
         print(f"[API] Provider: {provider}")
         print(f"[API] Platforms: {platforms}")
-        print(f"[API] Campaign text length: {len(campaign_text)}")
-        print(f"[API] Has inspiration analysis: {bool(inspiration_analysis)}")
-        if inspiration_analysis:
-            print(f"[API] Inspiration analysis length: {len(inspiration_analysis)}")
-            print(f"[API] Inspiration analysis preview: {inspiration_analysis[:200]}...")
-        else:
-            print(f"[API] WARNING: No inspiration analysis received!")
+        print(f"[API] Combined brief length: {len(combined_brief)}")
+        print(f"[API] Combined brief preview: {combined_brief[:300]}..." if combined_brief else "[API] WARNING: No combined brief!")
 
         # Check if Google Ads platforms are selected
         is_google_ads = any(p.lower() in ['demandgen', 'pmax'] for p in platforms)
 
-        # Build inspiration context if available
-        inspiration_context = ""
-        if inspiration_analysis:
-            inspiration_context = f"""
-=== CRITICAL: INSPIRATION IMAGE ANALYSIS (HIGHEST PRIORITY) ===
-The user uploaded an inspiration image. Here is the detailed analysis:
-
-{inspiration_analysis}
-
-=== MANDATORY REQUIREMENTS ===
-1. Your generated prompt MUST incorporate the SUBJECT MATTER from the inspiration (if it shows a bear, your prompt must include a bear; if it shows a landscape, include that landscape, etc.)
-2. Use the STYLE CUES, COLOR PALETTE, and LIGHTING described above
-3. Incorporate the PROMPT SNIPPETS provided
-4. Match the MOOD/ATMOSPHERE of the inspiration
-5. The inspiration image takes PRIORITY over default BriteCo brand imagery - adapt the brand message to work WITH the inspiration, not against it
-
-DO NOT ignore the inspiration image. DO NOT default to generic "happy couple with ring" if the inspiration shows something different.
-"""
-
-        # Build platform-specific context
+        # Build platform-specific context using the pre-combined brief
+        # IMPORTANT: User's creative brief takes PRIORITY over brand guidelines
         if is_google_ads:
             platform_context = f"""You are an expert at creating image generation prompts for Google Ads campaigns.
 
 Create an image generation prompt for BriteCo jewelry insurance ads for {', '.join(platforms)}.
 
-Campaign context: {campaign_text}
-{inspiration_context}
-{BRAND_GUIDELINES}
+=== PRIMARY DIRECTIVE: USER'S CREATIVE BRIEF ===
+{combined_brief}
+
+=== HOW TO COMBINE THE BRIEF WITH BRAND GUIDELINES ===
+1. USE the subjects, scenes, and imagery described in the USER'S CREATIVE BRIEF above
+2. APPLY the BriteCo brand style (colors, lighting, aesthetic) to those subjects
+3. If the brief describes a bear - create a bear image with BriteCo's brand colors and style
+4. If the brief describes a landscape - create that landscape with BriteCo's warm lighting and turquoise accents
+5. NEVER substitute the user's subjects with default "couple with engagement ring" imagery
+
+=== BRITECO BRAND STYLE (Apply these to the user's subjects) ===
+- Color accents: Turquoise, Navy, Orange (use visually in lighting, backgrounds, or props - NOT as text)
+- Aesthetic: Modern, clean, optimistic, trustworthy
+- Lighting: Warm, natural, professional quality
+- No gradients - solid colors only
+- No text, watermarks, or hex codes in the image
 
 {GOOGLE_ADS_BEST_PRACTICES}
 
@@ -271,27 +261,45 @@ IMPORTANT FOR GOOGLE ADS:
 - Images must be high-quality and work across YouTube, Discover, Gmail, and Display Network
 - Subject should be centered in 80% of frame space
 - Keep text overlay minimal (under 20% of image)
-- Create aspirational lifestyle imagery that inspires action
 - Ensure the imagery works well at smaller mobile sizes
 - Use clear visual hierarchy with one strong focal point
 
 NEVER include hex color codes like #31D7CA in your prompt - just describe the colors by name (turquoise, navy, orange).
 
-Generate ONE detailed, creative prompt (200 words max) for Nano Banana (Google Gemini) image generator. Make it specific, visual, and actionable."""
+Generate ONE detailed, creative prompt (200 words max) for Nano Banana (Google Gemini) image generator based on the USER'S CREATIVE BRIEF above.
+Make it specific, visual, and actionable."""
         else:
             platform_context = f"""You are an expert at creating image generation prompts for AI models.
 
 Create an image generation prompt for BriteCo jewelry insurance ads for {', '.join(platforms)}.
 
-Campaign context: {campaign_text}
-{inspiration_context}
-{BRAND_GUIDELINES}
+=== PRIMARY DIRECTIVE: USER'S CREATIVE BRIEF ===
+{combined_brief}
+
+=== HOW TO COMBINE THE BRIEF WITH BRAND GUIDELINES ===
+1. USE the subjects, scenes, and imagery described in the USER'S CREATIVE BRIEF above
+2. APPLY the BriteCo brand style (colors, lighting, aesthetic) to those subjects
+3. If the brief describes a bear - create a bear image with BriteCo's brand colors and style
+4. If the brief describes a landscape - create that landscape with BriteCo's warm lighting and turquoise accents
+5. NEVER substitute the user's subjects with default "couple with engagement ring" imagery
+
+=== BRITECO BRAND STYLE (Apply these to the user's subjects) ===
+- Color accents: Turquoise, Navy, Orange (use visually in lighting, backgrounds, or props - NOT as text)
+- Aesthetic: Modern, clean, optimistic, trustworthy
+- Lighting: Warm, natural, professional quality
+- No gradients - solid colors only
+- No text, watermarks, or hex codes in the image
 
 NEVER include hex color codes like #31D7CA in your prompt - just describe the colors by name (turquoise, navy, orange).
 
-Generate ONE detailed, creative prompt (200 words max) for Nano Banana (Google Gemini) image generator. Make it specific, visual, and actionable."""
+Generate ONE detailed, creative prompt (200 words max) for Nano Banana (Google Gemini) image generator that COMBINES the user's creative brief subjects WITH the BriteCo brand style.
+Make it specific, visual, and actionable."""
 
         prompt_context = platform_context
+
+        # Debug: Log what we're sending to the AI
+        print(f"[API] Full prompt being sent to AI ({len(prompt_context)} chars)")
+        print(f"[API] Combined brief is included: {'YES' if combined_brief else 'NO'}")
 
         # Use selected provider
         if provider == 'claude':
