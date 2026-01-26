@@ -15,6 +15,7 @@ from flask import Flask, request, jsonify, send_from_directory, Response, redire
 from flask_cors import CORS
 from dotenv import load_dotenv
 from authlib.integrations.flask_client import OAuth
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 # Load environment variables
 load_dotenv()
@@ -34,6 +35,9 @@ from integrations.claude_client import ClaudeClient
 
 app = Flask(__name__, static_folder='.')
 CORS(app)
+
+# Fix for running behind Cloud Run's proxy - ensures correct HTTPS URLs
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 # Session configuration for OAuth
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', secrets.token_hex(32))
