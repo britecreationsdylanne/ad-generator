@@ -4444,13 +4444,12 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                     if (descriptionSection) {
                         descriptionSection.style.display = 'block';
                     }
-                    // Auto-select Gemini as provider when inspiration images are uploaded
-                    // This ensures the best results since Gemini Vision analyzes the images
+                    // Ensure Claude is selected as the default provider
                     const providerStep2 = document.getElementById('aiProviderStep2');
                     const providerStep3 = document.getElementById('aiProvider');
-                    if (providerStep2) providerStep2.value = 'gemini';
-                    if (providerStep3) providerStep3.value = 'gemini';
-                    console.log('[INSPIRATION] Auto-selected Gemini provider for best results with inspiration images');
+                    if (providerStep2) providerStep2.value = 'claude';
+                    if (providerStep3) providerStep3.value = 'claude';
+                    console.log('[INSPIRATION] Using Claude provider for prompt generation');
                 } else {
                     countContainer.style.display = 'none';
                     if (geminiStatus) geminiStatus.style.display = 'none';
