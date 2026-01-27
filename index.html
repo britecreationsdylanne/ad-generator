@@ -4582,7 +4582,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             try {
                 const userEmail = (window.AUTH_USER && window.AUTH_USER.email) || 'unknown';
                 const campaignName = document.getElementById('campaignText')?.value?.substring(0, 60) || 'Untitled Campaign';
-                const resp = await fetch(`${API_BASE}/api/save-draft`, {
+                const resp = await fetch(`/api/save-draft`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -4604,7 +4604,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
 
         async function loadDrafts() {
             try {
-                const response = await fetch(`${API_BASE}/api/list-drafts`);
+                const response = await fetch(`/api/list-drafts`);
                 const data = await response.json();
                 const grid = document.getElementById('draftsGrid');
                 const empty = document.getElementById('draftsEmpty');
@@ -4641,7 +4641,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
 
         async function loadDraft(filename) {
             try {
-                const response = await fetch(`${API_BASE}/api/load-draft?file=${encodeURIComponent(filename)}`);
+                const response = await fetch(`/api/load-draft?file=${encodeURIComponent(filename)}`);
                 const data = await response.json();
                 if (!data.success || !data.draft) { alert('Failed to load draft'); return; }
                 const d = data.draft;
