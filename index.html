@@ -261,6 +261,8 @@
             0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
         }
+        #draftSearch::placeholder { color: rgba(255,255,255,0.5); }
+        #draftFilterPlatform option, #draftFilterCreator option { color: #333; }
     </style>
 
 </head>
@@ -381,6 +383,27 @@
         <div id="pastProjectsPanel" class="card" style="margin-top: 2rem; background: #3B5A6E; padding: 2.5rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
                 <h2 style="margin: 0; color: white;">Saved Drafts</h2>
+            </div>
+
+            <!-- Search and Filter Controls -->
+            <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                <input type="text" id="draftSearch" placeholder="Search drafts..."
+                    oninput="filterDrafts()"
+                    style="flex: 1; min-width: 200px; padding: 0.75rem 1rem; border-radius: 8px; border: none; background: rgba(255,255,255,0.15); color: white; font-size: 0.95rem;">
+                <select id="draftFilterPlatform" onchange="filterDrafts()"
+                    style="padding: 0.75rem 1rem; border-radius: 8px; border: none; background: rgba(255,255,255,0.15); color: white; font-size: 0.95rem; cursor: pointer;">
+                    <option value="">All Platforms</option>
+                    <option value="meta">Meta</option>
+                    <option value="reddit">Reddit</option>
+                    <option value="pinterest">Pinterest</option>
+                    <option value="demandgen">DemandGen</option>
+                    <option value="pmax">PMax</option>
+                    <option value="general">General</option>
+                </select>
+                <select id="draftFilterCreator" onchange="filterDrafts()"
+                    style="padding: 0.75rem 1rem; border-radius: 8px; border: none; background: rgba(255,255,255,0.15); color: white; font-size: 0.95rem; cursor: pointer;">
+                    <option value="">All Creators</option>
+                </select>
             </div>
 
             <div id="draftsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
@@ -4602,40 +4625,101 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             }
         }
 
+        let allDrafts = []; // Store all drafts for filtering
+
         async function loadDrafts() {
             try {
                 const response = await fetch(`/api/list-drafts`);
                 const data = await response.json();
-                const grid = document.getElementById('draftsGrid');
-                const empty = document.getElementById('draftsEmpty');
-                if (data.success && data.drafts && data.drafts.length > 0) {
-                    if (empty) empty.style.display = 'none';
-                    grid.style.display = 'grid';
-                    grid.innerHTML = '';
-                    data.drafts.forEach(d => {
-                        const name = d.campaignName || 'Untitled';
-                        const savedBy = d.lastSavedBy || 'unknown';
-                        const savedAt = d.lastSavedAt ? new Date(d.lastSavedAt).toLocaleString('en-US', { timeZone: 'America/Chicago', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }) : '';
-                        const platforms = (d.selectedPlatforms || []).map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(', ') || 'None';
-                        const card = document.createElement('div');
-                        card.style.cssText = 'background: white; border-radius: 12px; padding: 24px; cursor: pointer; transition: transform 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.1);';
-                        card.onmouseenter = () => card.style.transform = 'translateY(-4px)';
-                        card.onmouseleave = () => card.style.transform = '';
-                        card.innerHTML = `
-                            <h4 style="margin:0 0 8px 0;color:#272d3f;">${name}</h4>
-                            <p style="margin:4px 0;font-size:13px;color:#666;">Platforms: ${platforms}</p>
-                            <p style="margin:4px 0;font-size:13px;color:#666;">Created by: ${savedBy}</p>
-                            <p style="margin:4px 0;font-size:12px;color:#999;">${savedAt} CT</p>
-                        `;
-                        card.onclick = () => loadDraft(d.filename);
-                        grid.appendChild(card);
-                    });
+                if (data.success && data.drafts) {
+                    allDrafts = data.drafts;
+                    populateCreatorFilter();
+                    filterDrafts();
                 } else {
-                    if (empty) empty.style.display = 'block';
-                    grid.style.display = 'none';
+                    allDrafts = [];
+                    filterDrafts();
                 }
             } catch (e) {
                 console.error('[Drafts] Load list failed:', e);
+            }
+        }
+
+        function populateCreatorFilter() {
+            const select = document.getElementById('draftFilterCreator');
+            if (!select) return;
+            const creators = [...new Set(allDrafts.map(d => d.lastSavedBy).filter(Boolean))];
+            select.innerHTML = '<option value="">All Creators</option>' +
+                creators.map(c => `<option value="${c}">${c.split('@')[0]}</option>`).join('');
+        }
+
+        function filterDrafts() {
+            const search = (document.getElementById('draftSearch')?.value || '').toLowerCase();
+            const platformFilter = document.getElementById('draftFilterPlatform')?.value || '';
+            const creatorFilter = document.getElementById('draftFilterCreator')?.value || '';
+
+            const filtered = allDrafts.filter(d => {
+                const name = (d.campaignName || '').toLowerCase();
+                const creator = d.lastSavedBy || '';
+                const platforms = d.selectedPlatforms || [];
+
+                if (search && !name.includes(search)) return false;
+                if (platformFilter && !platforms.includes(platformFilter)) return false;
+                if (creatorFilter && creator !== creatorFilter) return false;
+                return true;
+            });
+
+            renderDrafts(filtered);
+        }
+
+        function renderDrafts(drafts) {
+            const grid = document.getElementById('draftsGrid');
+            const empty = document.getElementById('draftsEmpty');
+
+            if (drafts && drafts.length > 0) {
+                if (empty) empty.style.display = 'none';
+                grid.style.display = 'grid';
+                grid.innerHTML = '';
+                drafts.forEach(d => {
+                    const name = d.campaignName || 'Untitled';
+                    const savedBy = d.lastSavedBy || 'unknown';
+                    const savedAt = d.lastSavedAt ? new Date(d.lastSavedAt).toLocaleString('en-US', { timeZone: 'America/Chicago', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }) : '';
+                    const platforms = (d.selectedPlatforms || []).map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(', ') || 'None';
+                    const card = document.createElement('div');
+                    card.style.cssText = 'background: white; border-radius: 12px; padding: 24px; cursor: pointer; transition: transform 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: relative;';
+                    card.onmouseenter = () => card.style.transform = 'translateY(-4px)';
+                    card.onmouseleave = () => card.style.transform = '';
+                    card.innerHTML = `
+                        <button onclick="event.stopPropagation(); deleteDraft('${d.filename}')"
+                            style="position: absolute; top: 12px; right: 12px; background: #ff4757; color: white; border: none; border-radius: 6px; padding: 6px 10px; font-size: 12px; cursor: pointer; opacity: 0.8; transition: opacity 0.2s;"
+                            onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='0.8'">
+                            Delete
+                        </button>
+                        <h4 style="margin:0 0 8px 0;color:#272d3f;padding-right:60px;">${name}</h4>
+                        <p style="margin:4px 0;font-size:13px;color:#666;">Platforms: ${platforms}</p>
+                        <p style="margin:4px 0;font-size:13px;color:#666;">Created by: ${savedBy.split('@')[0]}</p>
+                        <p style="margin:4px 0;font-size:12px;color:#999;">${savedAt} CT</p>
+                    `;
+                    card.onclick = () => loadDraft(d.filename);
+                    grid.appendChild(card);
+                });
+            } else {
+                if (empty) empty.style.display = 'block';
+                grid.style.display = 'none';
+            }
+        }
+
+        async function deleteDraft(filename) {
+            if (!confirm('Are you sure you want to delete this draft?')) return;
+            try {
+                await fetch('/api/delete-draft', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ file: filename })
+                });
+                console.log('[Draft] Deleted');
+                loadDrafts();
+            } catch (e) {
+                console.error('[Draft] Delete failed:', e);
             }
         }
 
@@ -4666,9 +4750,6 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                     if (el) el.value = d.promptText;
                 }
 
-                // Navigate to the saved step
-                const targetStep = d.currentStep || 1;
-
                 // Hide all steps
                 for (let i = 1; i <= 10; i++) {
                     const step = document.getElementById('step' + i);
@@ -4680,30 +4761,24 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 if (stepGeneralPreview) stepGeneralPreview.classList.add('hidden');
                 document.getElementById('pastProjectsPanel').classList.add('hidden');
 
-                // If we have generated images, render them
-                if (generatedImages.length > 0 && typeof renderImagePreviews === 'function') {
-                    renderImagePreviews();
-                }
-
-                // Show the target step
-                if (targetStep === 'preview') {
-                    if (stepPreview) stepPreview.classList.remove('hidden');
-                } else {
-                    const targetEl = document.getElementById('step' + targetStep);
-                    if (targetEl) {
-                        targetEl.classList.remove('hidden');
-                    } else {
-                        // Fallback: show step 4 if images exist, else step 1
-                        if (generatedImages.length > 0) {
-                            document.getElementById('step4').classList.remove('hidden');
-                        } else {
-                            document.getElementById('step1').classList.remove('hidden');
-                            document.getElementById('pastProjectsPanel').classList.remove('hidden');
-                        }
+                // If we have generated images, render them and go to step 4
+                if (generatedImages.length > 0) {
+                    if (typeof renderImagePreviews === 'function') {
+                        renderImagePreviews();
                     }
+                    document.getElementById('step4').classList.remove('hidden');
+                    currentStep = 4;
+                } else if (d.promptText) {
+                    // If we have a prompt but no images, go to step 3
+                    document.getElementById('step3').classList.remove('hidden');
+                    currentStep = 3;
+                } else {
+                    // Otherwise go to step 1
+                    document.getElementById('step1').classList.remove('hidden');
+                    document.getElementById('pastProjectsPanel').classList.remove('hidden');
+                    currentStep = 1;
                 }
 
-                currentStep = targetStep;
                 window.scrollTo(0, 0);
             } catch (e) {
                 console.error('[Draft] Load failed:', e);
