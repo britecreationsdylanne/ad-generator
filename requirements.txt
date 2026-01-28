@@ -16,6 +16,7 @@ httpx>=0.28.0
 # Utilities
 python-dotenv==1.0.1
 pillow==10.2.0
+pytz>=2024.1
 
 # Cloud Storage
 google-cloud-storage>=2.14.0

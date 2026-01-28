@@ -10,12 +10,16 @@ import json
 import time
 import requests
 import secrets
+import pytz
 from datetime import datetime
 from flask import Flask, request, jsonify, send_from_directory, Response, redirect, session, url_for
 from flask_cors import CORS
 from dotenv import load_dotenv
 from authlib.integrations.flask_client import OAuth
 from werkzeug.middleware.proxy_fix import ProxyFix
+
+# Timezone configuration
+CHICAGO_TZ = pytz.timezone('America/Chicago')
 
 # Load environment variables
 load_dotenv()
@@ -1537,7 +1541,7 @@ def save_draft():
             'campaignText': data.get('campaignText'),
             'promptText': data.get('promptText'),
             'lastSavedBy': data.get('savedBy', 'unknown'),
-            'lastSavedAt': datetime.now().isoformat()
+            'lastSavedAt': datetime.now(CHICAGO_TZ).isoformat()
         }
 
         bucket = gcs_client.bucket(GCS_BUCKET_NAME)
