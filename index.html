@@ -4649,6 +4649,10 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 // Restore state
                 if (d.selectedPlatforms) {
                     selectedPlatforms = new Set(d.selectedPlatforms);
+                    // Check the platform checkboxes
+                    document.querySelectorAll('.platform-option input[type="checkbox"]').forEach(cb => {
+                        cb.checked = selectedPlatforms.has(cb.value);
+                    });
                 }
                 if (d.generatedImages) {
                     generatedImages = d.generatedImages;
@@ -4662,7 +4666,45 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                     if (el) el.value = d.promptText;
                 }
 
-                alert('Draft loaded! You can continue where you left off.');
+                // Navigate to the saved step
+                const targetStep = d.currentStep || 1;
+
+                // Hide all steps
+                for (let i = 1; i <= 10; i++) {
+                    const step = document.getElementById('step' + i);
+                    if (step) step.classList.add('hidden');
+                }
+                const stepPreview = document.getElementById('stepPreview');
+                if (stepPreview) stepPreview.classList.add('hidden');
+                const stepGeneralPreview = document.getElementById('stepGeneralPreview');
+                if (stepGeneralPreview) stepGeneralPreview.classList.add('hidden');
+                document.getElementById('pastProjectsPanel').classList.add('hidden');
+
+                // If we have generated images, render them
+                if (generatedImages.length > 0 && typeof renderImagePreviews === 'function') {
+                    renderImagePreviews();
+                }
+
+                // Show the target step
+                if (targetStep === 'preview') {
+                    if (stepPreview) stepPreview.classList.remove('hidden');
+                } else {
+                    const targetEl = document.getElementById('step' + targetStep);
+                    if (targetEl) {
+                        targetEl.classList.remove('hidden');
+                    } else {
+                        // Fallback: show step 4 if images exist, else step 1
+                        if (generatedImages.length > 0) {
+                            document.getElementById('step4').classList.remove('hidden');
+                        } else {
+                            document.getElementById('step1').classList.remove('hidden');
+                            document.getElementById('pastProjectsPanel').classList.remove('hidden');
+                        }
+                    }
+                }
+
+                currentStep = targetStep;
+                window.scrollTo(0, 0);
             } catch (e) {
                 console.error('[Draft] Load failed:', e);
                 alert('Failed to load draft: ' + e.message);
