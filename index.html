@@ -320,16 +320,44 @@
             const existingUserInfo = document.getElementById('userInfo');
             if (existingUserInfo) existingUserInfo.remove();
 
-            // Add user info
+            // Add user info with profile picture, name, and email
             const userInfo = document.createElement('div');
             userInfo.id = 'userInfo';
-            userInfo.style.cssText = 'display: flex; align-items: center; gap: 1rem;';
+            userInfo.style.cssText = 'display: flex; align-items: center; gap: 1rem; position: relative;';
+
+            const profilePic = user.picture
+                ? `<img src="${user.picture}" alt="Profile" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; cursor: pointer;" onclick="toggleUserMenu()">`
+                : `<div style="width: 40px; height: 40px; border-radius: 50%; background: #31D7CA; display: flex; align-items: center; justify-content: center; color: #272D3F; font-weight: 600; cursor: pointer;" onclick="toggleUserMenu()">${(user.name || user.email || '?').charAt(0).toUpperCase()}</div>`;
+
             userInfo.innerHTML = `
-                <span style="color: #A9C1CB; font-size: 0.9rem;">${user.email}</span>
-                <button onclick="signOut()" style="background: transparent; border: 1px solid #31D7CA; color: #31D7CA; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; cursor: pointer; transition: all 0.2s;">Sign Out</button>
+                ${profilePic}
+                <div id="userMenu" style="display: none; position: absolute; top: 50px; right: 0; background: white; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); padding: 1rem 1.25rem; min-width: 200px; z-index: 1000;">
+                    <div style="color: #272D3F; font-weight: 600; font-size: 1rem; margin-bottom: 0.25rem;">${user.name || 'User'}</div>
+                    <div style="color: #7DA3AF; font-size: 0.875rem; margin-bottom: 0.75rem;">${user.email}</div>
+                    <div style="border-top: 1px solid #E1E7EF; padding-top: 0.75rem;">
+                        <a href="#" onclick="signOut(); return false;" style="color: #272D3F; text-decoration: none; font-size: 0.9rem; display: block;">Sign out</a>
+                    </div>
+                </div>
             `;
             headerContent.appendChild(userInfo);
         }
+
+        // Toggle user menu dropdown
+        function toggleUserMenu() {
+            const menu = document.getElementById('userMenu');
+            if (menu) {
+                menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+            }
+        }
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function(e) {
+            const userInfo = document.getElementById('userInfo');
+            const menu = document.getElementById('userMenu');
+            if (menu && userInfo && !userInfo.contains(e.target)) {
+                menu.style.display = 'none';
+            }
+        });
     </script>
 
     <header>
