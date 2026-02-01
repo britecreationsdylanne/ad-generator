@@ -304,8 +304,8 @@
             }
         }
 
-        // Run on page load
-        initAuth();
+        // Run on page load (wait for DOM)
+        document.addEventListener('DOMContentLoaded', initAuth);
 
         // Sign out - redirect to server logout
         function signOut() {
