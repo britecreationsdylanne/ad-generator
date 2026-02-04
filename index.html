@@ -1703,6 +1703,9 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             const boxes = textOverlays[imageIndex];
             const selectedIdx = selectedTextBox[imageIndex];
 
+            // Clean up old document-level event listeners before re-rendering
+            cleanupTextBoxHandlers();
+
             container.innerHTML = '';
 
             boxes.forEach((box, boxIdx) => {
@@ -1744,6 +1747,16 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             });
         }
 
+        // Store active handlers so we can clean them up before re-rendering
+        const _activeTextBoxHandlers = [];
+
+        function cleanupTextBoxHandlers() {
+            _activeTextBoxHandlers.forEach(({ event, handler }) => {
+                document.removeEventListener(event, handler);
+            });
+            _activeTextBoxHandlers.length = 0;
+        }
+
         function setupTextBoxHandlers(element, imageIndex, boxIndex) {
             const container = document.getElementById(`preview-container-${imageIndex}`);
             let isDragging = false;
@@ -1772,7 +1785,6 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 } else {
                     // Start dragging
                     isDragging = true;
-                    const rect = container.getBoundingClientRect();
                     startX = e.clientX;
                     startY = e.clientY;
                     startLeft = textOverlays[imageIndex][boxIndex].x;
@@ -1782,7 +1794,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 e.stopPropagation();
             });
 
-            document.addEventListener('mousemove', (e) => {
+            const onMouseMove = (e) => {
                 if (isDragging) {
                     const rect = container.getBoundingClientRect();
                     const deltaX = e.clientX - startX;
@@ -1813,14 +1825,30 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                     const newFontSize = Math.max(12, Math.min(96, startFontSize + delta));
                     textOverlays[imageIndex][boxIndex].fontSize = Math.round(newFontSize);
 
-                    renderAllTextBoxes(imageIndex);
+                    // Update font size directly in DOM without re-rendering
+                    const textEl = element.querySelector('p');
+                    if (textEl) {
+                        textEl.style.fontSize = Math.round(newFontSize) + 'px';
+                    }
                 }
-            });
+            };
 
-            document.addEventListener('mouseup', () => {
+            const onMouseUp = () => {
+                const wasResizing = isResizing;
                 isDragging = false;
                 isResizing = false;
-            });
+                // Re-render once after resize completes to sync final state
+                if (wasResizing) {
+                    renderAllTextBoxes(imageIndex);
+                }
+            };
+
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+
+            // Track these so they can be cleaned up
+            _activeTextBoxHandlers.push({ event: 'mousemove', handler: onMouseMove });
+            _activeTextBoxHandlers.push({ event: 'mouseup', handler: onMouseUp });
         }
 
         // Note: setupDragHandler and updateTextOverlayPreview have been replaced
