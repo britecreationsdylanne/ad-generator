@@ -13,6 +13,10 @@
       defer
     ></script>
 
+    <!-- Cropper.js for image cropping -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js" defer></script>
+
     <style>
         * {
             margin: 0;
@@ -495,7 +499,16 @@
                 </div>
                 <div id="editModePreview" style="display: none; margin-top: 1.5rem;">
                     <p style="color: #31D7CA; font-weight: 600; margin-bottom: 1rem;">Image uploaded successfully!</p>
-                    <img id="editModePreviewImg" style="max-width: 300px; max-height: 300px; border-radius: 8px; border: 2px solid #E1E7EF;">
+                    <div style="display: flex; align-items: flex-start; gap: 1.5rem; flex-wrap: wrap;">
+                        <img id="editModePreviewImg" style="max-width: 300px; max-height: 300px; border-radius: 8px; border: 2px solid #E1E7EF;">
+                        <div>
+                            <p id="editModeImageDims" style="color: #7DA3AF; font-size: 0.9rem; margin-bottom: 1rem;"></p>
+                            <button onclick="openEditCropModal()" style="padding: 0.75rem 1.5rem; border: 2px solid #31D7CA; background: white; color: #272D3F; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: all 0.2s;">
+                                ✂️ Crop & Resize
+                            </button>
+                            <p style="color: #A9C1CB; font-size: 0.8rem; margin-top: 0.5rem;">Optional — crop to a specific aspect ratio or size</p>
+                        </div>
+                    </div>
                 </div>
                 <div class="button-group" style="margin-top: 2rem;">
                     <button class="btn-secondary" onclick="cancelEditMode()">← Back</button>
@@ -810,6 +823,41 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
         </div>
     </main>
 
+    <!-- Crop Modal for Edit Mode -->
+    <div id="editCropModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 10001; overflow-y: auto;">
+        <div style="max-width: 900px; margin: 2rem auto; background: white; border-radius: 16px; padding: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2 style="color: #272D3F; margin: 0;">Crop & Resize Image</h2>
+                <button onclick="cancelEditCrop()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #7DA3AF;">✕</button>
+            </div>
+
+            <!-- Aspect Ratio Presets -->
+            <div style="margin-bottom: 1rem;">
+                <p style="color: #7DA3AF; font-size: 0.9rem; margin-bottom: 0.75rem; font-weight: 600;">Aspect Ratio:</p>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                    <button class="crop-ratio-btn" onclick="setEditCropRatio(NaN, this)" style="padding: 0.5rem 1rem; border: 2px solid #31D7CA; background: #31D7CA; color: white; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem;">Freeform</button>
+                    <button class="crop-ratio-btn" onclick="setEditCropRatio(1, this)" style="padding: 0.5rem 1rem; border: 2px solid #E1E7EF; background: white; color: #272D3F; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem;">1:1 Square</button>
+                    <button class="crop-ratio-btn" onclick="setEditCropRatio(4/5, this)" style="padding: 0.5rem 1rem; border: 2px solid #E1E7EF; background: white; color: #272D3F; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem;">4:5 Meta</button>
+                    <button class="crop-ratio-btn" onclick="setEditCropRatio(9/16, this)" style="padding: 0.5rem 1rem; border: 2px solid #E1E7EF; background: white; color: #272D3F; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem;">9:16 Stories</button>
+                    <button class="crop-ratio-btn" onclick="setEditCropRatio(2/3, this)" style="padding: 0.5rem 1rem; border: 2px solid #E1E7EF; background: white; color: #272D3F; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem;">2:3 Pinterest</button>
+                    <button class="crop-ratio-btn" onclick="setEditCropRatio(16/9, this)" style="padding: 0.5rem 1rem; border: 2px solid #E1E7EF; background: white; color: #272D3F; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem;">16:9 Landscape</button>
+                </div>
+            </div>
+
+            <!-- Cropper Container -->
+            <div style="max-height: 60vh; overflow: hidden; background: #f0f0f0; border-radius: 8px;">
+                <img id="editCropImage" style="display: block; max-width: 100%;">
+            </div>
+
+            <div id="editCropDimensions" style="color: #7DA3AF; font-size: 0.9rem; margin-top: 0.75rem; text-align: center;"></div>
+
+            <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: flex-end;">
+                <button onclick="cancelEditCrop()" class="btn-secondary" style="margin-top: 0;">Cancel</button>
+                <button onclick="confirmEditCrop()" class="btn-primary" style="margin-top: 0;">Apply Crop</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Frame Editor Modal -->
     <div id="frameEditorModal" class="hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 10000; overflow-y: auto;">
         <div style="max-width: 1200px; margin: 2rem auto; background: white; border-radius: 16px; padding: 2rem;">
@@ -1075,6 +1123,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
         function cancelEditMode() {
             isEditMode = false;
             editModeImage = null;
+            editModeOriginalImage = null;
 
             // Reset edit mode UI
             document.getElementById('editModePreview').style.display = 'none';
@@ -1091,6 +1140,8 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
+        let editModeOriginalImage = null; // Keep original for re-cropping
+
         function handleEditModeUpload(files) {
             if (files.length === 0) return;
 
@@ -1103,13 +1154,119 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             const reader = new FileReader();
             reader.onload = function(e) {
                 editModeImage = e.target.result;
+                editModeOriginalImage = e.target.result; // Keep original for re-cropping
 
-                // Show preview
-                document.getElementById('editModePreviewImg').src = editModeImage;
+                // Show preview and get dimensions
+                const previewImg = document.getElementById('editModePreviewImg');
+                previewImg.src = editModeImage;
+                previewImg.onload = function() {
+                    document.getElementById('editModeImageDims').textContent =
+                        `${this.naturalWidth} × ${this.naturalHeight} px`;
+                };
                 document.getElementById('editModePreview').style.display = 'block';
                 document.getElementById('editModeContinueBtn').disabled = false;
             };
             reader.readAsDataURL(file);
+        }
+
+        // Crop modal functions
+        let editCropper = null;
+
+        function openEditCropModal() {
+            if (!editModeOriginalImage) return;
+
+            const modal = document.getElementById('editCropModal');
+            const img = document.getElementById('editCropImage');
+
+            // Destroy existing cropper
+            if (editCropper) {
+                editCropper.destroy();
+                editCropper = null;
+            }
+
+            img.src = editModeOriginalImage;
+            modal.style.display = 'block';
+
+            img.onload = function() {
+                if (editCropper) editCropper.destroy();
+                editCropper = new Cropper(img, {
+                    aspectRatio: NaN, // Freeform by default
+                    viewMode: 1,
+                    dragMode: 'move',
+                    guides: true,
+                    center: true,
+                    highlight: false,
+                    cropBoxMovable: true,
+                    cropBoxResizable: true,
+                    background: true,
+                    autoCropArea: 0.9,
+                    responsive: true,
+                    crop: function(event) {
+                        const w = Math.round(event.detail.width);
+                        const h = Math.round(event.detail.height);
+                        document.getElementById('editCropDimensions').textContent =
+                            `Output: ${w} × ${h} px`;
+                    }
+                });
+
+                // Highlight the Freeform button as default
+                document.querySelectorAll('.crop-ratio-btn').forEach(btn => {
+                    btn.style.background = 'white';
+                    btn.style.color = '#272D3F';
+                    btn.style.borderColor = '#E1E7EF';
+                });
+                const firstBtn = document.querySelector('.crop-ratio-btn');
+                if (firstBtn) {
+                    firstBtn.style.background = '#31D7CA';
+                    firstBtn.style.color = 'white';
+                    firstBtn.style.borderColor = '#31D7CA';
+                }
+            };
+        }
+
+        function setEditCropRatio(ratio, btn) {
+            if (!editCropper) return;
+            editCropper.setAspectRatio(ratio);
+
+            // Highlight active button
+            document.querySelectorAll('.crop-ratio-btn').forEach(b => {
+                b.style.background = 'white';
+                b.style.color = '#272D3F';
+                b.style.borderColor = '#E1E7EF';
+            });
+            btn.style.background = '#31D7CA';
+            btn.style.color = 'white';
+            btn.style.borderColor = '#31D7CA';
+        }
+
+        function confirmEditCrop() {
+            if (!editCropper) return;
+
+            const canvas = editCropper.getCroppedCanvas({
+                imageSmoothingEnabled: true,
+                imageSmoothingQuality: 'high'
+            });
+
+            const croppedDataUrl = canvas.toDataURL('image/png');
+            editModeImage = croppedDataUrl;
+
+            // Update preview
+            const previewImg = document.getElementById('editModePreviewImg');
+            previewImg.src = croppedDataUrl;
+            previewImg.onload = function() {
+                document.getElementById('editModeImageDims').textContent =
+                    `${this.naturalWidth} × ${this.naturalHeight} px (cropped)`;
+            };
+
+            cancelEditCrop();
+        }
+
+        function cancelEditCrop() {
+            if (editCropper) {
+                editCropper.destroy();
+                editCropper = null;
+            }
+            document.getElementById('editCropModal').style.display = 'none';
         }
 
         function proceedWithEditMode() {
@@ -4817,6 +4974,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 // Reset edit mode state
                 isEditMode = false;
                 editModeImage = null;
+                editModeOriginalImage = null;
                 const stepEditUpload = document.getElementById('stepEditUpload');
                 if (stepEditUpload) stepEditUpload.classList.add('hidden');
                 document.getElementById('editModePreview').style.display = 'none';
