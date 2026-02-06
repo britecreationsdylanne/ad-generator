@@ -549,6 +549,22 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- AI Image Edit Prompt -->
+                <div id="aiEditSection" style="display: none; margin-top: 2rem; padding: 1.5rem; background: linear-gradient(135deg, #F4F7FC 0%, #E8F4F8 100%); border-radius: 12px; border: 2px solid #E1E7EF;">
+                    <h3 style="color: #272D3F; margin: 0 0 0.5rem 0; font-size: 1.1rem;">AI Image Tweaks</h3>
+                    <p style="color: #7DA3AF; font-size: 0.85rem; margin-bottom: 1rem;">Describe changes you want Gemini to make to your image</p>
+                    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                        <input type="text" id="aiEditPrompt" placeholder="e.g., Add hearts around the ring, make the background warmer, add sparkles..."
+                            style="flex: 1; min-width: 250px; padding: 0.75rem 1rem; border: 2px solid #E1E7EF; border-radius: 8px; font-size: 0.95rem; font-family: inherit;"
+                            onkeydown="if(event.key==='Enter') applyAiEdit()">
+                        <button onclick="applyAiEdit()" id="aiEditBtn" style="padding: 0.75rem 1.5rem; background: #272D3F; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.95rem; white-space: nowrap;">
+                            ✨ Apply with AI
+                        </button>
+                    </div>
+                    <div id="aiEditStatus" style="display: none; margin-top: 0.75rem; padding: 0.75rem; background: white; border-radius: 6px; color: #7DA3AF; font-size: 0.9rem;"></div>
+                </div>
+
                 <div class="button-group" style="margin-top: 2rem;">
                     <button class="btn-secondary" onclick="cancelEditMode()">← Back</button>
                     <button class="btn-primary" id="editModeContinueBtn" onclick="proceedWithEditMode()" disabled>Continue to Edit →</button>
@@ -1092,7 +1108,28 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
         let editModeImage = null; // Store the uploaded image for edit mode
         let generatedImages = []; // Store generated images for use across steps
         let textOverlays = {}; // Store text overlay settings for each image
+        let shapeOverlays = {}; // Store shape overlays (arrows, circles, etc.) for each image
+        let selectedShape = {}; // Track selected shape per image
         let logoSettings = {}; // Store logo position (x, y), scale, and selectedLogoIndex for each image
+
+        // BriteCo brand colors for shapes
+        const BRITECO_COLORS = [
+            { name: 'Teal', hex: '#31D7CA' },
+            { name: 'Navy', hex: '#272D3F' },
+            { name: 'Orange', hex: '#FC883A' },
+            { name: 'White', hex: '#FFFFFF' },
+            { name: 'Black', hex: '#000000' }
+        ];
+
+        // Shape presets
+        const SHAPE_TYPES = [
+            { id: 'arrow-down', label: 'Arrow ↓', icon: '↓' },
+            { id: 'arrow-right', label: 'Arrow →', icon: '→' },
+            { id: 'arrow-curved', label: 'Curved Arrow', icon: '↩' },
+            { id: 'circle', label: 'Circle', icon: '○' },
+            { id: 'rectangle', label: 'Rectangle', icon: '▭' },
+            { id: 'line', label: 'Line', icon: '—' }
+        ];
 
         // Helper function to capitalize platform names for display
         function capitalizePlatform(platform) {
@@ -1171,6 +1208,9 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
 
             // Reset edit mode UI
             document.getElementById('editModePreview').style.display = 'none';
+            document.getElementById('aiEditSection').style.display = 'none';
+            document.getElementById('aiEditPrompt').value = '';
+            document.getElementById('aiEditStatus').style.display = 'none';
             document.getElementById('editModeContinueBtn').disabled = true;
             document.getElementById('editModeFileInput').value = '';
 
@@ -1209,6 +1249,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                         `${this.naturalWidth} × ${this.naturalHeight} px`;
                 };
                 document.getElementById('editModePreview').style.display = 'block';
+                document.getElementById('aiEditSection').style.display = 'block';
                 document.getElementById('editModeContinueBtn').disabled = false;
             };
             reader.readAsDataURL(file);
@@ -1312,6 +1353,57 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 editCropper = null;
             }
             document.getElementById('editCropModal').style.display = 'none';
+        }
+
+        async function applyAiEdit() {
+            const prompt = document.getElementById('aiEditPrompt').value.trim();
+            if (!prompt) { alert('Please describe the changes you want'); return; }
+            if (!editModeImage) { alert('Please upload an image first'); return; }
+
+            const btn = document.getElementById('aiEditBtn');
+            const status = document.getElementById('aiEditStatus');
+
+            btn.disabled = true;
+            btn.textContent = 'Generating...';
+            status.style.display = 'block';
+            status.innerHTML = '&#9889; Sending to Gemini AI... This may take 10-30 seconds.';
+
+            try {
+                const resp = await fetch('/api/edit-image', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        imageData: editModeImage,
+                        prompt: prompt
+                    })
+                });
+
+                const result = await resp.json();
+                if (!result.success) throw new Error(result.error || 'Edit failed');
+
+                // Update the image with the AI-edited version
+                editModeImage = result.editedImage;
+
+                // Update preview
+                const previewImg = document.getElementById('editModePreviewImg');
+                previewImg.src = editModeImage;
+                previewImg.onload = function() {
+                    document.getElementById('editModeImageDims').textContent =
+                        `${this.naturalWidth} × ${this.naturalHeight} px (AI edited)`;
+                };
+
+                const timeSec = (result.generationTimeMs / 1000).toFixed(1);
+                status.innerHTML = `&#10003; AI edit applied in ${timeSec}s! You can apply more edits or continue.`;
+                status.style.color = '#22c55e';
+
+            } catch (e) {
+                console.error('[AI Edit] Failed:', e);
+                status.innerHTML = `&#10060; Failed: ${e.message}`;
+                status.style.color = '#ff4757';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '✨ Apply with AI';
+            }
         }
 
         function proceedWithEditMode() {
@@ -1843,6 +1935,14 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                     selectedTextBox[index] = textOverlays[index].length > 0 ? 0 : -1;
                 }
 
+                // Initialize shape overlays
+                if (!shapeOverlays[index] || !Array.isArray(shapeOverlays[index])) {
+                    shapeOverlays[index] = shapeOverlays[index] || [];
+                }
+                if (selectedShape[index] === undefined) {
+                    selectedShape[index] = -1;
+                }
+
                 const card = document.createElement('div');
                 card.style.cssText = 'border: 2px solid #E1E7EF; border-radius: 12px; padding: 2rem; background: white;';
 
@@ -1875,16 +1975,31 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                             <button onclick="addNewTextBox(${index})" class="btn-secondary" style="width: 100%; margin-top: 1rem; padding: 0.75rem; background: #31D7CA; color: white; border: none;">
                                 + New Text Box
                             </button>
+
+                            <!-- Shape Controls -->
+                            <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 2px solid #E1E7EF;">
+                                <h3 style="margin-bottom: 0.75rem; color: #272D3F; font-size: 1rem;">Shapes & Arrows</h3>
+                                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
+                                    ${SHAPE_TYPES.map(s => `
+                                        <button onclick="addShape(${index}, '${s.id}')" style="padding: 0.5rem 0.75rem; border: 2px solid #E1E7EF; background: white; border-radius: 6px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;" onmouseover="this.style.borderColor='#31D7CA'" onmouseout="this.style.borderColor='#E1E7EF'">${s.icon} ${s.label}</button>
+                                    `).join('')}
+                                </div>
+                                <div id="shape-controls-${index}">
+                                    <!-- Shape-specific controls rendered here when a shape is selected -->
+                                </div>
+                            </div>
                         </div>
                     </div>
                 `;
 
                 textOverlayGrid.appendChild(card);
 
-                // Render text boxes and controls
+                // Render text boxes, shapes, and controls
                 setTimeout(() => {
                     renderAllTextBoxes(index);
                     renderTextBoxControls(index);
+                    renderAllShapes(index);
+                    renderShapeControls(index);
                 }, 100);
             });
         }
@@ -2199,6 +2314,272 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
 
         // Note: setupDragHandler and updateTextOverlayPreview have been replaced
         // by the new multiple text box system (renderAllTextBoxes, setupTextBoxHandlers, etc.)
+
+        // ========== SHAPES SYSTEM ==========
+
+        function addShape(imageIndex, shapeType) {
+            const shape = {
+                type: shapeType,
+                x: 50,
+                y: 50 + (shapeOverlays[imageIndex].length * 10) % 40,
+                width: 15, // percentage of container
+                height: 15,
+                color: '#31D7CA',
+                strokeWidth: 4,
+                rotation: 0
+            };
+            shapeOverlays[imageIndex].push(shape);
+            selectedShape[imageIndex] = shapeOverlays[imageIndex].length - 1;
+            renderAllShapes(imageIndex);
+            renderShapeControls(imageIndex);
+        }
+
+        function deleteShape(imageIndex, shapeIdx) {
+            shapeOverlays[imageIndex].splice(shapeIdx, 1);
+            if (selectedShape[imageIndex] >= shapeOverlays[imageIndex].length) {
+                selectedShape[imageIndex] = shapeOverlays[imageIndex].length - 1;
+            }
+            renderAllShapes(imageIndex);
+            renderShapeControls(imageIndex);
+        }
+
+        function selectShape(imageIndex, shapeIdx) {
+            selectedShape[imageIndex] = shapeIdx;
+            renderAllShapes(imageIndex);
+            renderShapeControls(imageIndex);
+        }
+
+        function renderAllShapes(imageIndex) {
+            const container = document.getElementById(`text-boxes-container-${imageIndex}`);
+            if (!container) return;
+
+            // Clean up old shape handlers before re-rendering
+            cleanupShapeHandlers();
+
+            // Remove existing shapes (but keep text boxes)
+            container.querySelectorAll('.shape-overlay').forEach(el => el.remove());
+
+            const shapes = shapeOverlays[imageIndex] || [];
+            shapes.forEach((shape, idx) => {
+                const isSelected = idx === selectedShape[imageIndex];
+                const el = document.createElement('div');
+                el.className = 'shape-overlay';
+                el.dataset.imageIndex = imageIndex;
+                el.dataset.shapeIndex = idx;
+                el.style.cssText = `
+                    position: absolute;
+                    top: ${shape.y}%;
+                    left: ${shape.x}%;
+                    transform: translate(-50%, -50%);
+                    cursor: move;
+                    pointer-events: auto;
+                    ${isSelected ? 'filter: drop-shadow(0 0 4px rgba(49, 215, 202, 0.8));' : ''}
+                `;
+
+                el.innerHTML = getShapeSVG(shape, isSelected);
+                container.appendChild(el);
+                setupShapeDragHandler(el, imageIndex, idx);
+            });
+        }
+
+        function getShapeSVG(shape, isSelected) {
+            const w = 80;
+            const h = 80;
+            const c = shape.color;
+            const sw = shape.strokeWidth;
+            const outline = isSelected ? `<rect x="0" y="0" width="${w}" height="${h}" fill="none" stroke="#31D7CA" stroke-width="1" stroke-dasharray="4"/>` : '';
+
+            switch (shape.type) {
+                case 'arrow-down':
+                    return `<svg width="${w}" height="${h}" viewBox="0 0 80 80"><path d="M40 10 L40 60 M20 45 L40 65 L60 45" stroke="${c}" stroke-width="${sw}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>${outline}</svg>`;
+                case 'arrow-right':
+                    return `<svg width="${w}" height="${h}" viewBox="0 0 80 80"><path d="M10 40 L60 40 M45 20 L65 40 L45 60" stroke="${c}" stroke-width="${sw}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>${outline}</svg>`;
+                case 'arrow-curved':
+                    return `<svg width="${w}" height="${h}" viewBox="0 0 80 80"><path d="M60 20 C70 20, 70 50, 50 55 L50 55 M55 45 L50 58 L40 50" stroke="${c}" stroke-width="${sw}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>${outline}</svg>`;
+                case 'circle':
+                    return `<svg width="${w}" height="${h}" viewBox="0 0 80 80"><circle cx="40" cy="40" r="30" stroke="${c}" stroke-width="${sw}" fill="none"/>${outline}</svg>`;
+                case 'rectangle':
+                    return `<svg width="${w}" height="${h}" viewBox="0 0 80 80"><rect x="10" y="15" width="60" height="50" rx="4" stroke="${c}" stroke-width="${sw}" fill="none"/>${outline}</svg>`;
+                case 'line':
+                    return `<svg width="${w}" height="${h}" viewBox="0 0 80 80"><line x1="10" y1="40" x2="70" y2="40" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>${outline}</svg>`;
+                default:
+                    return '';
+            }
+        }
+
+        const _activeShapeHandlers = [];
+
+        function cleanupShapeHandlers() {
+            _activeShapeHandlers.forEach(({ event, handler }) => {
+                document.removeEventListener(event, handler);
+            });
+            _activeShapeHandlers.length = 0;
+        }
+
+        function setupShapeDragHandler(element, imageIndex, shapeIndex) {
+            const container = document.getElementById(`preview-container-${imageIndex}`);
+            let isDragging = false;
+            let startX, startY, startLeft, startTop;
+
+            element.addEventListener('click', (e) => {
+                selectShape(imageIndex, shapeIndex);
+            });
+
+            element.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                startLeft = shapeOverlays[imageIndex][shapeIndex].x;
+                startTop = shapeOverlays[imageIndex][shapeIndex].y;
+                e.preventDefault();
+                e.stopPropagation();
+            });
+
+            const onMouseMove = (e) => {
+                if (!isDragging) return;
+                const rect = container.getBoundingClientRect();
+                const deltaX = e.clientX - startX;
+                const deltaY = e.clientY - startY;
+                let newX = startLeft + (deltaX / rect.width) * 100;
+                let newY = startTop + (deltaY / rect.height) * 100;
+                newX = Math.max(5, Math.min(95, newX));
+                newY = Math.max(5, Math.min(95, newY));
+                shapeOverlays[imageIndex][shapeIndex].x = newX;
+                shapeOverlays[imageIndex][shapeIndex].y = newY;
+                element.style.left = newX + '%';
+                element.style.top = newY + '%';
+            };
+
+            const onMouseUp = () => { isDragging = false; };
+
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+            _activeShapeHandlers.push({ event: 'mousemove', handler: onMouseMove });
+            _activeShapeHandlers.push({ event: 'mouseup', handler: onMouseUp });
+        }
+
+        function renderShapeControls(imageIndex) {
+            const controlsDiv = document.getElementById(`shape-controls-${imageIndex}`);
+            if (!controlsDiv) return;
+
+            const shapes = shapeOverlays[imageIndex] || [];
+            const selIdx = selectedShape[imageIndex];
+
+            if (shapes.length === 0 || selIdx < 0 || selIdx >= shapes.length) {
+                controlsDiv.innerHTML = '<p style="color: #A9C1CB; font-size: 0.85rem;">Click a shape button above to add one</p>';
+                return;
+            }
+
+            const shape = shapes[selIdx];
+            const shapeLabel = SHAPE_TYPES.find(s => s.id === shape.type)?.label || shape.type;
+
+            // Shape tabs
+            let tabs = shapes.map((s, i) => {
+                const label = SHAPE_TYPES.find(st => st.id === s.type)?.icon || '?';
+                const active = i === selIdx;
+                return `<button onclick="selectShape(${imageIndex}, ${i})" style="padding: 4px 10px; border: 2px solid ${active ? '#31D7CA' : '#E1E7EF'}; background: ${active ? '#31D7CA' : 'white'}; color: ${active ? 'white' : '#272D3F'}; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">${label}</button>`;
+            }).join('');
+
+            controlsDiv.innerHTML = `
+                <div style="display: flex; gap: 4px; margin-bottom: 0.75rem; flex-wrap: wrap; align-items: center;">
+                    ${tabs}
+                    <span style="color: #7DA3AF; font-size: 0.8rem; margin-left: 4px;">${shapeLabel}</span>
+                </div>
+                <div style="margin-bottom: 0.75rem;">
+                    <label style="font-size: 0.85rem; color: #7DA3AF; display: block; margin-bottom: 4px;">Color</label>
+                    <div style="display: flex; gap: 6px;">
+                        ${BRITECO_COLORS.map(c =>
+                            `<button onclick="updateShapeColor(${imageIndex}, '${c.hex}')" style="width: 32px; height: 32px; border-radius: 50%; border: 3px solid ${shape.color === c.hex ? '#272D3F' : '#E1E7EF'}; background: ${c.hex}; cursor: pointer;" title="${c.name}"></button>`
+                        ).join('')}
+                    </div>
+                </div>
+                <div style="margin-bottom: 0.75rem;">
+                    <label style="font-size: 0.85rem; color: #7DA3AF; display: block; margin-bottom: 4px;">Thickness: ${shape.strokeWidth}px</label>
+                    <input type="range" min="2" max="12" value="${shape.strokeWidth}" oninput="updateShapeStroke(${imageIndex}, this.value)" style="width: 100%;">
+                </div>
+                <button onclick="deleteShape(${imageIndex}, ${selIdx})" style="width: 100%; padding: 0.5rem; background: #ff4757; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem;">Delete Shape</button>
+            `;
+        }
+
+        function updateShapeColor(imageIndex, color) {
+            const idx = selectedShape[imageIndex];
+            if (idx < 0) return;
+            shapeOverlays[imageIndex][idx].color = color;
+            renderAllShapes(imageIndex);
+            renderShapeControls(imageIndex);
+        }
+
+        function updateShapeStroke(imageIndex, value) {
+            const idx = selectedShape[imageIndex];
+            if (idx < 0) return;
+            shapeOverlays[imageIndex][idx].strokeWidth = parseInt(value);
+            renderAllShapes(imageIndex);
+        }
+
+        // Draw a shape on a canvas at native resolution
+        function drawShapeOnCanvas(ctx, shape, canvasWidth, canvasHeight) {
+            const x = (shape.x / 100) * canvasWidth;
+            const y = (shape.y / 100) * canvasHeight;
+            const scale = canvasWidth / 400; // Scale relative to preview size
+            const size = 40 * scale;
+            const sw = shape.strokeWidth * scale;
+
+            ctx.strokeStyle = shape.color;
+            ctx.lineWidth = sw;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            switch (shape.type) {
+                case 'arrow-down':
+                    ctx.beginPath();
+                    ctx.moveTo(x, y - size);
+                    ctx.lineTo(x, y + size * 0.5);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(x - size * 0.5, y + size * 0.1);
+                    ctx.lineTo(x, y + size * 0.6);
+                    ctx.lineTo(x + size * 0.5, y + size * 0.1);
+                    ctx.stroke();
+                    break;
+                case 'arrow-right':
+                    ctx.beginPath();
+                    ctx.moveTo(x - size, y);
+                    ctx.lineTo(x + size * 0.5, y);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(x + size * 0.1, y - size * 0.5);
+                    ctx.lineTo(x + size * 0.6, y);
+                    ctx.lineTo(x + size * 0.1, y + size * 0.5);
+                    ctx.stroke();
+                    break;
+                case 'arrow-curved':
+                    ctx.beginPath();
+                    ctx.moveTo(x + size * 0.5, y - size * 0.5);
+                    ctx.bezierCurveTo(x + size * 0.8, y - size * 0.5, x + size * 0.8, y + size * 0.3, x + size * 0.2, y + size * 0.4);
+                    ctx.stroke();
+                    // Arrowhead
+                    ctx.beginPath();
+                    ctx.moveTo(x + size * 0.4, y + size * 0.1);
+                    ctx.lineTo(x + size * 0.15, y + size * 0.5);
+                    ctx.lineTo(x, y + size * 0.2);
+                    ctx.stroke();
+                    break;
+                case 'circle':
+                    ctx.beginPath();
+                    ctx.arc(x, y, size * 0.75, 0, Math.PI * 2);
+                    ctx.stroke();
+                    break;
+                case 'rectangle':
+                    ctx.strokeRect(x - size * 0.75, y - size * 0.5, size * 1.5, size);
+                    break;
+                case 'line':
+                    ctx.beginPath();
+                    ctx.moveTo(x - size, y);
+                    ctx.lineTo(x + size, y);
+                    ctx.stroke();
+                    break;
+            }
+        }
 
         function renderLogoPlacementPage() {
             const logoGrid = document.getElementById('logoGrid');
@@ -2557,6 +2938,12 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                         const lineY = y - totalHeight / 2 + lineIdx * lineHeight;
                         ctx.fillText(line, x, lineY);
                     });
+                });
+
+                // Draw shapes
+                const shapes = shapeOverlays[index] || [];
+                shapes.forEach(shape => {
+                    drawShapeOnCanvas(ctx, shape, canvas.width, canvas.height);
                 });
 
                 // Draw logo if enabled
@@ -3629,6 +4016,12 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                         const lineY = y - totalHeight / 2 + lineIdx * lineHeight;
                         ctx.fillText(line, x, lineY);
                     });
+                });
+
+                // Draw shapes
+                const shapes = shapeOverlays[index] || [];
+                shapes.forEach(shape => {
+                    drawShapeOnCanvas(ctx, shape, img.width, img.height);
                 });
 
                 // Draw logo if enabled
@@ -5277,6 +5670,12 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                         });
                     });
 
+                    // Draw shapes
+                    const shapes = shapeOverlays[index] || [];
+                    shapes.forEach(shape => {
+                        drawShapeOnCanvas(ctx, shape, thumbWidth, thumbHeight);
+                    });
+
                     // Draw logo if enabled
                     const logo = logoSettings[index] || { enabled: false };
                     if (logo.enabled && availableLogos[logo.selectedLogoIndex || 0]) {
@@ -5337,6 +5736,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                         promptText: document.getElementById('promptText')?.value || '',
                         generatedImages: generatedImages,
                         textOverlays: textOverlays,
+                        shapeOverlays: shapeOverlays,
                         logoSettings: logoSettings,
                         selectedAdCopy: typeof selectedAdCopy !== 'undefined' ? selectedAdCopy : {},
                         thumbnails: thumbnails,
@@ -5347,15 +5747,9 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 const result = await resp.json();
                 if (result.success) {
                     if (btnElement) {
-                        btnElement.textContent = '&#10003; Project Saved!';
+                        btnElement.innerHTML = '&#10003; PROJECT SAVED!';
                         btnElement.style.background = '#22c55e';
                         btnElement.style.borderColor = '#22c55e';
-                        setTimeout(() => {
-                            btnElement.innerHTML = '&#10003; Complete Project';
-                            btnElement.style.background = '#31D7CA';
-                            btnElement.style.borderColor = '#31D7CA';
-                            btnElement.disabled = false;
-                        }, 3000);
                     }
                 } else {
                     throw new Error(result.error || 'Save failed');
@@ -5492,10 +5886,12 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 // Temporarily swap global state to reuse download functions
                 const prevImages = generatedImages;
                 const prevOverlays = textOverlays;
+                const prevShapes = shapeOverlays;
                 const prevLogo = logoSettings;
 
                 generatedImages = p.generatedImages || [];
                 textOverlays = p.textOverlays || {};
+                shapeOverlays = p.shapeOverlays || {};
                 logoSettings = p.logoSettings || {};
 
                 // Download each image with staggered delays
@@ -5509,6 +5905,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 setTimeout(() => {
                     generatedImages = prevImages;
                     textOverlays = prevOverlays;
+                    shapeOverlays = prevShapes;
                     logoSettings = prevLogo;
                 }, generatedImages.length * 500 + 1000);
 
@@ -5534,6 +5931,9 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 }
                 if (p.textOverlays) {
                     textOverlays = p.textOverlays;
+                }
+                if (p.shapeOverlays) {
+                    shapeOverlays = p.shapeOverlays;
                 }
                 if (p.logoSettings) {
                     logoSettings = p.logoSettings;

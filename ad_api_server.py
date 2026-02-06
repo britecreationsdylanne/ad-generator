@@ -1620,6 +1620,42 @@ def delete_draft():
         return jsonify({'success': True})
 
 
+# ========== AI IMAGE EDITING ==========
+
+@app.route('/api/edit-image', methods=['POST'])
+def edit_image():
+    """Edit an image using Gemini by sending image + text prompt"""
+    try:
+        data = request.json
+        image_data = data.get('imageData')
+        prompt = data.get('prompt')
+
+        if not image_data or not prompt:
+            return jsonify({'success': False, 'error': 'Image and prompt are required'}), 400
+
+        print(f"[API] Edit image request: prompt='{prompt[:80]}...'")
+
+        result = gemini_client.edit_image(
+            image_data=image_data,
+            prompt=prompt,
+            model="gemini-2.5-flash-image"
+        )
+
+        edited_image = result.get('image_data', '')
+        if not edited_image:
+            return jsonify({'success': False, 'error': 'No edited image returned'}), 500
+
+        return jsonify({
+            'success': True,
+            'editedImage': f"data:image/png;base64,{edited_image}",
+            'generationTimeMs': result.get('generation_time_ms', 0)
+        })
+
+    except Exception as e:
+        print(f"[API ERROR] Edit image failed: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 # ========== COMPLETED PROJECTS ==========
 
 @app.route('/api/save-project', methods=['POST'])
@@ -1644,6 +1680,7 @@ def save_project():
             'promptText': data.get('promptText'),
             'generatedImages': data.get('generatedImages'),
             'textOverlays': data.get('textOverlays'),
+            'shapeOverlays': data.get('shapeOverlays'),
             'logoSettings': data.get('logoSettings'),
             'selectedAdCopy': data.get('selectedAdCopy'),
             'thumbnails': data.get('thumbnails', []),

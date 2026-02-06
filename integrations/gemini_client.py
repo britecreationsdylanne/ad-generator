@@ -149,6 +149,118 @@ class GeminiClient:
             traceback.print_exc()
             raise
 
+    def edit_image(
+        self,
+        image_data: str,
+        prompt: str,
+        model: Optional[str] = None,
+    ) -> Dict:
+        """
+        Edit an existing image using Gemini by sending the image + text prompt.
+
+        Args:
+            image_data: Base64-encoded image (with or without data URI prefix)
+            prompt: Edit instructions (e.g., "add hearts around the ring")
+            model: Model to use (default: gemini-2.5-flash-image)
+
+        Returns:
+            {
+                "image_data": "base64_encoded_edited_image",
+                "prompt": "original prompt",
+                "model": "model-used",
+                "generation_time_ms": 1234
+            }
+        """
+        if not self.api_key:
+            raise ValueError("Google AI API key not configured")
+
+        model_name = model or "gemini-2.5-flash-image"
+        start_time = time.time()
+
+        try:
+            from PIL import Image as PILImage
+            from io import BytesIO
+
+            print(f"[GEMINI EDIT] Using model: {model_name}")
+            print(f"[GEMINI EDIT] Prompt: {prompt[:100]}...")
+
+            # Extract base64 data from data URI if present
+            if ',' in image_data:
+                header = image_data.split(',', 1)[0]
+                base64_data = image_data.split(',', 1)[1]
+                if 'png' in header.lower():
+                    mime_type = 'image/png'
+                elif 'webp' in header.lower():
+                    mime_type = 'image/webp'
+                else:
+                    mime_type = 'image/jpeg'
+            else:
+                base64_data = image_data
+                mime_type = 'image/jpeg'
+
+            image_bytes = base64.b64decode(base64_data)
+
+            # Verify it's a valid image
+            pil_image = PILImage.open(BytesIO(image_bytes))
+            print(f"[GEMINI EDIT] Input image: {pil_image.size}, mode: {pil_image.mode}")
+
+            # Build content parts: image + edit prompt
+            image_part = types.Part.from_bytes(
+                data=image_bytes,
+                mime_type=mime_type
+            )
+
+            edit_prompt = f"Edit this image: {prompt}. Keep the overall composition and style similar. Return the edited image."
+
+            response = self.client.models.generate_content(
+                model=model_name,
+                contents=[image_part, edit_prompt]
+            )
+
+            generation_time_ms = int((time.time() - start_time) * 1000)
+
+            # Extract image from response (same pattern as generate_image)
+            parts = []
+            if hasattr(response, 'parts'):
+                parts = response.parts
+            elif hasattr(response, 'candidates') and response.candidates:
+                candidate = response.candidates[0]
+                if hasattr(candidate, 'content') and hasattr(candidate.content, 'parts'):
+                    parts = candidate.content.parts
+
+            result_image_data = None
+            for part in parts:
+                if hasattr(part, 'inline_data') and part.inline_data:
+                    try:
+                        image_obj = part.as_image()
+                        if hasattr(image_obj, '_pil_image'):
+                            result_pil = image_obj._pil_image
+                            buffer = BytesIO()
+                            result_pil.save(buffer, format='PNG')
+                            result_bytes = buffer.getvalue()
+                            result_image_data = base64.b64encode(result_bytes).decode('utf-8')
+                            print(f"[GEMINI EDIT] Output image: {result_pil.size}")
+                            break
+                    except Exception as img_error:
+                        print(f"[GEMINI EDIT] Failed to extract image: {img_error}")
+                        continue
+
+            if not result_image_data:
+                raise ValueError("No edited image returned from Gemini")
+
+            return {
+                "image_data": result_image_data,
+                "prompt": prompt,
+                "model": model_name,
+                "generation_time_ms": generation_time_ms
+            }
+
+        except Exception as e:
+            print(f"[GEMINI EDIT ERROR] Image editing failed: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            raise
+
     def generate_content(
         self,
         prompt: str,
