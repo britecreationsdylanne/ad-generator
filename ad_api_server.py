@@ -1620,6 +1620,113 @@ def delete_draft():
         return jsonify({'success': True})
 
 
+# ========== COMPLETED PROJECTS ==========
+
+@app.route('/api/save-project', methods=['POST'])
+def save_project():
+    """Save a completed project to GCS"""
+    if not gcs_client:
+        return jsonify({'success': False, 'error': 'GCS not available'}), 503
+    try:
+        data = request.json
+        project_name = data.get('projectName', 'untitled').lower().replace(' ', '-')[:50]
+        saved_by = data.get('completedBy', 'unknown').split('@')[0].replace('.', '-')
+        timestamp = datetime.now(CHICAGO_TZ).strftime('%Y%m%d-%H%M%S')
+        blob_name = f"projects/{project_name}-{saved_by}-{timestamp}.json"
+
+        project = {
+            'projectName': data.get('projectName', 'Untitled'),
+            'completedBy': data.get('completedBy', 'unknown'),
+            'completedAt': datetime.now(CHICAGO_TZ).isoformat(),
+            'completedFrom': data.get('completedFrom'),
+            'selectedPlatforms': data.get('selectedPlatforms'),
+            'campaignText': data.get('campaignText'),
+            'promptText': data.get('promptText'),
+            'generatedImages': data.get('generatedImages'),
+            'textOverlays': data.get('textOverlays'),
+            'logoSettings': data.get('logoSettings'),
+            'selectedAdCopy': data.get('selectedAdCopy'),
+            'thumbnails': data.get('thumbnails', []),
+            'imageCount': data.get('imageCount', 0)
+        }
+
+        bucket = gcs_client.bucket(GCS_BUCKET_NAME)
+        blob = bucket.blob(blob_name)
+        blob.upload_from_string(json.dumps(project), content_type='application/json')
+        return jsonify({'success': True, 'file': blob_name})
+
+    except Exception as e:
+        print(f"[PROJECT SAVE ERROR] {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/list-projects', methods=['GET'])
+def list_projects():
+    """List all completed projects from GCS"""
+    if not gcs_client:
+        return jsonify({'success': True, 'projects': []})
+    try:
+        bucket = gcs_client.bucket(GCS_BUCKET_NAME)
+        blobs = list(bucket.list_blobs(prefix='projects/'))
+        projects = []
+        for blob in blobs:
+            if blob.name.endswith('.json'):
+                data = json.loads(blob.download_as_text())
+                projects.append({
+                    'filename': blob.name,
+                    'projectName': data.get('projectName'),
+                    'completedBy': data.get('completedBy'),
+                    'completedAt': data.get('completedAt'),
+                    'selectedPlatforms': data.get('selectedPlatforms'),
+                    'thumbnails': data.get('thumbnails', []),
+                    'imageCount': data.get('imageCount', 0)
+                })
+        projects.sort(key=lambda p: p.get('completedAt', ''), reverse=True)
+        return jsonify({'success': True, 'projects': projects})
+    except Exception as e:
+        print(f"[PROJECT LIST ERROR] {str(e)}")
+        return jsonify({'success': True, 'projects': []})
+
+
+@app.route('/api/load-project', methods=['GET'])
+def load_project():
+    """Load a specific completed project from GCS"""
+    if not gcs_client:
+        return jsonify({'success': False, 'error': 'GCS not available'}), 503
+    try:
+        filename = request.args.get('file')
+        if not filename:
+            return jsonify({'success': False, 'error': 'No file specified'}), 400
+        bucket = gcs_client.bucket(GCS_BUCKET_NAME)
+        blob = bucket.blob(filename)
+        if not blob.exists():
+            return jsonify({'success': False, 'error': 'Project not found'}), 404
+        data = json.loads(blob.download_as_text())
+        return jsonify({'success': True, 'project': data})
+    except Exception as e:
+        print(f"[PROJECT LOAD ERROR] {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/delete-project', methods=['DELETE'])
+def delete_project():
+    """Delete a completed project from GCS"""
+    if not gcs_client:
+        return jsonify({'success': True})
+    try:
+        filename = request.json.get('file')
+        if not filename:
+            return jsonify({'success': False, 'error': 'No file specified'}), 400
+        bucket = gcs_client.bucket(GCS_BUCKET_NAME)
+        blob = bucket.blob(filename)
+        if blob.exists():
+            blob.delete()
+        return jsonify({'success': True})
+    except Exception as e:
+        print(f"[PROJECT DELETE ERROR] {str(e)}")
+        return jsonify({'success': True})
+
+
 if __name__ == '__main__':
     import os
     port = int(os.environ.get('PORT', 3000))

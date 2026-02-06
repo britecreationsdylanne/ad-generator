@@ -482,6 +482,45 @@
             </div>
         </div>
 
+        <!-- Completed Projects Panel - Only visible on Step 1 -->
+        <div id="completedProjectsPanel" class="card" style="margin-top: 2rem; background: #272D3F; padding: 2.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2 style="margin: 0; color: white;">Completed Projects</h2>
+            </div>
+
+            <!-- Search and Filter Controls -->
+            <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                <input type="text" id="projectSearch" placeholder="Search projects..."
+                    oninput="filterProjects()"
+                    style="flex: 1; min-width: 200px; padding: 0.75rem 1rem; border-radius: 8px; border: none; background: rgba(255,255,255,0.15); color: white; font-size: 0.95rem;">
+                <select id="projectFilterPlatform" onchange="filterProjects()"
+                    style="padding: 0.75rem 1rem; border-radius: 8px; border: none; background: rgba(255,255,255,0.15); color: white; font-size: 0.95rem; cursor: pointer;">
+                    <option value="">All Platforms</option>
+                    <option value="meta">Meta</option>
+                    <option value="reddit">Reddit</option>
+                    <option value="pinterest">Pinterest</option>
+                    <option value="demandgen">DemandGen</option>
+                    <option value="pmax">PMax</option>
+                    <option value="general">General</option>
+                    <option value="edit">Edit</option>
+                </select>
+                <select id="projectFilterCreator" onchange="filterProjects()"
+                    style="padding: 0.75rem 1rem; border-radius: 8px; border: none; background: rgba(255,255,255,0.15); color: white; font-size: 0.95rem; cursor: pointer;">
+                    <option value="">All Creators</option>
+                </select>
+            </div>
+
+            <div id="projectsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem;">
+                <!-- Project cards loaded dynamically -->
+            </div>
+
+            <div id="projectsEmpty" style="text-align: center; padding: 3rem; background: rgba(255,255,255,0.1); border-radius: 12px;">
+                <p style="font-size: 3rem; margin-bottom: 1rem;">&#127942;</p>
+                <h3 style="color: white; margin-bottom: 0.5rem;">No completed projects yet</h3>
+                <p style="color: rgba(255,255,255,0.7);">Finished projects will appear here. You can re-download or re-edit them anytime.</p>
+            </div>
+        </div>
+
         <!-- Edit Mode: Upload Your Image -->
         <div id="stepEditUpload" class="card hidden" style="padding: 0; overflow: hidden;">
             <div style="background: #272D3F; padding: 1.5rem 2.5rem;">
@@ -745,6 +784,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 <button class="btn-secondary" onclick="exportAllCopy()">📋 Export Selected Copy</button>
                 <button class="btn-secondary" onclick="exportAllCopyOptions()">📋 Export All Copy Options</button>
                 <button class="btn-primary" onclick="downloadAll()">📥 Download All Ads</button>
+                <button class="btn-primary" onclick="completeProject('stepFinalReview', this)" style="background: #31D7CA; border-color: #31D7CA;">&#10003; Complete Project</button>
             </div>
 
             <div style="margin-top: 3rem; padding: 3rem 2rem; background: linear-gradient(135deg, #31D7CA 0%, #272D3F 100%); border-radius: 16px; text-align: center; box-shadow: 0 8px 24px rgba(49, 215, 202, 0.2);">
@@ -769,6 +809,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 <button class="btn-secondary" onclick="backToLogoFromGeneral()">← Back to Logos</button>
                 <button class="btn-secondary" onclick="downloadAllGeneralImages()">Download All Images</button>
                 <button class="btn-primary" onclick="goToGifFromGeneral()">Create Animated GIFs →</button>
+                <button class="btn-primary" onclick="completeProject('stepGeneralPreview', this)" style="background: #31D7CA; border-color: #31D7CA;">&#10003; Complete Project</button>
             </div>
         </div>
 
@@ -785,6 +826,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 <button class="btn-secondary" onclick="backToLogoFromPreview()">← Back to Logos</button>
                 <button class="btn-secondary" onclick="downloadAllPreviewImages()">Download All Images</button>
                 <button class="btn-primary" onclick="goToGifFromPreview()">Create Animated GIFs →</button>
+                <button class="btn-primary" onclick="completeProject('stepPreview', this)" style="background: #31D7CA; border-color: #31D7CA;">&#10003; Complete Project</button>
             </div>
 
             <div style="margin-top: 2rem; padding: 1.5rem; background: #F4F7FC; border-radius: 12px; text-align: center;">
@@ -818,6 +860,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             <div class="button-group" style="margin-top: 2rem;">
                 <button class="btn-secondary" onclick="backToGifSelection()">← Back to Selection</button>
                 <button class="btn-secondary" onclick="backToFinalReview()">← Back to All Ads</button>
+                <button class="btn-primary" onclick="completeProject('step10', this)" style="background: #31D7CA; border-color: #31D7CA;">&#10003; Complete Project</button>
                 <button class="btn-secondary" onclick="startOver()" style="background: #FC883A; color: white; border: none;">🔄 Start Over</button>
             </div>
         </div>
@@ -1116,6 +1159,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             // Hide step 1 and show edit upload screen
             document.getElementById('step1').classList.add('hidden');
             document.getElementById('pastProjectsPanel').classList.add('hidden');
+            document.getElementById('completedProjectsPanel').classList.add('hidden');
             document.getElementById('stepEditUpload').classList.remove('hidden');
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -1137,6 +1181,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             document.getElementById('stepEditUpload').classList.add('hidden');
             document.getElementById('step1').classList.remove('hidden');
             document.getElementById('pastProjectsPanel').classList.remove('hidden');
+            document.getElementById('completedProjectsPanel').classList.remove('hidden');
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
@@ -1323,6 +1368,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
 
             document.getElementById('step1').classList.add('hidden');
             document.getElementById('pastProjectsPanel').classList.add('hidden');
+            document.getElementById('completedProjectsPanel').classList.add('hidden');
             document.getElementById('step2').classList.remove('hidden');
             currentStep = 2;
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1333,6 +1379,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 document.getElementById('step2').classList.add('hidden');
                 document.getElementById('step1').classList.remove('hidden');
                 document.getElementById('pastProjectsPanel').classList.remove('hidden');
+                document.getElementById('completedProjectsPanel').classList.remove('hidden');
                 currentStep = 1;
             } else if (currentStep === 3) {
                 document.getElementById('step3').classList.add('hidden');
@@ -4957,6 +5004,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 // Show step 1 and past projects panel
                 document.getElementById('step1').classList.remove('hidden');
                 document.getElementById('pastProjectsPanel').classList.remove('hidden');
+                document.getElementById('completedProjectsPanel').classList.remove('hidden');
 
                 // Reset form data
                 document.getElementById('campaignText').value = '';
@@ -5156,6 +5204,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 const stepGeneralPreview = document.getElementById('stepGeneralPreview');
                 if (stepGeneralPreview) stepGeneralPreview.classList.add('hidden');
                 document.getElementById('pastProjectsPanel').classList.add('hidden');
+                document.getElementById('completedProjectsPanel').classList.add('hidden');
 
                 // If we have generated images, render them and go to step 4
                 if (generatedImages.length > 0) {
@@ -5172,6 +5221,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                     // Otherwise go to step 1
                     document.getElementById('step1').classList.remove('hidden');
                     document.getElementById('pastProjectsPanel').classList.remove('hidden');
+                    document.getElementById('completedProjectsPanel').classList.remove('hidden');
                     currentStep = 1;
                 }
 
@@ -5182,9 +5232,360 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             }
         }
 
-        // Load drafts on page load
+        // ========== COMPLETED PROJECTS - Save, Load, Delete ==========
+
+        let allProjects = [];
+
+        function generateSingleThumbnail(index) {
+            return new Promise((resolve) => {
+                const img = generatedImages[index];
+                if (!img || !img.url) { resolve(null); return; }
+
+                const baseImage = new Image();
+                baseImage.crossOrigin = 'anonymous';
+                baseImage.onload = function() {
+                    // Scale to 300px wide thumbnail
+                    const thumbWidth = 300;
+                    const scale = thumbWidth / baseImage.width;
+                    const thumbHeight = Math.round(baseImage.height * scale);
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = thumbWidth;
+                    canvas.height = thumbHeight;
+                    const ctx = canvas.getContext('2d');
+
+                    ctx.drawImage(baseImage, 0, 0, thumbWidth, thumbHeight);
+
+                    // Draw text overlays
+                    const overlays = textOverlays[index];
+                    const overlayList = Array.isArray(overlays) ? overlays : (overlays && overlays.text ? [overlays] : []);
+                    overlayList.forEach(overlay => {
+                        if (!overlay || !overlay.text) return;
+                        const x = (overlay.x / 100) * thumbWidth;
+                        const y = (overlay.y / 100) * thumbHeight;
+                        const scaleFactor = thumbWidth / 1080;
+                        const fontSize = (overlay.fontSize || 28) * scaleFactor;
+                        ctx.font = `700 ${fontSize}px Arial, sans-serif`;
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillStyle = overlay.textColor || '#FFFFFF';
+                        const lines = overlay.text.split('\n');
+                        const lineHeight = fontSize * 1.3;
+                        const totalHeight = lineHeight * (lines.length - 1);
+                        lines.forEach((line, lineIdx) => {
+                            ctx.fillText(line, x, y - totalHeight / 2 + lineIdx * lineHeight);
+                        });
+                    });
+
+                    // Draw logo if enabled
+                    const logo = logoSettings[index] || { enabled: false };
+                    if (logo.enabled && availableLogos[logo.selectedLogoIndex || 0]) {
+                        const logoImg = new Image();
+                        logoImg.crossOrigin = 'anonymous';
+                        logoImg.onload = function() {
+                            const logoW = (logo.scale / 100) * thumbWidth;
+                            const logoH = (logoImg.height / logoImg.width) * logoW;
+                            let logoX = (logo.x / 100) * thumbWidth - logoW / 2;
+                            let logoY = (logo.y / 100) * thumbHeight - logoH / 2;
+                            logoX = Math.max(0, Math.min(logoX, thumbWidth - logoW));
+                            logoY = Math.max(0, Math.min(logoY, thumbHeight - logoH));
+                            ctx.drawImage(logoImg, logoX, logoY, logoW, logoH);
+                            resolve(canvas.toDataURL('image/jpeg', 0.6));
+                        };
+                        logoImg.onerror = function() {
+                            resolve(canvas.toDataURL('image/jpeg', 0.6));
+                        };
+                        logoImg.src = availableLogos[logo.selectedLogoIndex || 0].url;
+                    } else {
+                        resolve(canvas.toDataURL('image/jpeg', 0.6));
+                    }
+                };
+                baseImage.onerror = function() { resolve(null); };
+                baseImage.src = img.url;
+            });
+        }
+
+        async function generateThumbnails() {
+            const thumbnails = [];
+            for (let i = 0; i < generatedImages.length; i++) {
+                const thumb = await generateSingleThumbnail(i);
+                if (thumb) thumbnails.push(thumb);
+            }
+            return thumbnails;
+        }
+
+        async function completeProject(completedFrom, btnElement) {
+            try {
+                if (btnElement) {
+                    btnElement.disabled = true;
+                    btnElement.textContent = 'Saving...';
+                }
+
+                const userEmail = (window.AUTH_USER && window.AUTH_USER.email) || 'unknown';
+                const campaignName = document.getElementById('campaignText')?.value?.substring(0, 60) || 'Untitled Project';
+                const thumbnails = await generateThumbnails();
+
+                const resp = await fetch('/api/save-project', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        projectName: campaignName,
+                        completedBy: userEmail,
+                        completedFrom: completedFrom,
+                        selectedPlatforms: Array.from(selectedPlatforms),
+                        campaignText: document.getElementById('campaignText')?.value || '',
+                        promptText: document.getElementById('promptText')?.value || '',
+                        generatedImages: generatedImages,
+                        textOverlays: textOverlays,
+                        logoSettings: logoSettings,
+                        selectedAdCopy: typeof selectedAdCopy !== 'undefined' ? selectedAdCopy : {},
+                        thumbnails: thumbnails,
+                        imageCount: generatedImages.length
+                    })
+                });
+
+                const result = await resp.json();
+                if (result.success) {
+                    if (btnElement) {
+                        btnElement.textContent = '&#10003; Project Saved!';
+                        btnElement.style.background = '#22c55e';
+                        btnElement.style.borderColor = '#22c55e';
+                        setTimeout(() => {
+                            btnElement.innerHTML = '&#10003; Complete Project';
+                            btnElement.style.background = '#31D7CA';
+                            btnElement.style.borderColor = '#31D7CA';
+                            btnElement.disabled = false;
+                        }, 3000);
+                    }
+                } else {
+                    throw new Error(result.error || 'Save failed');
+                }
+            } catch (e) {
+                console.error('[Project] Save failed:', e);
+                alert('Failed to save project: ' + e.message);
+                if (btnElement) {
+                    btnElement.innerHTML = '&#10003; Complete Project';
+                    btnElement.disabled = false;
+                }
+            }
+        }
+
+        async function loadProjects() {
+            try {
+                const resp = await fetch('/api/list-projects');
+                const data = await resp.json();
+                allProjects = data.projects || [];
+                populateProjectCreatorFilter();
+                filterProjects();
+            } catch (e) {
+                console.error('[Projects] Failed to load:', e);
+                allProjects = [];
+                filterProjects();
+            }
+        }
+
+        function populateProjectCreatorFilter() {
+            const select = document.getElementById('projectFilterCreator');
+            const creators = [...new Set(allProjects.map(p => p.completedBy).filter(Boolean))];
+            select.innerHTML = '<option value="">All Creators</option>';
+            creators.forEach(c => {
+                const name = c.split('@')[0].replace('.', ' ');
+                select.innerHTML += `<option value="${c}">${name}</option>`;
+            });
+        }
+
+        function filterProjects() {
+            const search = (document.getElementById('projectSearch')?.value || '').toLowerCase();
+            const platform = document.getElementById('projectFilterPlatform')?.value || '';
+            const creator = document.getElementById('projectFilterCreator')?.value || '';
+
+            let filtered = allProjects.filter(p => {
+                if (search && !(p.projectName || '').toLowerCase().includes(search)) return false;
+                if (platform && !(p.selectedPlatforms || []).includes(platform)) return false;
+                if (creator && p.completedBy !== creator) return false;
+                return true;
+            });
+
+            renderProjects(filtered);
+        }
+
+        function renderProjects(projects) {
+            const grid = document.getElementById('projectsGrid');
+            const empty = document.getElementById('projectsEmpty');
+
+            grid.innerHTML = '';
+
+            if (projects.length === 0) {
+                empty.style.display = 'block';
+                return;
+            }
+            empty.style.display = 'none';
+
+            projects.forEach(p => {
+                const card = document.createElement('div');
+                card.style.cssText = 'background: white; border-radius: 12px; padding: 24px; transition: transform 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: relative;';
+                card.onmouseover = () => card.style.transform = 'translateY(-4px)';
+                card.onmouseout = () => card.style.transform = 'translateY(0)';
+
+                // Thumbnails strip
+                const thumbs = (p.thumbnails || []).slice(0, 3);
+                const thumbsHtml = thumbs.length > 0
+                    ? `<div style="display: flex; gap: 6px; margin-bottom: 12px; overflow: hidden; border-radius: 6px;">
+                        ${thumbs.map(t => `<img src="${t}" style="height: 80px; flex: 1; object-fit: cover; border-radius: 4px;">`).join('')}
+                       </div>`
+                    : '';
+
+                // Platform badges
+                const platforms = (p.selectedPlatforms || []).map(pl =>
+                    `<span style="display: inline-block; background: #31D7CA; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 600;">${capitalizePlatform(pl)}</span>`
+                ).join(' ');
+
+                // Creator + time
+                const creator = (p.completedBy || 'unknown').split('@')[0].replace('.', ' ');
+                let timeStr = '';
+                if (p.completedAt) {
+                    try {
+                        const d = new Date(p.completedAt);
+                        timeStr = d.toLocaleString('en-US', { timeZone: 'America/Chicago', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                    } catch(e) { timeStr = p.completedAt; }
+                }
+
+                const imageCount = p.imageCount || 0;
+
+                card.innerHTML = `
+                    <button onclick="event.stopPropagation(); deleteProject('${p.filename}')" style="position: absolute; top: 8px; right: 8px; background: rgba(255,71,87,0.15); border: none; color: #ff4757; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center;" title="Delete project">✕</button>
+                    ${thumbsHtml}
+                    <h4 style="color: #272D3F; margin: 0 0 6px 0; font-size: 1rem; padding-right: 30px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${p.projectName || 'Untitled'}</h4>
+                    <div style="margin-bottom: 8px;">${platforms}</div>
+                    <p style="color: #7DA3AF; font-size: 0.8rem; margin: 0 0 12px 0;">${creator} &middot; ${timeStr} &middot; ${imageCount} image${imageCount !== 1 ? 's' : ''}</p>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="event.stopPropagation(); redownloadProject('${p.filename}')" style="flex: 1; padding: 8px; background: #FC883A; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem;">Download</button>
+                        <button onclick="event.stopPropagation(); reeditProject('${p.filename}')" style="flex: 1; padding: 8px; background: #31D7CA; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem;">Re-Edit</button>
+                    </div>
+                `;
+
+                grid.appendChild(card);
+            });
+        }
+
+        async function deleteProject(filename) {
+            if (!confirm('Delete this completed project?')) return;
+            try {
+                await fetch('/api/delete-project', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ file: filename })
+                });
+                loadProjects();
+            } catch (e) {
+                console.error('[Project] Delete failed:', e);
+            }
+        }
+
+        async function redownloadProject(filename) {
+            try {
+                const resp = await fetch(`/api/load-project?file=${encodeURIComponent(filename)}`);
+                const data = await resp.json();
+                if (!data.success || !data.project) { alert('Failed to load project'); return; }
+                const p = data.project;
+
+                // Temporarily swap global state to reuse download functions
+                const prevImages = generatedImages;
+                const prevOverlays = textOverlays;
+                const prevLogo = logoSettings;
+
+                generatedImages = p.generatedImages || [];
+                textOverlays = p.textOverlays || {};
+                logoSettings = p.logoSettings || {};
+
+                // Download each image with staggered delays
+                for (let i = 0; i < generatedImages.length; i++) {
+                    setTimeout(() => {
+                        downloadFinalImage(i);
+                    }, i * 500);
+                }
+
+                // Restore state after downloads kick off
+                setTimeout(() => {
+                    generatedImages = prevImages;
+                    textOverlays = prevOverlays;
+                    logoSettings = prevLogo;
+                }, generatedImages.length * 500 + 1000);
+
+            } catch (e) {
+                console.error('[Project] Re-download failed:', e);
+                alert('Failed to download: ' + e.message);
+            }
+        }
+
+        async function reeditProject(filename) {
+            try {
+                const resp = await fetch(`/api/load-project?file=${encodeURIComponent(filename)}`);
+                const data = await resp.json();
+                if (!data.success || !data.project) { alert('Failed to load project'); return; }
+                const p = data.project;
+
+                // Restore full state
+                if (p.selectedPlatforms) {
+                    selectedPlatforms = new Set(p.selectedPlatforms);
+                }
+                if (p.generatedImages) {
+                    generatedImages = p.generatedImages;
+                }
+                if (p.textOverlays) {
+                    textOverlays = p.textOverlays;
+                }
+                if (p.logoSettings) {
+                    logoSettings = p.logoSettings;
+                }
+                if (p.selectedAdCopy && typeof selectedAdCopy !== 'undefined') {
+                    selectedAdCopy = p.selectedAdCopy;
+                }
+                if (p.campaignText) {
+                    const el = document.getElementById('campaignText');
+                    if (el) el.value = p.campaignText;
+                }
+                if (p.promptText) {
+                    const el = document.getElementById('promptText');
+                    if (el) el.value = p.promptText;
+                }
+
+                // Initialize selectedTextBox for each image
+                generatedImages.forEach((img, idx) => {
+                    if (!selectedTextBox[idx] && selectedTextBox[idx] !== 0) {
+                        selectedTextBox[idx] = textOverlays[idx] && textOverlays[idx].length > 0 ? 0 : -1;
+                    }
+                });
+
+                // Hide all steps
+                for (let i = 1; i <= 10; i++) {
+                    const step = document.getElementById('step' + i);
+                    if (step) step.classList.add('hidden');
+                }
+                const stepPreview = document.getElementById('stepPreview');
+                if (stepPreview) stepPreview.classList.add('hidden');
+                const stepGeneralPreview = document.getElementById('stepGeneralPreview');
+                if (stepGeneralPreview) stepGeneralPreview.classList.add('hidden');
+                document.getElementById('stepEditUpload')?.classList.add('hidden');
+                document.getElementById('pastProjectsPanel').classList.add('hidden');
+                document.getElementById('completedProjectsPanel').classList.add('hidden');
+
+                // Navigate to text overlay step (step 5)
+                document.getElementById('step5').classList.remove('hidden');
+                currentStep = 5;
+                renderTextOverlayPage();
+                window.scrollTo(0, 0);
+
+            } catch (e) {
+                console.error('[Project] Re-edit failed:', e);
+                alert('Failed to load project: ' + e.message);
+            }
+        }
+
+        // Load drafts and projects on page load
         document.addEventListener('DOMContentLoaded', function() {
             loadDrafts();
+            loadProjects();
         });
     </script>
 </body>
