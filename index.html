@@ -424,6 +424,13 @@
                             2 Variations (9:16 Portrait)
                         </p>
                     </div>
+                    <div class="platform-card" onclick="selectEditMode(this)" style="border-style: dashed; background: linear-gradient(135deg, #F4F7FC 0%, #E8F4F8 100%);">
+                        <h3><svg style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px;" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="#FC883A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="#FC883A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Edit My Image</h3>
+                        <p style="color: #7DA3AF; margin-top: 0.5rem;">Upload & Customize</p>
+                        <p style="color: #A9C1CB; font-size: 0.9rem; margin-top: 0.5rem;">
+                            Add text, logos & overlays to your own image
+                        </p>
+                    </div>
                 </div>
 
                 <button class="btn-primary" id="continueBtn" onclick="nextStep()" disabled>
@@ -468,6 +475,32 @@
                 <p style="font-size: 3rem; margin-bottom: 1rem;">📂</p>
                 <h3 style="color: white; margin-bottom: 0.5rem;">No saved drafts yet</h3>
                 <p style="color: rgba(255,255,255,0.7);">Projects you save will appear here for easy access and editing.</p>
+            </div>
+        </div>
+
+        <!-- Edit Mode: Upload Your Image -->
+        <div id="stepEditUpload" class="card hidden" style="padding: 0; overflow: hidden;">
+            <div style="background: #272D3F; padding: 1.5rem 2.5rem;">
+                <h1 style="color: white; margin-bottom: 0.5rem;">Upload Your Image</h1>
+                <p style="color: rgba(255,255,255,0.7); font-size: 1.1rem; margin: 0;">
+                    Upload the image you want to edit. You'll be able to add text overlays and logos.
+                </p>
+            </div>
+            <div style="padding: 2rem 2.5rem;">
+                <div class="image-upload-area" onclick="document.getElementById('editModeFileInput').click()" id="editModeUploadArea">
+                    <p style="font-size: 3rem; margin-bottom: 1rem;">🖼️</p>
+                    <p style="font-weight: 600; font-size: 1.2rem; margin-bottom: 0.5rem;">Upload Your Image</p>
+                    <p style="color: #A9C1CB;">Click to browse or drag and drop (PNG, JPG, WebP)</p>
+                    <input type="file" id="editModeFileInput" accept="image/*" style="display: none;" onchange="handleEditModeUpload(this.files)">
+                </div>
+                <div id="editModePreview" style="display: none; margin-top: 1.5rem;">
+                    <p style="color: #31D7CA; font-weight: 600; margin-bottom: 1rem;">Image uploaded successfully!</p>
+                    <img id="editModePreviewImg" style="max-width: 300px; max-height: 300px; border-radius: 8px; border: 2px solid #E1E7EF;">
+                </div>
+                <div class="button-group" style="margin-top: 2rem;">
+                    <button class="btn-secondary" onclick="cancelEditMode()">← Back</button>
+                    <button class="btn-primary" id="editModeContinueBtn" onclick="proceedWithEditMode()" disabled>Continue to Edit →</button>
+                </div>
             </div>
         </div>
 
@@ -964,6 +997,8 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
         let uploadedLogo = null;
         let currentStep = 1;
         let skippedCopyFlow = false; // Track if user skipped the ad copy step
+        let isEditMode = false; // Track if user is in "Edit My Image" mode
+        let editModeImage = null; // Store the uploaded image for edit mode
         let generatedImages = []; // Store generated images for use across steps
         let textOverlays = {}; // Store text overlay settings for each image
         let logoSettings = {}; // Store logo position (x, y), scale, and selectedLogoIndex for each image
@@ -1019,6 +1054,108 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             } else {
                 btn.disabled = true;
             }
+        }
+
+        // Edit Mode Functions
+        function selectEditMode(element) {
+            // Deselect all platform cards
+            document.querySelectorAll('.platform-card').forEach(card => card.classList.remove('selected'));
+            // Select the edit mode card
+            element.classList.add('selected');
+
+            isEditMode = true;
+
+            // Hide step 1 and show edit upload screen
+            document.getElementById('step1').classList.add('hidden');
+            document.getElementById('pastProjectsPanel').classList.add('hidden');
+            document.getElementById('stepEditUpload').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function cancelEditMode() {
+            isEditMode = false;
+            editModeImage = null;
+
+            // Reset edit mode UI
+            document.getElementById('editModePreview').style.display = 'none';
+            document.getElementById('editModeContinueBtn').disabled = true;
+            document.getElementById('editModeFileInput').value = '';
+
+            // Deselect edit mode card
+            document.querySelectorAll('.platform-card').forEach(card => card.classList.remove('selected'));
+
+            // Go back to step 1
+            document.getElementById('stepEditUpload').classList.add('hidden');
+            document.getElementById('step1').classList.remove('hidden');
+            document.getElementById('pastProjectsPanel').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function handleEditModeUpload(files) {
+            if (files.length === 0) return;
+
+            const file = files[0];
+            if (!file.type.startsWith('image/')) {
+                alert('Please upload an image file (PNG, JPG, WebP)');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                editModeImage = e.target.result;
+
+                // Show preview
+                document.getElementById('editModePreviewImg').src = editModeImage;
+                document.getElementById('editModePreview').style.display = 'block';
+                document.getElementById('editModeContinueBtn').disabled = false;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function proceedWithEditMode() {
+            if (!editModeImage) {
+                alert('Please upload an image first');
+                return;
+            }
+
+            // For edit mode, we'll create a single "image" entry
+            // that uses the uploaded image directly
+            generatedImages = [{
+                url: editModeImage,
+                platform: 'edit',
+                size: 'Original',
+                width: 0, // Will be set after image loads
+                height: 0,
+                isEditMode: true
+            }];
+
+            // Load image to get dimensions
+            const img = new Image();
+            img.onload = function() {
+                generatedImages[0].width = img.width;
+                generatedImages[0].height = img.height;
+
+                // Initialize text overlay and logo settings for edit mode image
+                textOverlays[0] = [];
+                selectedTextBox[0] = -1;
+                logoSettings[0] = {
+                    x: 50,
+                    y: 50,
+                    scale: 27,
+                    enabled: false,
+                    selectedLogoIndex: 0
+                };
+
+                // Skip to text overlay step (step 5)
+                document.getElementById('stepEditUpload').classList.add('hidden');
+                document.getElementById('step5').classList.remove('hidden');
+                currentStep = 5;
+
+                // Render the text overlay page
+                renderTextOverlayPage();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+            img.src = editModeImage;
         }
 
         function nextStep() {
@@ -1443,8 +1580,13 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
 
         function backToImagePreview() {
             document.getElementById('step5').classList.add('hidden');
-            document.getElementById('step4').classList.remove('hidden');
-            currentStep = 4;
+            if (isEditMode) {
+                // In edit mode, go back to upload screen
+                document.getElementById('stepEditUpload').classList.remove('hidden');
+            } else {
+                document.getElementById('step4').classList.remove('hidden');
+                currentStep = 4;
+            }
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
@@ -1459,8 +1601,8 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             const afterLogoBtn = document.getElementById('afterLogoBtn');
             const skipCopyBtn = document.getElementById('skipCopyBtn');
 
-            if (shouldSkipCopyGeneration()) {
-                // General Image or Google Ads: only show Preview & Download as primary
+            if (isEditMode || shouldSkipCopyGeneration()) {
+                // Edit mode, General Image or Google Ads: only show Preview & Download as primary
                 if (afterLogoBtn) afterLogoBtn.textContent = 'Preview & Download →';
                 if (skipCopyBtn) skipCopyBtn.style.display = 'none';
             } else {
@@ -2101,8 +2243,11 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
         }
 
         function goToNextAfterLogo() {
-            // For General Image or Google Ads (Demand Gen, PMax), skip ad copy and go directly to preview
-            if (shouldSkipCopyGeneration()) {
+            // For Edit Mode, General Image or Google Ads (Demand Gen, PMax), skip ad copy and go directly to preview
+            if (isEditMode) {
+                // Edit mode - go to preview/download
+                goToPreviewSkipCopy();
+            } else if (shouldSkipCopyGeneration()) {
                 if (isGeneralImageOnly()) {
                     goToGeneralImagePreview();
                 } else {
@@ -4668,6 +4813,18 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 selectedPlatforms = [];
                 gifResults = [];
                 skippedCopyFlow = false;
+
+                // Reset edit mode state
+                isEditMode = false;
+                editModeImage = null;
+                const stepEditUpload = document.getElementById('stepEditUpload');
+                if (stepEditUpload) stepEditUpload.classList.add('hidden');
+                document.getElementById('editModePreview').style.display = 'none';
+                document.getElementById('editModeContinueBtn').disabled = true;
+                document.getElementById('editModeFileInput').value = '';
+
+                // Deselect all platform cards (including edit mode card)
+                document.querySelectorAll('.platform-card').forEach(card => card.classList.remove('selected'));
 
                 // Hide additional preview steps
                 const stepPreview = document.getElementById('stepPreview');
