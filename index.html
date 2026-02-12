@@ -2115,8 +2115,20 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                     </div>
                 </div>
 
-                <label style="display: block; font-weight: 600; margin-top: 1rem; margin-bottom: 0.5rem; color: #272D3F; font-size: 0.9rem;">Font Size: ${box.fontSize}px</label>
-                <input type="range" min="12" max="120" value="${box.fontSize}" oninput="updateTextFontSize(${imageIndex}, this.value)" style="width: 100%;">
+                <label style="display: block; font-weight: 600; margin-top: 1rem; margin-bottom: 0.5rem; color: #272D3F; font-size: 0.9rem;">Font Size</label>
+                <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem;">
+                    <input type="range" min="12" max="120" step="4" value="${box.fontSize}" oninput="updateTextFontSize(${imageIndex}, this.value)" style="flex: 1;">
+                    <input type="number" min="12" max="200" value="${box.fontSize}" onchange="updateTextFontSize(${imageIndex}, this.value)" style="width: 60px; padding: 0.35rem 0.5rem; border: 2px solid #E1E7EF; border-radius: 6px; font-size: 0.9rem; text-align: center;">
+                </div>
+                <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+                    ${[16, 24, 32, 48, 64, 96].map(s => `
+                        <button type="button" onclick="updateTextFontSize(${imageIndex}, ${s})"
+                            style="padding: 0.3rem 0.6rem; border-radius: 5px; font-size: 0.8rem; cursor: pointer;
+                                   background: ${box.fontSize === s ? '#31D7CA' : '#F4F7FC'};
+                                   color: ${box.fontSize === s ? 'white' : '#272D3F'};
+                                   border: 2px solid ${box.fontSize === s ? '#31D7CA' : '#E1E7EF'};">${s}px</button>
+                    `).join('')}
+                </div>
 
                 <label style="display: block; font-weight: 600; margin-top: 1rem; margin-bottom: 0.5rem; color: #272D3F; font-size: 0.9rem;">Background</label>
                 <select id="overlay-bg-${imageIndex}" onchange="updateSelectedTextBox(${imageIndex})"
