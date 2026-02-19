@@ -1532,7 +1532,8 @@ def save_draft():
         data = request.json
         campaign_name = re.sub(r'[^a-z0-9-]', '', data.get('campaignName', 'untitled').lower().replace(' ', '-'))[:50] or 'untitled'
         saved_by = re.sub(r'[^a-z0-9-]', '', data.get('savedBy', 'unknown').split('@')[0].replace('.', '-'))[:30] or 'unknown'
-        blob_name = f"drafts/{campaign_name}-{saved_by}.json"
+        timestamp = datetime.now(CHICAGO_TZ).strftime('%Y%m%d-%H%M%S')
+        blob_name = f"drafts/{campaign_name}-{saved_by}-{timestamp}.json"
 
         draft = {
             'campaignName': data.get('campaignName', 'Untitled'),
