@@ -8,6 +8,7 @@ import os
 import sys
 import json
 import time
+import re
 import requests
 import secrets
 import pytz
@@ -1529,8 +1530,8 @@ def save_draft():
         return jsonify({'success': False, 'error': 'GCS not available'}), 503
     try:
         data = request.json
-        campaign_name = data.get('campaignName', 'untitled').lower().replace(' ', '-')[:50]
-        saved_by = data.get('savedBy', 'unknown').split('@')[0].replace('.', '-')
+        campaign_name = re.sub(r'[^a-z0-9-]', '', data.get('campaignName', 'untitled').lower().replace(' ', '-'))[:50] or 'untitled'
+        saved_by = re.sub(r'[^a-z0-9-]', '', data.get('savedBy', 'unknown').split('@')[0].replace('.', '-'))[:30] or 'unknown'
         blob_name = f"drafts/{campaign_name}-{saved_by}.json"
 
         draft = {
@@ -1665,8 +1666,8 @@ def save_project():
         return jsonify({'success': False, 'error': 'GCS not available'}), 503
     try:
         data = request.json
-        project_name = data.get('projectName', 'untitled').lower().replace(' ', '-')[:50]
-        saved_by = data.get('completedBy', 'unknown').split('@')[0].replace('.', '-')
+        project_name = re.sub(r'[^a-z0-9-]', '', data.get('projectName', 'untitled').lower().replace(' ', '-'))[:50] or 'untitled'
+        saved_by = re.sub(r'[^a-z0-9-]', '', data.get('completedBy', 'unknown').split('@')[0].replace('.', '-'))[:30] or 'unknown'
         timestamp = datetime.now(CHICAGO_TZ).strftime('%Y%m%d-%H%M%S')
         blob_name = f"projects/{project_name}-{saved_by}-{timestamp}.json"
 

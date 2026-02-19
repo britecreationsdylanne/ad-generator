@@ -723,7 +723,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             <div id="imagesGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 2rem;"></div>
 
             <div style="margin-top: 1.5rem; padding: 15px; background: #f0fdf4; border: 2px solid #22c55e; border-radius: 8px; text-align: center;">
-                <button class="btn-primary" onclick="saveDraft(); this.textContent='✓ Draft Saved!'; setTimeout(() => { this.textContent='💾 Save Draft'; }, 2000);" style="background: #22c55e; border-color: #22c55e; padding: 10px 30px;">💾 Save Draft</button>
+                <button class="btn-primary" onclick="handleSaveDraft(this)" style="background: #22c55e; border-color: #22c55e; padding: 10px 30px;">💾 Save Draft</button>
                 <p style="margin: 8px 0 0 0; font-size: 13px; color: #666;">Save your progress to resume later</p>
             </div>
 
@@ -792,7 +792,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             <div id="finalReviewGrid" style="display: grid; grid-template-columns: 1fr; gap: 2rem;"></div>
 
             <div style="margin-top: 1.5rem; padding: 15px; background: #f0fdf4; border: 2px solid #22c55e; border-radius: 8px; text-align: center;">
-                <button class="btn-primary" onclick="saveDraft(); this.textContent='✓ Draft Saved!'; setTimeout(() => { this.textContent='💾 Save Draft'; }, 2000);" style="background: #22c55e; border-color: #22c55e; padding: 10px 30px;">💾 Save Draft</button>
+                <button class="btn-primary" onclick="handleSaveDraft(this)" style="background: #22c55e; border-color: #22c55e; padding: 10px 30px;">💾 Save Draft</button>
                 <p style="margin: 8px 0 0 0; font-size: 13px; color: #666;">Save your progress to resume later</p>
             </div>
 
@@ -5518,10 +5518,32 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                         savedBy: userEmail
                     })
                 });
+                const result = await resp.json();
+                if (!resp.ok || !result.success) {
+                    throw new Error(result.error || 'Save failed');
+                }
                 console.log('[Draft] Saved');
                 loadDrafts();
+                return true;
             } catch (e) {
                 console.error('[Draft] Save failed:', e);
+                return false;
+            }
+        }
+
+        async function handleSaveDraft(btn) {
+            const originalText = btn.textContent;
+            btn.textContent = 'Saving...';
+            btn.disabled = true;
+            const success = await saveDraft();
+            if (success) {
+                btn.textContent = '\u2713 Draft Saved!';
+                btn.style.background = '#22c55e';
+                setTimeout(() => { btn.textContent = originalText; btn.disabled = false; }, 2000);
+            } else {
+                btn.textContent = '\u2717 Save Failed';
+                btn.style.background = '#ff4757';
+                setTimeout(() => { btn.textContent = originalText; btn.style.background = '#22c55e'; btn.disabled = false; }, 3000);
             }
         }
 
