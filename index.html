@@ -268,10 +268,68 @@
         }
         #draftSearch::placeholder { color: rgba(255,255,255,0.5); }
         #draftFilterPlatform option, #draftFilterCreator option { color: #333; }
+
+        /* Image Zoom Lightbox */
+        #image-lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 10000;
+            cursor: zoom-out;
+            animation: fadeIn 0.2s ease;
+        }
+        #image-lightbox.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #image-lightbox img {
+            max-width: 95%;
+            max-height: 95%;
+            object-fit: contain;
+            cursor: default;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+        }
+        #image-lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 10001;
+            transition: opacity 0.2s;
+        }
+        #image-lightbox-close:hover {
+            opacity: 0.7;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .zoomable-image {
+            cursor: zoom-in;
+            transition: opacity 0.2s;
+        }
+        .zoomable-image:hover {
+            opacity: 0.9;
+        }
     </style>
 
 </head>
 <body>
+    <!-- Image Zoom Lightbox -->
+    <div id="image-lightbox" onclick="closeLightbox()">
+        <span id="image-lightbox-close" onclick="closeLightbox()">&times;</span>
+        <img id="image-lightbox-img" src="" alt="Zoomed image" onclick="event.stopPropagation()">
+    </div>
+
     <!-- Server-side Auth Script -->
     <script>
         // User is authenticated server-side, get user from injected window.AUTH_USER
@@ -1114,6 +1172,28 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
         let selectedShape = {}; // Track selected shape per image
         let logoSettings = {}; // Store logo position (x, y), scale, and selectedLogoIndex for each image
 
+        // ========== IMAGE LIGHTBOX / ZOOM ==========
+        function openLightbox(imageSrc) {
+            const lightbox = document.getElementById('image-lightbox');
+            const lightboxImg = document.getElementById('image-lightbox-img');
+            lightboxImg.src = imageSrc;
+            lightbox.classList.add('active');
+            document.body.style.overflow = 'hidden'; // Prevent background scroll
+        }
+
+        function closeLightbox() {
+            const lightbox = document.getElementById('image-lightbox');
+            lightbox.classList.remove('active');
+            document.body.style.overflow = ''; // Restore scroll
+        }
+
+        // ESC key to close lightbox
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeLightbox();
+            }
+        });
+
         // BriteCo brand colors for shapes
         const BRITECO_COLORS = [
             { name: 'Teal', hex: '#31D7CA' },
@@ -1784,6 +1864,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                     const variationNumber = img.size.match(/Variation\s+(\d+)/)?.[1] || '';
                     card.innerHTML = `
                         <img id="image-preview-${index}" src="${img.url}" alt="${capitalizePlatform(img.platform)} ${img.size}"
+                             class="zoomable-image" onclick="openLightbox('${img.url}')"
                              style="width: 100%; max-width: 100%; border-radius: 8px; display: block; margin-bottom: 1rem;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <div>
@@ -2921,7 +3002,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 card.innerHTML = `
                     <h3 style="color: #272D3F; margin-bottom: 1rem;">${capitalizePlatform(img.platform)} - ${img.size}</h3>
                     <div style="position: relative; background: #F4F7FC; border-radius: 12px; padding: 1rem; margin-bottom: 1rem;">
-                        <canvas id="preview-canvas-${index}" style="width: 100%; border-radius: 8px; display: block;"></canvas>
+                        <canvas id="preview-canvas-${index}" class="zoomable-image" style="width: 100%; border-radius: 8px; display: block;"></canvas>
                     </div>
                     <p style="color: #7DA3AF; font-size: 0.9rem; margin-bottom: 1rem;">${img.width}x${img.height}</p>
                     <button onclick="downloadPreviewImage(${index})" class="btn-primary" style="width: 100%;">
@@ -3023,6 +3104,9 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                     };
                     logoImg.src = availableLogos[selectedLogoIndex].url;
                 }
+
+                // Add click-to-zoom handler after canvas is rendered
+                canvas.onclick = () => openLightbox(canvas.toDataURL('image/png'));
             };
             image.src = img.url;
         }
@@ -3105,7 +3189,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 card.innerHTML = `
                     <h3 style="color: #272D3F; margin-bottom: 1rem;">${capitalizePlatform(img.platform)} - ${img.size}</h3>
                     <div style="position: relative; background: #F4F7FC; border-radius: 12px; padding: 1rem; margin-bottom: 1rem;">
-                        <canvas id="general-preview-canvas-${index}" style="width: 100%; border-radius: 8px; display: block;"></canvas>
+                        <canvas id="general-preview-canvas-${index}" class="zoomable-image" style="width: 100%; border-radius: 8px; display: block;"></canvas>
                     </div>
                     <p style="color: #7DA3AF; font-size: 0.9rem; margin-bottom: 1rem;">${img.width}x${img.height}</p>
                     <button onclick="downloadGeneralImage(${index})" class="btn-primary" style="width: 100%;">
@@ -3201,6 +3285,9 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                     };
                     logoImg.src = availableLogos[selectedLogoIndex].url;
                 }
+
+                // Add click-to-zoom handler after canvas is rendered
+                canvas.onclick = () => openLightbox(canvas.toDataURL('image/png'));
             };
             image.src = img.url;
         }
