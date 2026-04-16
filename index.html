@@ -976,6 +976,29 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
         </div>
     </div>
 
+    <!-- Reposition Modal for AI-generated images -->
+    <div id="repositionModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 10001; overflow-y: auto;">
+        <div style="max-width: 900px; margin: 2rem auto; background: white; border-radius: 16px; padding: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2 style="color: #272D3F; margin: 0;">Reposition Image</h2>
+                <button onclick="cancelReposition()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #7DA3AF;">✕</button>
+            </div>
+            <p style="color: #7DA3AF; font-size: 0.9rem; margin-bottom: 1rem;">Drag to adjust which part of the image is visible. The crop area is locked to the target dimensions.</p>
+
+            <!-- Cropper Container -->
+            <div style="max-height: 60vh; overflow: hidden; background: #f0f0f0; border-radius: 8px;">
+                <img id="repositionImage" style="display: block; max-width: 100%;">
+            </div>
+
+            <div id="repositionDimensions" style="color: #7DA3AF; font-size: 0.9rem; margin-top: 0.75rem; text-align: center;"></div>
+
+            <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: flex-end;">
+                <button onclick="cancelReposition()" class="btn-secondary" style="margin-top: 0;">Cancel</button>
+                <button onclick="confirmReposition()" class="btn-primary" style="margin-top: 0;">Apply</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Frame Editor Modal -->
     <div id="frameEditorModal" class="hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 10000; overflow-y: auto;">
         <div style="max-width: 1200px; margin: 2rem auto; background: white; border-radius: 16px; padding: 2rem;">
@@ -1171,6 +1194,8 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
         let textOverlayEditorWidths = {}; // Store editor container width for consistent text scaling
         let selectedShape = {}; // Track selected shape per image
         let logoSettings = {}; // Store logo position (x, y), scale, and selectedLogoIndex for each image
+        let repositionCropper = null; // Cropper instance for reposition modal
+        let repositionIndex = null; // Which image is being repositioned
 
         // ========== IMAGE LIGHTBOX / ZOOM ==========
         function openLightbox(imageSrc) {
@@ -1435,6 +1460,77 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 editCropper = null;
             }
             document.getElementById('editCropModal').style.display = 'none';
+        }
+
+        // ========== REPOSITION MODAL (for AI-generated images) ==========
+        function openRepositionModal(index) {
+            const img = generatedImages[index];
+            if (!img || !img.original_url) return;
+
+            repositionIndex = index;
+            const modal = document.getElementById('repositionModal');
+            const imgEl = document.getElementById('repositionImage');
+
+            if (repositionCropper) {
+                repositionCropper.destroy();
+                repositionCropper = null;
+            }
+
+            imgEl.src = img.original_url;
+            modal.style.display = 'block';
+
+            const targetRatio = img.width / img.height;
+
+            imgEl.onload = function() {
+                if (repositionCropper) repositionCropper.destroy();
+                repositionCropper = new Cropper(imgEl, {
+                    aspectRatio: targetRatio,
+                    viewMode: 1,
+                    dragMode: 'move',
+                    guides: true,
+                    center: true,
+                    highlight: false,
+                    cropBoxMovable: true,
+                    cropBoxResizable: true,
+                    background: true,
+                    autoCropArea: 1,
+                    responsive: true,
+                    crop: function(event) {
+                        document.getElementById('repositionDimensions').textContent =
+                            `Output: ${img.width} × ${img.height} px`;
+                    }
+                });
+            };
+        }
+
+        function confirmReposition() {
+            if (!repositionCropper || repositionIndex === null) return;
+
+            const img = generatedImages[repositionIndex];
+            const canvas = repositionCropper.getCroppedCanvas({
+                width: img.width,
+                height: img.height,
+                imageSmoothingEnabled: true,
+                imageSmoothingQuality: 'high'
+            });
+
+            const croppedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            generatedImages[repositionIndex].url = croppedDataUrl;
+
+            // Update the displayed image
+            const imgEl = document.getElementById(`image-preview-${repositionIndex}`);
+            if (imgEl) imgEl.src = croppedDataUrl;
+
+            cancelReposition();
+        }
+
+        function cancelReposition() {
+            if (repositionCropper) {
+                repositionCropper.destroy();
+                repositionCropper = null;
+            }
+            repositionIndex = null;
+            document.getElementById('repositionModal').style.display = 'none';
         }
 
         async function applyAiEdit() {
@@ -1871,11 +1967,18 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                                 <p style="color: #7DA3AF; font-size: 0.9rem; font-weight: 600; margin: 0;">Variation ${variationNumber}</p>
                                 <p style="color: #A9C1CB; font-size: 0.85rem; margin: 0.25rem 0 0 0;">${img.width}x${img.height}</p>
                             </div>
-                            <button onclick="regenerateSingleImage(${index})" id="regen-btn-${index}"
-                                    style="padding: 0.5rem 1rem; border: 2px solid #31D7CA; border-radius: 6px;
-                                           background: white; color: #31D7CA; cursor: pointer; font-size: 0.85rem; font-weight: 600;">
-                                🔄 Regenerate
-                            </button>
+                            <div style="display: flex; gap: 0.5rem;">
+                                ${img.original_url ? `<button onclick="openRepositionModal(${index})" id="reposition-btn-${index}"
+                                        style="padding: 0.5rem 1rem; border: 2px solid #7DA3AF; border-radius: 6px;
+                                               background: white; color: #7DA3AF; cursor: pointer; font-size: 0.85rem; font-weight: 600;">
+                                    ✂️ Reposition
+                                </button>` : ''}
+                                <button onclick="regenerateSingleImage(${index})" id="regen-btn-${index}"
+                                        style="padding: 0.5rem 1rem; border: 2px solid #31D7CA; border-radius: 6px;
+                                               background: white; color: #31D7CA; cursor: pointer; font-size: 0.85rem; font-weight: 600;">
+                                    🔄 Regenerate
+                                </button>
+                            </div>
                         </div>
                     `;
 
@@ -1916,6 +2019,9 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 if (result.success && result.image) {
                     // Update the image in our array
                     generatedImages[index].url = result.image.url;
+                    if (result.image.original_url) {
+                        generatedImages[index].original_url = result.image.original_url;
+                    }
                     // Update the displayed image
                     imgEl.src = result.image.url;
                     console.log(`[DEBUG] Regenerated image ${index} successfully`);
@@ -5599,7 +5705,10 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                         campaignName: campaignName,
                         currentStep: currentStep,
                         selectedPlatforms: Array.from(selectedPlatforms),
-                        generatedImages: generatedImages,
+                        generatedImages: generatedImages.map(img => {
+                            const { original_url, ...rest } = img;
+                            return rest;
+                        }),
                         campaignText: document.getElementById('campaignText')?.value || '',
                         promptText: document.getElementById('promptText')?.value || '',
                         savedBy: userEmail
@@ -5907,7 +6016,10 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                         selectedPlatforms: Array.from(selectedPlatforms),
                         campaignText: document.getElementById('campaignText')?.value || '',
                         promptText: document.getElementById('promptText')?.value || '',
-                        generatedImages: generatedImages,
+                        generatedImages: generatedImages.map(img => {
+                            const { original_url, ...rest } = img;
+                            return rest;
+                        }),
                         textOverlays: textOverlays,
                         shapeOverlays: shapeOverlays,
                         logoSettings: logoSettings,

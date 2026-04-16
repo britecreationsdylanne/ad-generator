@@ -536,6 +536,7 @@ NEVER include any text, logos, watermarks, color codes, hex values, or brand mar
 
                         if image_data:
                             # Resize and compress image to reduce size
+                            original_image_data = None
                             try:
                                 import base64
                                 from PIL import Image, ImageOps
@@ -547,11 +548,15 @@ NEVER include any text, logos, watermarks, color codes, hex values, or brand mar
 
                                 print(f"[API] Original image: {pil_image.size}")
 
-                                # Use ImageOps.pad to resize while keeping entire image visible (no cropping)
-                                # This adds padding if needed to reach exact dimensions
+                                # Save original for frontend reposition feature
+                                orig_buffer = BytesIO()
+                                pil_image.convert('RGB').save(orig_buffer, format='JPEG', quality=85, optimize=True)
+                                original_image_data = base64.b64encode(orig_buffer.getvalue()).decode('utf-8')
+
+                                # Use ImageOps.fit to crop-to-fill (no white bars)
                                 target_width = size['width']
                                 target_height = size['height']
-                                pil_image = ImageOps.pad(pil_image, (target_width, target_height), Image.Resampling.LANCZOS, color=(255, 255, 255), centering=(0.5, 0.5))
+                                pil_image = ImageOps.fit(pil_image, (target_width, target_height), Image.Resampling.LANCZOS, centering=(0.5, 0.5))
 
                                 # Convert to JPEG with compression to reduce size
                                 buffer = BytesIO()
@@ -563,13 +568,16 @@ NEVER include any text, logos, watermarks, color codes, hex values, or brand mar
                             except Exception as resize_error:
                                 print(f"[API] WARNING - Resize failed, using original: {resize_error}")
 
-                            images.append({
+                            img_entry = {
                                 'platform': platform,
                                 'size': f"{size['name']} - Variation {variation_num}",
                                 'width': size['width'],
                                 'height': size['height'],
                                 'url': f"data:image/jpeg;base64,{image_data}"
-                            })
+                            }
+                            if original_image_data:
+                                img_entry['original_url'] = f"data:image/jpeg;base64,{original_image_data}"
+                            images.append(img_entry)
                             print(f"[API] SUCCESS - {platform} {size['name']} - Variation {variation_num}")
                         else:
                             print(f"[API] WARNING - No image data for {platform} {size['name']} - Variation {variation_num}")
@@ -650,6 +658,7 @@ NEVER include any text, logos, watermarks, color codes, hex values, or brand mar
 
         if image_data:
             # Resize and compress image
+            original_image_data = None
             try:
                 import base64
                 from PIL import Image, ImageOps
@@ -660,8 +669,13 @@ NEVER include any text, logos, watermarks, color codes, hex values, or brand mar
 
                 print(f"[API] Original image: {pil_image.size}")
 
-                # Resize to target dimensions (pad to keep entire image visible, no cropping)
-                pil_image = ImageOps.pad(pil_image, (width, height), Image.Resampling.LANCZOS, color=(255, 255, 255), centering=(0.5, 0.5))
+                # Save original for frontend reposition feature
+                orig_buffer = BytesIO()
+                pil_image.convert('RGB').save(orig_buffer, format='JPEG', quality=85, optimize=True)
+                original_image_data = base64.b64encode(orig_buffer.getvalue()).decode('utf-8')
+
+                # Crop-to-fill (no white bars)
+                pil_image = ImageOps.fit(pil_image, (width, height), Image.Resampling.LANCZOS, centering=(0.5, 0.5))
 
                 # Compress
                 buffer = BytesIO()
@@ -673,15 +687,19 @@ NEVER include any text, logos, watermarks, color codes, hex values, or brand mar
             except Exception as resize_error:
                 print(f"[API] WARNING - Resize failed, using original: {resize_error}")
 
+            img_response = {
+                'platform': platform,
+                'size': size_name,
+                'width': width,
+                'height': height,
+                'url': f"data:image/jpeg;base64,{image_data}"
+            }
+            if original_image_data:
+                img_response['original_url'] = f"data:image/jpeg;base64,{original_image_data}"
+
             return jsonify({
                 'success': True,
-                'image': {
-                    'platform': platform,
-                    'size': size_name,
-                    'width': width,
-                    'height': height,
-                    'url': f"data:image/jpeg;base64,{image_data}"
-                }
+                'image': img_response
             })
         else:
             return jsonify({'success': False, 'error': 'No image generated'}), 500
@@ -925,8 +943,8 @@ def generate_animation():
                     image_bytes = base64.b64decode(image_data)
                     pil_image = Image.open(BytesIO(image_bytes))
 
-                    # Resize to exact dimensions (pad to keep entire image visible, no cropping)
-                    pil_image = ImageOps.pad(pil_image, (width, height), Image.Resampling.LANCZOS, color=(255, 255, 255), centering=(0.5, 0.5))
+                    # Crop-to-fill exact dimensions (no white bars)
+                    pil_image = ImageOps.fit(pil_image, (width, height), Image.Resampling.LANCZOS, centering=(0.5, 0.5))
 
                     frames.append(pil_image.convert('RGB'))
                     print(f"[API] Frame {i+1} generated successfully")
