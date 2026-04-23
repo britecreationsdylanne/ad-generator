@@ -2147,7 +2147,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                                 </div>
                             </div>
                             <p style="background: #F4F7FC; padding: 0.75rem; border-radius: 8px; margin-top: 0.75rem; color: #7DA3AF; font-size: 0.9rem; text-align: center;">
-                                💡 <strong>Drag to move</strong> • <strong>Drag corners to resize</strong> • <strong>Click to select</strong>
+                                💡 <strong>Drag to move</strong> • <strong>Drag bottom-right handle to resize width</strong> • <strong>Click to select</strong>
                             </p>
                             <h4 style="margin-top: 1rem; color: #272D3F;">${capitalizePlatform(img.platform)} - ${img.size}</h4>
                             <p style="color: #7DA3AF; font-size: 0.9rem;">${img.width}x${img.height}</p>
@@ -2198,6 +2198,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 text: 'New text',
                 x: 50,
                 y: 30 + (textOverlays[imageIndex].length * 20) % 60, // Stagger vertically
+                widthPct: 60,
                 fontSize: 28,
                 textColor: '#FFFFFF',
                 bgColor: 'rgba(0, 0, 0, 0.7)',
@@ -2318,6 +2319,12 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                     `).join('')}
                 </div>
 
+                <label style="display: block; font-weight: 600; margin-top: 1rem; margin-bottom: 0.5rem; color: #272D3F; font-size: 0.9rem;">Box Width (% of image)</label>
+                <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 1rem;">
+                    <input type="range" id="overlay-width-range-${imageIndex}" min="10" max="100" step="1" value="${box.widthPct || 60}" oninput="updateTextBoxWidth(${imageIndex}, this.value)" style="flex: 1;">
+                    <input type="number" id="overlay-width-${imageIndex}" min="10" max="100" value="${box.widthPct || 60}" onchange="updateTextBoxWidth(${imageIndex}, this.value)" style="width: 60px; padding: 0.35rem 0.5rem; border: 2px solid #E1E7EF; border-radius: 6px; font-size: 0.9rem; text-align: center;">
+                </div>
+
                 <label style="display: block; font-weight: 600; margin-top: 1rem; margin-bottom: 0.5rem; color: #272D3F; font-size: 0.9rem;">Background</label>
                 <select id="overlay-bg-${imageIndex}" onchange="updateSelectedTextBox(${imageIndex})"
                         style="width: 100%; padding: 0.5rem; border: 2px solid #E1E7EF; border-radius: 8px; font-size: 0.9rem;">
@@ -2358,6 +2365,21 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             renderTextBoxControls(imageIndex);
         }
 
+        function updateTextBoxWidth(imageIndex, value) {
+            const selectedIdx = selectedTextBox[imageIndex];
+            if (selectedIdx < 0 || selectedIdx >= textOverlays[imageIndex].length) return;
+            const clamped = Math.max(10, Math.min(100, parseInt(value) || 60));
+            textOverlays[imageIndex][selectedIdx].widthPct = clamped;
+            // Update both inputs in sync
+            const widthInput = document.getElementById(`overlay-width-${imageIndex}`);
+            const widthRange = document.getElementById(`overlay-width-range-${imageIndex}`);
+            if (widthInput) widthInput.value = clamped;
+            if (widthRange) widthRange.value = clamped;
+            // Update just the rendered box width — don't re-render or we lose focus on the input
+            const boxEl = document.querySelector(`#text-boxes-container-${imageIndex} [data-box-index="${selectedIdx}"]`);
+            if (boxEl) boxEl.style.width = clamped + '%';
+        }
+
         function updateSelectedTextBox(imageIndex) {
             const selectedIdx = selectedTextBox[imageIndex];
             if (selectedIdx < 0 || selectedIdx >= textOverlays[imageIndex].length) return;
@@ -2392,6 +2414,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
 
                 const isSelected = boxIdx === selectedIdx;
                 const bgStyle = box.bgColor === 'none' ? 'background: transparent;' : `background: ${box.bgColor};`;
+                const widthPct = box.widthPct || 60;
 
                 const textBoxEl = document.createElement('div');
                 textBoxEl.className = 'resizable-text-box';
@@ -2401,15 +2424,21 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                     position: absolute;
                     top: ${box.y}%;
                     left: ${box.x}%;
+                    width: ${widthPct}%;
                     transform: translate(-50%, -50%);
                     cursor: move;
                     pointer-events: auto;
                     ${isSelected ? 'outline: 2px dashed #31D7CA; outline-offset: 4px;' : ''}
                 `;
 
+                const handleHtml = isSelected ? `
+                    <div class="resize-handle" style="position: absolute; right: -8px; bottom: -8px; width: 16px; height: 16px; background: #31D7CA; border: 2px solid white; border-radius: 50%; cursor: nwse-resize; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>
+                ` : '';
+
                 textBoxEl.innerHTML = `
-                    <div style="display: inline-block; ${bgStyle} padding: 10px 20px; border-radius: 8px; text-align: center; position: relative;">
-                        <p style="color: ${box.textColor}; font-family: '${box.fontFamily}', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: ${box.fontSize}px; font-weight: 700; margin: 0; line-height: 1.3; white-space: pre-line;">${box.text}</p>
+                    <div style="${bgStyle} padding: 10px 20px; border-radius: 8px; text-align: center; position: relative; box-sizing: border-box; width: 100%;">
+                        <p style="color: ${box.textColor}; font-family: '${box.fontFamily}', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: ${box.fontSize}px; font-weight: 700; margin: 0; line-height: 1.3; white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word;">${box.text}</p>
+                        ${handleHtml}
                     </div>
                 `;
 
@@ -2433,15 +2462,29 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
         function setupTextBoxHandlers(element, imageIndex, boxIndex) {
             const container = document.getElementById(`preview-container-${imageIndex}`);
             let isDragging = false;
-            let startX, startY, startLeft, startTop;
+            let isResizing = false;
+            let startX, startY, startLeft, startTop, startWidth;
 
             // Click to select
             element.addEventListener('click', (e) => {
                 selectTextBox(imageIndex, boxIndex);
             });
 
-            // Drag to move (no resize — use font size slider in controls instead)
+            // Resize handle — start resize, don't start drag
+            const resizeHandle = element.querySelector('.resize-handle');
+            if (resizeHandle) {
+                resizeHandle.addEventListener('mousedown', (e) => {
+                    isResizing = true;
+                    startX = e.clientX;
+                    startWidth = textOverlays[imageIndex][boxIndex].widthPct || 60;
+                    e.preventDefault();
+                    e.stopPropagation();
+                });
+            }
+
+            // Drag to move
             element.addEventListener('mousedown', (e) => {
+                if (isResizing) return; // don't start drag if resize is active
                 isDragging = true;
                 startX = e.clientX;
                 startY = e.clientY;
@@ -2452,7 +2495,22 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             });
 
             const onMouseMove = (e) => {
-                if (isDragging) {
+                if (isResizing) {
+                    const rect = container.getBoundingClientRect();
+                    const deltaX = e.clientX - startX;
+                    // widthPct is centered (transform: translate(-50%,-50%)), so edge moves at deltaX,
+                    // which equals half the width change — multiply by 2
+                    let newWidth = startWidth + (deltaX / rect.width) * 100 * 2;
+                    newWidth = Math.max(10, Math.min(100, newWidth));
+                    textOverlays[imageIndex][boxIndex].widthPct = newWidth;
+                    element.style.width = newWidth + '%';
+
+                    // Keep the controls panel width input in sync
+                    const widthInput = document.getElementById(`overlay-width-${imageIndex}`);
+                    const widthRange = document.getElementById(`overlay-width-range-${imageIndex}`);
+                    if (widthInput) widthInput.value = Math.round(newWidth);
+                    if (widthRange) widthRange.value = Math.round(newWidth);
+                } else if (isDragging) {
                     const rect = container.getBoundingClientRect();
                     const deltaX = e.clientX - startX;
                     const deltaY = e.clientY - startY;
@@ -2473,6 +2531,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
 
             const onMouseUp = () => {
                 isDragging = false;
+                isResizing = false;
             };
 
             document.addEventListener('mousemove', onMouseMove);
@@ -3144,41 +3203,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
 
                 overlayList.forEach(overlay => {
                     if (!overlay || !overlay.text) return;
-
-                    const editorWidth = textOverlayEditorWidths[index] || 500;
-                    const fontSize = Math.round((overlay.fontSize || 28) * (image.width / editorWidth));
-                    ctx.font = `bold ${fontSize}px ${overlay.fontFamily || 'Gilroy'}, Arial, sans-serif`;
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-
-                    const x = (overlay.x / 100) * canvas.width;
-                    const y = (overlay.y / 100) * canvas.height;
-
-                    // Handle multi-line text
-                    const lines = overlay.text.split('\n');
-                    const lineHeight = fontSize * 1.3;
-
-                    // Background
-                    if (overlay.bgColor && overlay.bgColor !== 'none') {
-                        let maxWidth = 0;
-                        lines.forEach(line => {
-                            const metrics = ctx.measureText(line);
-                            if (metrics.width > maxWidth) maxWidth = metrics.width;
-                        });
-                        const padding = 30;
-                        const bgHeight = lineHeight * lines.length + padding;
-
-                        ctx.fillStyle = overlay.bgColor;
-                        ctx.fillRect(x - maxWidth / 2 - padding, y - bgHeight / 2, maxWidth + padding * 2, bgHeight);
-                    }
-
-                    // Text - draw each line
-                    ctx.fillStyle = overlay.textColor || '#FFFFFF';
-                    const totalHeight = lineHeight * (lines.length - 1);
-                    lines.forEach((line, lineIdx) => {
-                        const lineY = y - totalHeight / 2 + lineIdx * lineHeight;
-                        ctx.fillText(line, x, lineY);
-                    });
+                    drawTextOverlayOnCanvas(ctx, canvas, image, overlay, textOverlayEditorWidths[index] || 500);
                 });
 
                 // Draw shapes
@@ -3215,6 +3240,58 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                 canvas.onclick = () => openLightbox(canvas.toDataURL('image/png'));
             };
             image.src = img.url;
+        }
+
+        // Shared text overlay renderer — wraps text within box width and draws background
+        function drawTextOverlayOnCanvas(ctx, canvas, image, overlay, editorWidth) {
+            const fontSize = Math.round((overlay.fontSize || overlay.size || 28) * (image.width / editorWidth));
+            ctx.font = `bold ${fontSize}px ${overlay.fontFamily || overlay.font || 'Gilroy'}, Arial, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            const x = (overlay.x / 100) * canvas.width;
+            const y = (overlay.y / 100) * canvas.height;
+
+            const widthPct = overlay.widthPct || 60;
+            const padding = 30;
+            const boxWidth = (widthPct / 100) * canvas.width;
+            const textMaxWidth = boxWidth - padding * 2;
+
+            // Word-wrap each user-entered line within textMaxWidth
+            const rawLines = overlay.text.split('\n');
+            const wrappedLines = [];
+            rawLines.forEach(rawLine => {
+                if (rawLine === '') { wrappedLines.push(''); return; }
+                const words = rawLine.split(' ');
+                let currentLine = '';
+                words.forEach(word => {
+                    const testLine = currentLine ? currentLine + ' ' + word : word;
+                    if (ctx.measureText(testLine).width <= textMaxWidth || !currentLine) {
+                        currentLine = testLine;
+                    } else {
+                        wrappedLines.push(currentLine);
+                        currentLine = word;
+                    }
+                });
+                if (currentLine) wrappedLines.push(currentLine);
+            });
+
+            const lineHeight = fontSize * 1.3;
+            const bgHeight = lineHeight * wrappedLines.length + padding;
+
+            // Background — uses fixed box width (not text-fit)
+            if (overlay.bgColor && overlay.bgColor !== 'none') {
+                ctx.fillStyle = overlay.bgColor;
+                ctx.fillRect(x - boxWidth / 2, y - bgHeight / 2, boxWidth, bgHeight);
+            }
+
+            // Text - draw each wrapped line
+            ctx.fillStyle = overlay.textColor || overlay.color || '#FFFFFF';
+            const totalHeight = lineHeight * (wrappedLines.length - 1);
+            wrappedLines.forEach((line, lineIdx) => {
+                const lineY = y - totalHeight / 2 + lineIdx * lineHeight;
+                ctx.fillText(line, x, lineY);
+            });
         }
 
         async function downloadPreviewImage(index) {
@@ -3331,41 +3408,7 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
 
                 overlayList.forEach(overlay => {
                     if (!overlay || !overlay.text) return;
-
-                    const editorWidth = textOverlayEditorWidths[index] || 500;
-                    const fontSize = Math.round((overlay.fontSize || overlay.size || 28) * (image.width / editorWidth));
-                    ctx.font = `bold ${fontSize}px ${overlay.fontFamily || overlay.font || 'Gilroy'}, Arial, sans-serif`;
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-
-                    const x = (overlay.x / 100) * canvas.width;
-                    const y = (overlay.y / 100) * canvas.height;
-
-                    // Handle multi-line text
-                    const lines = overlay.text.split('\n');
-                    const lineHeight = fontSize * 1.3;
-
-                    // Background
-                    if (overlay.bgColor && overlay.bgColor !== 'none') {
-                        let maxWidth = 0;
-                        lines.forEach(line => {
-                            const metrics = ctx.measureText(line);
-                            if (metrics.width > maxWidth) maxWidth = metrics.width;
-                        });
-                        const padding = 30;
-                        const bgHeight = lineHeight * lines.length + padding;
-
-                        ctx.fillStyle = overlay.bgColor;
-                        ctx.fillRect(x - maxWidth / 2 - padding, y - bgHeight / 2, maxWidth + padding * 2, bgHeight);
-                    }
-
-                    // Text - draw each line
-                    ctx.fillStyle = overlay.textColor || overlay.color || '#FFFFFF';
-                    const totalHeight = lineHeight * (lines.length - 1);
-                    lines.forEach((line, lineIdx) => {
-                        const lineY = y - totalHeight / 2 + lineIdx * lineHeight;
-                        ctx.fillText(line, x, lineY);
-                    });
+                    drawTextOverlayOnCanvas(ctx, canvas, image, overlay, textOverlayEditorWidths[index] || 500);
                 });
 
                 // Draw logo if enabled
