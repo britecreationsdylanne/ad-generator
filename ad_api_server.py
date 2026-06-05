@@ -72,6 +72,58 @@ print("[OK] OpenAI initialized")
 print("[OK] Gemini initialized")
 print("[OK] Claude initialized")
 
+
+def _openai_image_size_for(width, height):
+    """Map a target aspect ratio to a GPT Image 2 supported size."""
+    aspect_ratio = width / height
+    if aspect_ratio > 1.2:
+        return "1536x1024"   # landscape
+    elif aspect_ratio < 0.85:
+        return "1024x1536"   # portrait
+    return "1024x1024"       # square
+
+
+def generate_ad_image(prompt, width=1024, height=1024, provider="gemini"):
+    """
+    Route image generation to the selected provider.
+
+    provider: 'gemini' (Nano Banana / gemini-2.5-flash-image, default) or
+              'openai' (GPT Image 2).
+    Returns a dict with an 'image_data' base64 field (provider-agnostic).
+    """
+    if provider == "openai":
+        size = _openai_image_size_for(width, height)
+        print(f"[IMAGE] Provider: OpenAI GPT Image 2 ({size})")
+        return openai_client.generate_image(
+            prompt=prompt,
+            model="gpt-image-2",
+            size=size,
+        )
+    print("[IMAGE] Provider: Gemini (gemini-2.5-flash-image)")
+    return gemini_client.generate_image(
+        prompt=prompt,
+        model="gemini-2.5-flash-image",
+    )
+
+
+def edit_ad_image(image_data, prompt, width=1024, height=1024, provider="gemini"):
+    """Route image editing to the selected provider. Returns dict with 'image_data'."""
+    if provider == "openai":
+        size = _openai_image_size_for(width, height)
+        print(f"[IMAGE EDIT] Provider: OpenAI GPT Image 2 ({size})")
+        return openai_client.edit_image(
+            image_data=image_data,
+            prompt=prompt,
+            model="gpt-image-2",
+            size=size,
+        )
+    print("[IMAGE EDIT] Provider: Gemini (gemini-2.5-flash-image)")
+    return gemini_client.edit_image(
+        image_data=image_data,
+        prompt=prompt,
+        model="gemini-2.5-flash-image",
+    )
+
 # GCS for drafts
 GCS_BUCKET_NAME = 'ad-generator-drafts'
 gcs_client = None
@@ -472,9 +524,11 @@ def generate_images():
         data = request.json
         prompt = data.get('prompt', '')
         platforms = data.get('platforms', [])
+        image_provider = data.get('imageProvider', 'gemini')
 
         print(f"\n[API] Generate Images Request")
         print(f"  Platforms: {platforms}")
+        print(f"  Image provider: {image_provider}")
         print(f"  Prompt: {prompt[:100]}...")
         print(f"  Generating 2 variations per size")
 
@@ -526,10 +580,12 @@ CRITICAL COMPOSITION REQUIREMENTS:
 
 NEVER include any text, logos, watermarks, color codes, hex values, or brand marks in the image. Generate photography only."""
 
-                        # Generate with Gemini (Nano Banana) with aspect-specific prompt
-                        result = gemini_client.generate_image(
+                        # Generate with the selected provider, aspect-specific prompt
+                        result = generate_ad_image(
                             prompt=enhanced_prompt,
-                            model="gemini-2.5-flash-image"
+                            width=width,
+                            height=height,
+                            provider=image_provider,
                         )
 
                         image_data = result.get('image_data', '')
@@ -610,10 +666,12 @@ def generate_single_image():
         width = data.get('width', 1080)
         height = data.get('height', 1080)
         size_name = data.get('sizeName', 'Image')
+        image_provider = data.get('imageProvider', 'gemini')
 
         print(f"\n[API] Generate Single Image Request")
         print(f"  Platform: {platform}")
         print(f"  Size: {size_name} ({width}x{height})")
+        print(f"  Image provider: {image_provider}")
 
         # Calculate aspect ratio for prompt enhancement
         aspect_ratio = width / height
@@ -648,10 +706,12 @@ CRITICAL COMPOSITION REQUIREMENTS:
 
 NEVER include any text, logos, watermarks, color codes, hex values, or brand marks in the image. Generate photography only."""
 
-        # Generate with Gemini
-        result = gemini_client.generate_image(
+        # Generate with the selected provider
+        result = generate_ad_image(
             prompt=enhanced_prompt,
-            model="gemini-2.5-flash-image"
+            width=width,
+            height=height,
+            provider=image_provider,
         )
 
         image_data = result.get('image_data', '')
@@ -878,6 +938,7 @@ def generate_animation():
         fps = data.get('fps', 2)  # Frames per second (default: 2)
         platform = data.get('platform', 'Meta')
         size_name = data.get('sizeName', 'Square')
+        image_provider = data.get('imageProvider', 'gemini')
 
         # Ensure frame_count is within limits
         frame_count = min(max(frame_count, 3), 7)  # Between 3 and 7 frames
@@ -926,10 +987,12 @@ def generate_animation():
 
                 enhanced_prompt += f"\n\nIMPORTANT: Compose this image specifically for {aspect_hint}. Use {composition_hint}. Frame: {width}x{height}px.\n\nDo NOT include any company logos, brand marks, watermarks, or text overlays in the image. Generate photography only without any branding elements."
 
-                # Generate frame with Gemini
-                result = gemini_client.generate_image(
+                # Generate frame with the selected provider
+                result = generate_ad_image(
                     prompt=enhanced_prompt,
-                    model="gemini-2.5-flash-image"
+                    width=width,
+                    height=height,
+                    provider=image_provider,
                 )
 
                 image_data = result.get('image_data', '')
@@ -1152,7 +1215,7 @@ def generate_video_veo(prompt_text, prompt_image, duration, aspect_ratio):
         duration = 8  # Default to 8 if invalid
 
     # Veo API endpoint
-    model = 'veo-3.1-generate-preview'
+    model = 'veo-3.1-generate-001'
     endpoint = f'{VEO_API_BASE}/models/{model}:predictLongRunning'
 
     headers = {
@@ -1649,16 +1712,17 @@ def edit_image():
         data = request.json
         image_data = data.get('imageData')
         prompt = data.get('prompt')
+        image_provider = data.get('imageProvider', 'gemini')
 
         if not image_data or not prompt:
             return jsonify({'success': False, 'error': 'Image and prompt are required'}), 400
 
-        print(f"[API] Edit image request: prompt='{prompt[:80]}...'")
+        print(f"[API] Edit image request: provider={image_provider}, prompt='{prompt[:80]}...'")
 
-        result = gemini_client.edit_image(
+        result = edit_ad_image(
             image_data=image_data,
             prompt=prompt,
-            model="gemini-2.5-flash-image"
+            provider=image_provider,
         )
 
         edited_image = result.get('image_data', '')
@@ -1794,8 +1858,8 @@ if __name__ == '__main__':
     print(f"\nStarting server...")
     print(f"URL: http://localhost:{port}")
     print(f"\nAPIs:")
-    print(f"  [OK] Claude (claude-sonnet-4-5-20250929)")
-    print(f"  [OK] OpenAI (gpt-4o)")
+    print(f"  [OK] Claude (claude-sonnet-4-6)")
+    print(f"  [OK] OpenAI (gpt-5.5)")
     print(f"  [OK] Google Gemini (gemini-2.5-flash-image / Nano Banana)")
     print(f"  [OK] Google Veo 3.1 (video generation - DEFAULT)" if GOOGLE_VEO_API_KEY else "  [--] Google Veo (not configured)")
     print(f"  [OK] Runway (video generation - fallback)" if RUNWAY_API_KEY else "  [--] Runway (not configured)")

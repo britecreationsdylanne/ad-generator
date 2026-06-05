@@ -22,7 +22,7 @@ class GeminiClient:
         # Initialize the client with API key
         self.client = genai.Client(api_key=self.api_key)
         # Use Gemini 3 Pro Image Preview for image generation
-        self.default_model = os.getenv("DEFAULT_IMAGE_MODEL", "gemini-3-pro-image-preview")
+        self.default_model = os.getenv("DEFAULT_IMAGE_MODEL", "gemini-2.5-flash-image")
 
     def generate_image(
         self,
@@ -503,7 +503,7 @@ class GeminiClient:
         try:
             # Use Gemini 2.0 Flash with Google Search grounding
             response = self.client.models.generate_content(
-                model="gemini-2.0-flash-exp",
+                model="gemini-2.5-flash",
                 contents=[f"""Search Google for {max_results} recent, real articles about: {query}
 
 For each article found, provide:

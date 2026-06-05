@@ -15,7 +15,7 @@ class OpenAIClient:
     def __init__(self, api_key: Optional[str] = None):
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         self.client = OpenAI(api_key=self.api_key) if self.api_key else None
-        self.default_model = os.getenv("DEFAULT_CONTENT_MODEL", "gpt-4o")
+        self.default_model = os.getenv("DEFAULT_CONTENT_MODEL", "gpt-5.5")
 
     def generate_content(
         self,
@@ -60,14 +60,17 @@ class OpenAIClient:
         kwargs = {
             "model": model,
             "messages": messages,
-            "temperature": temperature,
         }
 
-        # GPT-5.x and newer models use max_completion_tokens instead of max_tokens
+        # GPT-5.x / reasoning models use max_completion_tokens and only support the
+        # default temperature; older chat models use max_tokens + a custom temperature.
         if model and (model.startswith("gpt-5") or model.startswith("o1") or model.startswith("o3")):
             kwargs["max_completion_tokens"] = max_tokens
+            if temperature == 1:
+                kwargs["temperature"] = temperature  # only default is allowed; omit otherwise
         else:
             kwargs["max_tokens"] = max_tokens
+            kwargs["temperature"] = temperature
 
         # Add tools if provided (for web search)
         if tools:
@@ -574,6 +577,89 @@ Look for trend forecasts, style guides, design inspiration, and industry predict
 that help venues understand what couples will be requesting for {season} weddings.
 """
         return self.search_web_responses_api(query, max_results=15, exclude_urls=exclude_urls)
+    def generate_image(
+        self,
+        prompt: str,
+        model: str = "gpt-image-2",
+        size: str = "1024x1024",
+        quality: str = "high",
+    ) -> Dict:
+        """
+        Generate an image using OpenAI's image API (GPT Image 2).
+
+        Args:
+            prompt: Text description of the image to generate
+            model: Image model (default: gpt-image-2)
+            size: Output dimensions (e.g. 1024x1024, 1536x1024, 1024x1536)
+            quality: low | medium | high
+
+        Returns:
+            {"image_data": "<base64 png>", "model": ..., "generation_time_ms": ...}
+        """
+        if not self.client:
+            raise ValueError("OpenAI API key not configured")
+
+        start_time = time.time()
+        response = self.client.images.generate(
+            model=model,
+            prompt=prompt,
+            size=size,
+            quality=quality,
+            n=1,
+        )
+        # gpt-image models always return base64 (no URL)
+        b64 = response.data[0].b64_json
+
+        return {
+            "image_data": b64,
+            "model": model,
+            "generation_time_ms": int((time.time() - start_time) * 1000),
+        }
+
+    def edit_image(
+        self,
+        image_data: str,
+        prompt: str,
+        model: str = "gpt-image-2",
+        size: str = "1024x1024",
+    ) -> Dict:
+        """
+        Edit an image using OpenAI's image edit API (GPT Image 2).
+
+        Args:
+            image_data: Base64-encoded source image
+            prompt: Edit instructions
+            model: Image model (default: gpt-image-2)
+            size: Output dimensions
+
+        Returns:
+            {"image_data": "<base64 png>", "model": ..., "generation_time_ms": ...}
+        """
+        if not self.client:
+            raise ValueError("OpenAI API key not configured")
+
+        import base64
+        from io import BytesIO
+
+        start_time = time.time()
+        image_bytes = base64.b64decode(image_data)
+        buffer = BytesIO(image_bytes)
+        buffer.name = "image.png"  # OpenAI SDK infers format from filename
+
+        response = self.client.images.edit(
+            model=model,
+            image=buffer,
+            prompt=prompt,
+            size=size,
+            n=1,
+        )
+        b64 = response.data[0].b64_json
+
+        return {
+            "image_data": b64,
+            "model": model,
+            "generation_time_ms": int((time.time() - start_time) * 1000),
+        }
 
 
 # Singleton instance

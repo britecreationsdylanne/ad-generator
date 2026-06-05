@@ -69,7 +69,7 @@ Requirements for the prompt:
 Generate ONE detailed, creative prompt (200 words max) for Nano Banana (Google Gemini) image generator. Make it specific, visual, and actionable.`;
 
     const requestBody = JSON.stringify({
-        model: 'claude-sonnet-4-5-20250929',
+        model: 'claude-sonnet-4-6',
         max_tokens: 500,
         messages: [{
             role: 'user',
@@ -344,8 +344,8 @@ server.listen(PORT, () => {
     console.log('='.repeat(80));
     console.log(`\nURL: http://localhost:${PORT}`);
     console.log('\nAPIs:');
-    console.log('  [OK] Claude (claude-sonnet-4-5-20250929)');
-    console.log('  [OK] OpenAI (gpt-4o)');
+    console.log('  [OK] Claude (claude-sonnet-4-6)');
+    console.log('  [OK] OpenAI (gpt-5.5)');
     console.log('  [OK] Google Gemini (gemini-2.5-flash-image / Nano Banana)');
     console.log('\nPress Ctrl+C to stop');
     console.log('='.repeat(80));
