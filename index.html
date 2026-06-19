@@ -330,6 +330,40 @@
         <img id="image-lightbox-img" src="" alt="Zoomed image" onclick="event.stopPropagation()">
     </div>
 
+    <!-- Conversational Refine Chat Modal -->
+    <div id="refine-chat-overlay" style="display:none; position:fixed; inset:0; background:rgba(39,45,63,0.75); z-index:10000; align-items:center; justify-content:center; padding:1rem;">
+        <div style="background:white; border-radius:16px; width:100%; max-width:900px; max-height:90vh; display:flex; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+            <!-- Left: current image -->
+            <div style="flex:1; background:#F4F7FC; padding:1.5rem; display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:0;">
+                <img id="refine-current-img" src="" alt="Current image" style="max-width:100%; max-height:60vh; border-radius:10px; box-shadow:0 4px 16px rgba(0,0,0,0.12);">
+                <p id="refine-img-label" style="color:#7DA3AF; font-size:0.85rem; margin-top:0.75rem; margin-bottom:0.4rem;"></p>
+                <select id="refine-version-select" onchange="selectRefineVersion(this.value)"
+                    style="display:none; padding:0.4rem 0.6rem; border:1px solid #E1E7EF; border-radius:6px; font-size:0.85rem; color:#272D3F; background:white;"></select>
+            </div>
+            <!-- Right: chat -->
+            <div style="width:360px; display:flex; flex-direction:column; border-left:1px solid #E1E7EF;">
+                <div style="padding:1rem 1.25rem; border-bottom:1px solid #E1E7EF; display:flex; justify-content:space-between; align-items:center;">
+                    <h3 style="margin:0; color:#272D3F; font-size:1.05rem;">💬 Refine this image</h3>
+                    <span onclick="closeRefineChat()" style="cursor:pointer; color:#A9C1CB; font-size:1.5rem; line-height:1;">&times;</span>
+                </div>
+                <div id="refine-messages" style="flex:1; overflow-y:auto; padding:1rem 1.25rem; display:flex; flex-direction:column; gap:0.75rem; min-height:200px;"></div>
+                <div style="padding:1rem 1.25rem; border-top:1px solid #E1E7EF;">
+                    <textarea id="refine-input" rows="2" placeholder="e.g. I like it but make the background blue, or change the headline to say 'Insure in minutes'"
+                        style="width:100%; box-sizing:border-box; padding:0.6rem; border:1px solid #E1E7EF; border-radius:8px; font-size:0.9rem; resize:none; font-family:inherit;"
+                        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendRefineMessage();}"></textarea>
+                    <div style="display:flex; gap:0.5rem; margin-top:0.6rem;">
+                        <button id="refine-send-btn" onclick="sendRefineMessage()"
+                            style="flex:1; padding:0.6rem; border:none; border-radius:8px; background:#FC883A; color:white; font-weight:600; cursor:pointer; font-size:0.9rem;">Send</button>
+                        <button id="refine-revert-btn" onclick="revertRefine()" disabled
+                            style="padding:0.6rem 0.9rem; border:1px solid #E1E7EF; border-radius:8px; background:white; color:#7DA3AF; font-weight:600; cursor:pointer; font-size:0.9rem;">↶ Undo</button>
+                    </div>
+                    <button onclick="closeRefineChat()"
+                        style="width:100%; margin-top:0.5rem; padding:0.55rem; border:1px solid #31D7CA; border-radius:8px; background:white; color:#31D7CA; font-weight:600; cursor:pointer; font-size:0.9rem;">Done — use this image</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Server-side Auth Script -->
     <script>
         // User is authenticated server-side, get user from injected window.AUTH_USER
@@ -1228,6 +1262,160 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
             }
         });
 
+        // ========== CONVERSATIONAL REFINE CHAT ==========
+        // Iterative pixel-editing: each message edits the CURRENT image on top of itself,
+        // so the parts the user likes stay locked. Every result is kept as a version,
+        // browsable via a dropdown ("Original", "Edit 1"…) and steppable via Undo.
+        let refineActiveIndex = null;
+        const refineVersions = {};   // index -> [url, url, ...]  (version 0 = original)
+        const refineVersionIdx = {}; // index -> currently selected version index
+
+        function refineEnsureVersions(index) {
+            if (!refineVersions[index]) {
+                refineVersions[index] = [generatedImages[index].url];
+                refineVersionIdx[index] = 0;
+            }
+        }
+
+        function refineAddMessage(role, html) {
+            const box = document.getElementById('refine-messages');
+            const bubble = document.createElement('div');
+            const isUser = role === 'user';
+            bubble.style.cssText = `align-self:${isUser ? 'flex-end' : 'flex-start'}; max-width:90%;
+                background:${isUser ? '#31D7CA' : '#F4F7FC'}; color:${isUser ? 'white' : '#272D3F'};
+                padding:0.55rem 0.8rem; border-radius:12px; font-size:0.88rem; line-height:1.35; word-wrap:break-word;`;
+            bubble.innerHTML = html;
+            box.appendChild(bubble);
+            box.scrollTop = box.scrollHeight;
+            return bubble;
+        }
+
+        function openRefineChat(index) {
+            refineActiveIndex = index;
+            refineEnsureVersions(index);
+            const img = generatedImages[index];
+            document.getElementById('refine-current-img').src = img.url;
+            document.getElementById('refine-img-label').textContent =
+                `${capitalizePlatform(img.platform)} · ${img.size}`;
+            document.getElementById('refine-messages').innerHTML = '';
+            document.getElementById('refine-input').value = '';
+            refineAddMessage('assistant',
+                'Tell me what to change and I\'ll edit this image directly — the rest stays the same. For example: <em>"make the background blue"</em> or <em>"change the text to say Insure in minutes"</em>.');
+            refreshRefineVersionUI();
+            document.getElementById('refine-chat-overlay').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => document.getElementById('refine-input').focus(), 100);
+        }
+
+        function closeRefineChat() {
+            document.getElementById('refine-chat-overlay').style.display = 'none';
+            document.body.style.overflow = '';
+            refineActiveIndex = null;
+        }
+
+        function versionLabel(i) {
+            return i === 0 ? 'Original' : `Edit ${i}`;
+        }
+
+        function refreshRefineVersionUI() {
+            const i = refineActiveIndex;
+            const versions = refineVersions[i] || [];
+            const sel = document.getElementById('refine-version-select');
+            if (versions.length < 2) {
+                sel.style.display = 'none';
+            } else {
+                sel.style.display = 'inline-block';
+                sel.innerHTML = versions.map((_, v) =>
+                    `<option value="${v}" ${v === refineVersionIdx[i] ? 'selected' : ''}>${versionLabel(v)}</option>`
+                ).join('');
+            }
+            // Undo steps back one version
+            const btn = document.getElementById('refine-revert-btn');
+            const canUndo = (refineVersionIdx[i] || 0) > 0;
+            btn.disabled = !canUndo;
+            btn.style.opacity = canUndo ? '1' : '0.5';
+        }
+
+        function refineApplyImage(url) {
+            // Update modal preview, the card thumbnail, and the stored image
+            document.getElementById('refine-current-img').src = url;
+            generatedImages[refineActiveIndex].url = url;
+            const cardImg = document.getElementById(`image-preview-${refineActiveIndex}`);
+            if (cardImg) {
+                cardImg.src = url;
+                cardImg.setAttribute('onclick', `openLightbox('${url}')`);
+            }
+        }
+
+        function selectRefineVersion(v) {
+            const i = refineActiveIndex;
+            v = parseInt(v, 10);
+            const versions = refineVersions[i];
+            if (!versions || !versions[v]) return;
+            refineVersionIdx[i] = v;
+            refineApplyImage(versions[v]);
+            refreshRefineVersionUI();
+        }
+
+        async function sendRefineMessage() {
+            if (refineActiveIndex === null) return;
+            const input = document.getElementById('refine-input');
+            const message = input.value.trim();
+            if (!message) return;
+
+            const i = refineActiveIndex;
+            const sendBtn = document.getElementById('refine-send-btn');
+            input.value = '';
+            refineAddMessage('user', message.replace(/</g, '&lt;'));
+            const thinking = refineAddMessage('assistant', '⏳ Editing…');
+            sendBtn.disabled = true;
+            sendBtn.textContent = 'Editing…';
+
+            // Always edit from the currently selected version
+            const currentUrl = refineVersions[i][refineVersionIdx[i]];
+
+            try {
+                const resp = await fetch('/api/edit-image', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        imageData: currentUrl,
+                        prompt: message,
+                        imageProvider: document.getElementById('imageProvider').value
+                    })
+                });
+                const result = await resp.json();
+                if (!result.success) throw new Error(result.error || 'Edit failed');
+
+                // Append as a new version after the current one (drop any redo tail)
+                const versions = refineVersions[i];
+                versions.length = refineVersionIdx[i] + 1;
+                versions.push(result.editedImage);
+                refineVersionIdx[i] = versions.length - 1;
+                refineApplyImage(result.editedImage);
+                refreshRefineVersionUI();
+
+                const timeSec = ((result.generationTimeMs || 0) / 1000).toFixed(1);
+                thinking.innerHTML = `✅ Done in ${timeSec}s — saved as <strong>${versionLabel(refineVersionIdx[i])}</strong>. Keep going, switch versions above, or click <strong>Done</strong>.`;
+            } catch (e) {
+                console.error('[Refine] Failed:', e);
+                thinking.innerHTML = `❌ ${e.message}. Try rephrasing the change.`;
+                thinking.style.background = '#FFECEC';
+                thinking.style.color = '#C0392B';
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Send';
+                input.focus();
+            }
+        }
+
+        function revertRefine() {
+            const i = refineActiveIndex;
+            if ((refineVersionIdx[i] || 0) <= 0) return;
+            selectRefineVersion(refineVersionIdx[i] - 1);
+            refineAddMessage('assistant', `↶ Back to <strong>${versionLabel(refineVersionIdx[i])}</strong>.`);
+        }
+
         // BriteCo brand colors for shapes
         const BRITECO_COLORS = [
             { name: 'Teal', hex: '#31D7CA' },
@@ -1984,6 +2172,11 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
                                                background: white; color: #7DA3AF; cursor: pointer; font-size: 0.85rem; font-weight: 600;">
                                     ✂️ Reposition
                                 </button>` : ''}
+                                <button onclick="openRefineChat(${index})" id="refine-btn-${index}"
+                                        style="padding: 0.5rem 1rem; border: 2px solid #FC883A; border-radius: 6px;
+                                               background: white; color: #FC883A; cursor: pointer; font-size: 0.85rem; font-weight: 600;">
+                                    💬 Refine
+                                </button>
                                 <button onclick="regenerateSingleImage(${index})" id="regen-btn-${index}"
                                         style="padding: 0.5rem 1rem; border: 2px solid #31D7CA; border-radius: 6px;
                                                background: white; color: #31D7CA; cursor: pointer; font-size: 0.85rem; font-weight: 600;">
