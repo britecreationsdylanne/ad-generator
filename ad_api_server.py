@@ -9,6 +9,7 @@ import sys
 import json
 import time
 import re
+import base64
 import requests
 import secrets
 import pytz
@@ -45,7 +46,19 @@ CORS(app)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 # Session configuration for OAuth
-app.secret_key = os.environ.get('FLASK_SECRET_KEY', secrets.token_hex(32))
+_secret = os.environ.get('FLASK_SECRET_KEY')
+if not _secret:
+    print("[WARNING] FLASK_SECRET_KEY not set - using a random per-process key. "
+          "Sessions will not persist across instances/restarts. Set FLASK_SECRET_KEY in production.", flush=True)
+    _secret = secrets.token_hex(32)
+app.secret_key = _secret
+
+# Harden session cookies (SECURE defaults on; set SESSION_COOKIE_SECURE=false for local http dev)
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE='Lax',
+    SESSION_COOKIE_SECURE=os.environ.get('SESSION_COOKIE_SECURE', 'true').lower() == 'true',
+)
 
 # OAuth configuration
 oauth = OAuth(app)
@@ -62,6 +75,60 @@ ALLOWED_DOMAIN = 'brite.co'
 def get_current_user():
     """Get current authenticated user from session"""
     return session.get('user')
+
+
+# ========== API AUTH GUARD ==========
+# Every /api/* route requires an authenticated @brite.co session, EXCEPT the
+# endpoints below. This closes the previously wide-open API surface without
+# having to decorate each route individually.
+API_AUTH_EXEMPT = {'/api/user'}  # returns its own {authenticated: ...} shape
+
+@app.before_request
+def _enforce_api_auth():
+    path = request.path
+    if not path.startswith('/api/'):
+        return  # HTML page, OAuth, static assets handled elsewhere
+    if request.method == 'OPTIONS':
+        return  # allow CORS preflight
+    if path in API_AUTH_EXEMPT:
+        return
+    user = session.get('user')
+    email = (user or {}).get('email', '') if isinstance(user, dict) else ''
+    if not user or not str(email).endswith(f'@{ALLOWED_DOMAIN}'):
+        return jsonify({'success': False, 'error': 'Authentication required'}), 401
+
+
+def safe_blob_name(name, allowed_prefixes):
+    """Validate a user-supplied GCS blob name stays within allowed prefixes.
+
+    Returns the name if safe, else None. Blocks path traversal, absolute paths,
+    and escaping the intended drafts/projects folders.
+    """
+    if not name or not isinstance(name, str):
+        return None
+    if '..' in name or name.startswith('/') or '\\' in name or '\x00' in name:
+        return None
+    if not any(name.startswith(p) for p in allowed_prefixes):
+        return None
+    return name
+
+
+# ========== LIST INDEX SIDECARS ==========
+# List views only need a few small fields (name, date, thumbnails), but the full
+# draft/project JSON embeds every base64 image. To avoid downloading megabytes per
+# item on every list call, each save also writes a tiny '<name>.idx' sidecar with
+# just the list-view fields. The list reads only sidecars. '.idx' (not '.json') is
+# used so older deployed code that filters on '.json' ignores these files.
+def _index_blob_name(full_name):
+    return (full_name[:-5] if full_name.endswith('.json') else full_name) + '.idx'
+
+def _write_index(bucket, full_name, index_obj):
+    try:
+        bucket.blob(_index_blob_name(full_name)).upload_from_string(
+            json.dumps(index_obj), content_type='application/json')
+    except Exception as e:
+        print(f"[INDEX WRITE WARN] {full_name}: {e}")
+
 
 # Initialize AI clients
 openai_client = OpenAIClient()
@@ -532,42 +599,46 @@ def generate_images():
         print(f"  Prompt: {prompt[:100]}...")
         print(f"  Generating 2 variations per size")
 
-        images = []
-
+        # Build the full task list (platform x size x 2 variations)
+        tasks = []
         for platform in platforms:
             platform_lower = platform.lower()
             sizes = PLATFORM_SIZES.get(platform_lower, PLATFORM_SIZES['meta'])
-
             for size in sizes:
-                # Generate 2 variations for each size
                 for variation_num in range(1, 3):  # 1, 2
-                    try:
-                        print(f"[API] Generating {platform} - {size['name']} - Variation {variation_num}...")
+                    tasks.append((platform, size, variation_num))
 
-                        # Calculate aspect ratio for this size
-                        width = size['width']
-                        height = size['height']
-                        aspect_ratio = width / height
+        def _render_image(task):
+            """Generate + compress one image. Returns an img_entry dict or None.
+            Runs concurrently across tasks; failures are isolated per image."""
+            platform, size, variation_num = task
+            try:
+                print(f"[API] Generating {platform} - {size['name']} - Variation {variation_num}...")
 
-                        # Determine aspect ratio string for Gemini prompt enhancement
-                        if aspect_ratio > 1.5:
-                            aspect_hint = "wide landscape format (16:9 or wider)"
-                            composition_hint = "horizontal composition with subjects positioned to fill the wide frame"
-                        elif aspect_ratio > 1.2:
-                            aspect_hint = "landscape format"
-                            composition_hint = "horizontal composition"
-                        elif aspect_ratio > 0.85:
-                            aspect_hint = "square format (1:1)"
-                            composition_hint = "centered composition with subjects filling the square frame"
-                        elif aspect_ratio > 0.6:
-                            aspect_hint = "portrait format (4:5)"
-                            composition_hint = "vertical composition with more headroom"
-                        else:
-                            aspect_hint = "tall portrait format (9:16 story)"
-                            composition_hint = "full vertical composition from head to below waist, story-style framing"
+                # Calculate aspect ratio for this size
+                width = size['width']
+                height = size['height']
+                aspect_ratio = width / height
 
-                        # Enhance prompt with aspect ratio guidance
-                        enhanced_prompt = f"""{prompt}
+                # Determine aspect ratio string for Gemini prompt enhancement
+                if aspect_ratio > 1.5:
+                    aspect_hint = "wide landscape format (16:9 or wider)"
+                    composition_hint = "horizontal composition with subjects positioned to fill the wide frame"
+                elif aspect_ratio > 1.2:
+                    aspect_hint = "landscape format"
+                    composition_hint = "horizontal composition"
+                elif aspect_ratio > 0.85:
+                    aspect_hint = "square format (1:1)"
+                    composition_hint = "centered composition with subjects filling the square frame"
+                elif aspect_ratio > 0.6:
+                    aspect_hint = "portrait format (4:5)"
+                    composition_hint = "vertical composition with more headroom"
+                else:
+                    aspect_hint = "tall portrait format (9:16 story)"
+                    composition_hint = "full vertical composition from head to below waist, story-style framing"
+
+                # Enhance prompt with aspect ratio guidance
+                enhanced_prompt = f"""{prompt}
 
 CRITICAL COMPOSITION REQUIREMENTS:
 1. Generate this image EXACTLY for {aspect_hint} at {width}x{height}px dimensions.
@@ -580,66 +651,66 @@ CRITICAL COMPOSITION REQUIREMENTS:
 
 NEVER include any text, logos, watermarks, color codes, hex values, or brand marks in the image. Generate photography only."""
 
-                        # Generate with the selected provider, aspect-specific prompt
-                        result = generate_ad_image(
-                            prompt=enhanced_prompt,
-                            width=width,
-                            height=height,
-                            provider=image_provider,
-                        )
+                result = generate_ad_image(
+                    prompt=enhanced_prompt,
+                    width=width,
+                    height=height,
+                    provider=image_provider,
+                )
 
-                        image_data = result.get('image_data', '')
+                image_data = result.get('image_data', '')
+                if not image_data:
+                    print(f"[API] WARNING - No image data for {platform} {size['name']} - Variation {variation_num}")
+                    return None
 
-                        if image_data:
-                            # Resize and compress image to reduce size
-                            original_image_data = None
-                            try:
-                                import base64
-                                from PIL import Image, ImageOps
-                                from io import BytesIO
+                # Resize and compress image to reduce size
+                original_image_data = None
+                try:
+                    import base64
+                    from PIL import Image, ImageOps
+                    from io import BytesIO
 
-                                # Decode base64 to PIL Image
-                                image_bytes = base64.b64decode(image_data)
-                                pil_image = Image.open(BytesIO(image_bytes))
+                    image_bytes = base64.b64decode(image_data)
+                    pil_image = Image.open(BytesIO(image_bytes))
 
-                                print(f"[API] Original image: {pil_image.size}")
+                    # Save original for frontend reposition feature
+                    orig_buffer = BytesIO()
+                    pil_image.convert('RGB').save(orig_buffer, format='JPEG', quality=85, optimize=True)
+                    original_image_data = base64.b64encode(orig_buffer.getvalue()).decode('utf-8')
 
-                                # Save original for frontend reposition feature
-                                orig_buffer = BytesIO()
-                                pil_image.convert('RGB').save(orig_buffer, format='JPEG', quality=85, optimize=True)
-                                original_image_data = base64.b64encode(orig_buffer.getvalue()).decode('utf-8')
+                    # Use ImageOps.fit to crop-to-fill (no white bars)
+                    pil_image = ImageOps.fit(pil_image, (width, height), Image.Resampling.LANCZOS, centering=(0.5, 0.5))
 
-                                # Use ImageOps.fit to crop-to-fill (no white bars)
-                                target_width = size['width']
-                                target_height = size['height']
-                                pil_image = ImageOps.fit(pil_image, (target_width, target_height), Image.Resampling.LANCZOS, centering=(0.5, 0.5))
+                    buffer = BytesIO()
+                    pil_image.convert('RGB').save(buffer, format='JPEG', quality=85, optimize=True)
+                    compressed_bytes = buffer.getvalue()
+                    image_data = base64.b64encode(compressed_bytes).decode('utf-8')
+                    print(f"[API] Final: {pil_image.size}, compressed to {len(compressed_bytes)} bytes")
+                except Exception as resize_error:
+                    print(f"[API] WARNING - Resize failed, using original: {resize_error}")
 
-                                # Convert to JPEG with compression to reduce size
-                                buffer = BytesIO()
-                                pil_image.convert('RGB').save(buffer, format='JPEG', quality=85, optimize=True)
-                                compressed_bytes = buffer.getvalue()
-                                image_data = base64.b64encode(compressed_bytes).decode('utf-8')
+                img_entry = {
+                    'platform': platform,
+                    'size': f"{size['name']} - Variation {variation_num}",
+                    'width': width,
+                    'height': height,
+                    'url': f"data:image/jpeg;base64,{image_data}"
+                }
+                if original_image_data:
+                    img_entry['original_url'] = f"data:image/jpeg;base64,{original_image_data}"
+                print(f"[API] SUCCESS - {platform} {size['name']} - Variation {variation_num}")
+                return img_entry
 
-                                print(f"[API] Final: {pil_image.size}, compressed from {len(image_bytes)} to {len(compressed_bytes)} bytes")
-                            except Exception as resize_error:
-                                print(f"[API] WARNING - Resize failed, using original: {resize_error}")
+            except Exception as img_error:
+                print(f"[API ERROR] Failed to generate {platform} {size['name']} - Variation {variation_num}: {img_error}")
+                return None
 
-                            img_entry = {
-                                'platform': platform,
-                                'size': f"{size['name']} - Variation {variation_num}",
-                                'width': size['width'],
-                                'height': size['height'],
-                                'url': f"data:image/jpeg;base64,{image_data}"
-                            }
-                            if original_image_data:
-                                img_entry['original_url'] = f"data:image/jpeg;base64,{original_image_data}"
-                            images.append(img_entry)
-                            print(f"[API] SUCCESS - {platform} {size['name']} - Variation {variation_num}")
-                        else:
-                            print(f"[API] WARNING - No image data for {platform} {size['name']} - Variation {variation_num}")
-
-                    except Exception as img_error:
-                        print(f"[API ERROR] Failed to generate {platform} {size['name']} - Variation {variation_num}: {img_error}")
+        # Generate images concurrently (I/O-bound). map() preserves task order.
+        from concurrent.futures import ThreadPoolExecutor
+        max_workers = int(os.environ.get('IMAGE_GEN_CONCURRENCY', '4'))
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            results = list(executor.map(_render_image, tasks))
+        images = [r for r in results if r]
 
         print(f"[API] Generated {len(images)} images total")
 
@@ -1264,7 +1335,7 @@ def generate_video_veo(prompt_text, prompt_image, duration, aspect_ratio):
     print(f"[API] Payload: {json.dumps({**payload, 'instances': [{'prompt': prompt_text[:50] + '...'}]}, indent=2)}")
 
     # Create the task
-    response = requests.post(endpoint, headers=headers, json=payload)
+    response = requests.post(endpoint, headers=headers, json=payload, timeout=120)
 
     print(f"[API] Veo Response Status: {response.status_code}")
 
@@ -1321,7 +1392,7 @@ def generate_video_runway(prompt_text, prompt_image, duration, aspect_ratio):
     print(f"[API] Calling Runway API: {endpoint}")
     print(f"[API] Payload: {json.dumps(payload, indent=2)}")
 
-    response = requests.post(endpoint, headers=headers, json=payload)
+    response = requests.post(endpoint, headers=headers, json=payload, timeout=120)
 
     if response.status_code != 200 and response.status_code != 201:
         error_msg = response.text
@@ -1365,6 +1436,12 @@ def get_veo_status(operation_name):
     if not GOOGLE_VEO_API_KEY:
         return jsonify({'success': False, 'error': 'Google Veo API key not configured'}), 500
 
+    # Validate operation name so it can't be used to drive our API key to
+    # arbitrary paths on the Google host (request forgery).
+    if (not re.fullmatch(r'[A-Za-z0-9._\-/]+', operation_name or '')
+            or not (operation_name.startswith('models/') or operation_name.startswith('operations/'))):
+        return jsonify({'success': False, 'error': 'Invalid operation name'}), 400
+
     # Poll the operation status
     endpoint = f'{VEO_API_BASE}/{operation_name}'
 
@@ -1372,7 +1449,7 @@ def get_veo_status(operation_name):
         'x-goog-api-key': GOOGLE_VEO_API_KEY
     }
 
-    response = requests.get(endpoint, headers=headers)
+    response = requests.get(endpoint, headers=headers, timeout=30)
 
     if response.status_code != 200:
         return jsonify({'success': False, 'error': f'Failed to get Veo task status: {response.text}'}), 500
@@ -1435,7 +1512,7 @@ def proxy_veo_video(file_id):
         print(f"[API] Proxying Veo video: {download_url}")
 
         # Stream the video from Google
-        response = requests.get(download_url, headers=headers, stream=True)
+        response = requests.get(download_url, headers=headers, stream=True, timeout=120)
 
         if response.status_code != 200:
             print(f"[API ERROR] Failed to download Veo video: {response.status_code} - {response.text[:200]}")
@@ -1474,7 +1551,7 @@ def get_runway_status(task_id):
         'X-Runway-Version': '2024-11-06'
     }
 
-    response = requests.get(f'{RUNWAY_API_BASE}/tasks/{task_id}', headers=headers)
+    response = requests.get(f'{RUNWAY_API_BASE}/tasks/{task_id}', headers=headers, timeout=30)
 
     if response.status_code != 200:
         return jsonify({'success': False, 'error': f'Failed to get task status: {response.text}'}), 500
@@ -1507,99 +1584,6 @@ def get_runway_status(task_id):
     return jsonify(result)
 
 
-@app.route('/api/generate-video-sync', methods=['POST'])
-def generate_video_sync():
-    """Generate video and wait for completion (synchronous)"""
-    try:
-        data = request.json
-        prompt_text = data.get('prompt', '')
-        prompt_image = data.get('image')
-        duration = int(data.get('duration', 6))  # Must be int: 4, 6, or 8 for veo3
-        aspect_ratio = data.get('ratio', '720:1280')
-
-        print(f"\n[API] Generate Video (Sync) Request")
-        print(f"  Duration: {duration}s")
-        print(f"  Ratio: {aspect_ratio}")
-
-        if not RUNWAY_API_KEY:
-            return jsonify({'success': False, 'error': 'Runway API key not configured'}), 500
-
-        headers = {
-            'Authorization': f'Bearer {RUNWAY_API_KEY}',
-            'Content-Type': 'application/json',
-            'X-Runway-Version': '2024-11-06'
-        }
-
-        if prompt_image:
-            # Image-to-video: supports gen4_turbo, gen3a_turbo, veo3, veo3.1, veo3.1_fast
-            payload = {
-                'model': 'gen4_turbo',
-                'promptText': prompt_text,
-                'promptImage': prompt_image,
-                'ratio': aspect_ratio,
-                'duration': duration
-            }
-            endpoint = f'{RUNWAY_API_BASE}/image_to_video'
-        else:
-            # Text-to-video: only supports veo3, veo3.1, veo3.1_fast
-            # Using veo3.1 with duration=8 (must be 4, 6, or 8)
-            payload = {
-                'model': 'veo3.1',
-                'promptText': prompt_text,
-                'ratio': aspect_ratio,
-                'duration': 8
-            }
-            endpoint = f'{RUNWAY_API_BASE}/text_to_video'
-
-        # Create the task
-        response = requests.post(endpoint, headers=headers, json=payload)
-
-        if response.status_code not in [200, 201]:
-            return jsonify({'success': False, 'error': f'Runway API error: {response.text}'}), 500
-
-        task_data = response.json()
-        task_id = task_data.get('id')
-        print(f"[API] Task created: {task_id}, polling for completion...")
-
-        # Poll for completion (max 5 minutes)
-        max_attempts = 60
-        for attempt in range(max_attempts):
-            time.sleep(5)  # Wait 5 seconds between polls
-
-            status_response = requests.get(f'{RUNWAY_API_BASE}/tasks/{task_id}', headers=headers)
-
-            if status_response.status_code != 200:
-                continue
-
-            status_data = status_response.json()
-            status = status_data.get('status', 'unknown')
-
-            if status == 'SUCCEEDED':
-                output = status_data.get('output', [])
-                video_url = output[0] if output else None
-                print(f"[API] Video complete: {video_url}")
-                return jsonify({
-                    'success': True,
-                    'video_url': video_url,
-                    'task_id': task_id
-                })
-            elif status == 'FAILED':
-                error = status_data.get('failure', 'Unknown error')
-                print(f"[API] Video failed: {error}")
-                return jsonify({'success': False, 'error': error}), 500
-
-            progress = status_data.get('progress', 0)
-            print(f"[API] Progress: {progress}% (attempt {attempt + 1}/{max_attempts})")
-
-        return jsonify({'success': False, 'error': 'Video generation timed out'}), 500
-
-    except Exception as e:
-        print(f"[API ERROR] {str(e)}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-
 # ============================================================================
 # DRAFTS - GCS Auto-save
 # ============================================================================
@@ -1630,6 +1614,14 @@ def save_draft():
         bucket = gcs_client.bucket(GCS_BUCKET_NAME)
         blob = bucket.blob(blob_name)
         blob.upload_from_string(json.dumps(draft), content_type='application/json')
+        _write_index(bucket, blob_name, {
+            'filename': blob_name,
+            'campaignName': draft.get('campaignName'),
+            'currentStep': draft.get('currentStep'),
+            'selectedPlatforms': draft.get('selectedPlatforms'),
+            'lastSavedBy': draft.get('lastSavedBy'),
+            'lastSavedAt': draft.get('lastSavedAt'),
+        })
         return jsonify({'success': True, 'file': blob_name})
 
     except Exception as e:
@@ -1645,18 +1637,29 @@ def list_drafts():
     try:
         bucket = gcs_client.bucket(GCS_BUCKET_NAME)
         blobs = list(bucket.list_blobs(prefix='drafts/'))
+        have_idx = {b.name for b in blobs if b.name.endswith('.idx')}
         drafts = []
         for blob in blobs:
-            if blob.name.endswith('.json'):
+            if blob.name.endswith('.idx'):
+                try:
+                    drafts.append(json.loads(blob.download_as_text()))
+                except Exception as idx_err:
+                    print(f"[DRAFT INDEX READ WARN] {blob.name}: {idx_err}")
+            elif blob.name.endswith('.json'):
+                # Old item with no sidecar yet: download once, then self-heal.
+                if _index_blob_name(blob.name) in have_idx:
+                    continue
                 data = json.loads(blob.download_as_text())
-                drafts.append({
+                entry = {
                     'filename': blob.name,
                     'campaignName': data.get('campaignName'),
                     'currentStep': data.get('currentStep'),
                     'selectedPlatforms': data.get('selectedPlatforms'),
                     'lastSavedBy': data.get('lastSavedBy'),
                     'lastSavedAt': data.get('lastSavedAt'),
-                })
+                }
+                drafts.append(entry)
+                _write_index(bucket, blob.name, entry)
         drafts.sort(key=lambda d: d.get('lastSavedAt', ''), reverse=True)
         return jsonify({'success': True, 'drafts': drafts})
     except Exception as e:
@@ -1670,9 +1673,9 @@ def load_draft():
     if not gcs_client:
         return jsonify({'success': False, 'error': 'GCS not available'}), 503
     try:
-        filename = request.args.get('file')
+        filename = safe_blob_name(request.args.get('file'), ('drafts/',))
         if not filename:
-            return jsonify({'success': False, 'error': 'No file specified'}), 400
+            return jsonify({'success': False, 'error': 'Invalid or missing file'}), 400
         bucket = gcs_client.bucket(GCS_BUCKET_NAME)
         blob = bucket.blob(filename)
         if not blob.exists():
@@ -1690,17 +1693,21 @@ def delete_draft():
     if not gcs_client:
         return jsonify({'success': True})
     try:
-        filename = request.json.get('file')
+        filename = safe_blob_name((request.json or {}).get('file'), ('drafts/',))
         if not filename:
-            return jsonify({'success': False, 'error': 'No file specified'}), 400
+            return jsonify({'success': False, 'error': 'Invalid or missing file'}), 400
         bucket = gcs_client.bucket(GCS_BUCKET_NAME)
         blob = bucket.blob(filename)
         if blob.exists():
             blob.delete()
+        # Remove the list-index sidecar too
+        idx = bucket.blob(_index_blob_name(filename))
+        if idx.exists():
+            idx.delete()
         return jsonify({'success': True})
     except Exception as e:
         print(f"[DRAFT DELETE ERROR] {str(e)}")
-        return jsonify({'success': True})
+        return jsonify({'success': False, 'error': 'Delete failed'}), 500
 
 
 # ========== AI IMAGE EDITING ==========
@@ -1729,9 +1736,23 @@ def edit_image():
         if not edited_image:
             return jsonify({'success': False, 'error': 'No edited image returned'}), 500
 
+        # Re-encode the edited image to JPEG (Gemini returns PNG, ~3-5x larger).
+        # Keeps refine iterations light in transport, browser memory, and saved projects.
+        edited_mime = 'image/png'
+        try:
+            from PIL import Image as _PILImage
+            from io import BytesIO as _BytesIO
+            _img = _PILImage.open(_BytesIO(base64.b64decode(edited_image)))
+            _buf = _BytesIO()
+            _img.convert('RGB').save(_buf, format='JPEG', quality=88, optimize=True)
+            edited_image = base64.b64encode(_buf.getvalue()).decode('utf-8')
+            edited_mime = 'image/jpeg'
+        except Exception as _enc_err:
+            print(f"[API] Edit image JPEG re-encode failed, returning PNG: {_enc_err}")
+
         return jsonify({
             'success': True,
-            'editedImage': f"data:image/png;base64,{edited_image}",
+            'editedImage': f"data:{edited_mime};base64,{edited_image}",
             'generationTimeMs': result.get('generation_time_ms', 0)
         })
 
@@ -1774,6 +1795,15 @@ def save_project():
         bucket = gcs_client.bucket(GCS_BUCKET_NAME)
         blob = bucket.blob(blob_name)
         blob.upload_from_string(json.dumps(project), content_type='application/json')
+        _write_index(bucket, blob_name, {
+            'filename': blob_name,
+            'projectName': project.get('projectName'),
+            'completedBy': project.get('completedBy'),
+            'completedAt': project.get('completedAt'),
+            'selectedPlatforms': project.get('selectedPlatforms'),
+            'thumbnails': (project.get('thumbnails') or [])[:3],  # list shows up to 3
+            'imageCount': project.get('imageCount', 0),
+        })
         return jsonify({'success': True, 'file': blob_name})
 
     except Exception as e:
@@ -1789,19 +1819,30 @@ def list_projects():
     try:
         bucket = gcs_client.bucket(GCS_BUCKET_NAME)
         blobs = list(bucket.list_blobs(prefix='projects/'))
+        have_idx = {b.name for b in blobs if b.name.endswith('.idx')}
         projects = []
         for blob in blobs:
-            if blob.name.endswith('.json'):
+            if blob.name.endswith('.idx'):
+                try:
+                    projects.append(json.loads(blob.download_as_text()))
+                except Exception as idx_err:
+                    print(f"[PROJECT INDEX READ WARN] {blob.name}: {idx_err}")
+            elif blob.name.endswith('.json'):
+                # Old item with no sidecar yet: download once, then self-heal.
+                if _index_blob_name(blob.name) in have_idx:
+                    continue
                 data = json.loads(blob.download_as_text())
-                projects.append({
+                entry = {
                     'filename': blob.name,
                     'projectName': data.get('projectName'),
                     'completedBy': data.get('completedBy'),
                     'completedAt': data.get('completedAt'),
                     'selectedPlatforms': data.get('selectedPlatforms'),
-                    'thumbnails': data.get('thumbnails', []),
-                    'imageCount': data.get('imageCount', 0)
-                })
+                    'thumbnails': (data.get('thumbnails') or [])[:3],
+                    'imageCount': data.get('imageCount', 0),
+                }
+                projects.append(entry)
+                _write_index(bucket, blob.name, entry)
         projects.sort(key=lambda p: p.get('completedAt', ''), reverse=True)
         return jsonify({'success': True, 'projects': projects})
     except Exception as e:
@@ -1815,9 +1856,9 @@ def load_project():
     if not gcs_client:
         return jsonify({'success': False, 'error': 'GCS not available'}), 503
     try:
-        filename = request.args.get('file')
+        filename = safe_blob_name(request.args.get('file'), ('projects/',))
         if not filename:
-            return jsonify({'success': False, 'error': 'No file specified'}), 400
+            return jsonify({'success': False, 'error': 'Invalid or missing file'}), 400
         bucket = gcs_client.bucket(GCS_BUCKET_NAME)
         blob = bucket.blob(filename)
         if not blob.exists():
@@ -1835,17 +1876,20 @@ def delete_project():
     if not gcs_client:
         return jsonify({'success': True})
     try:
-        filename = request.json.get('file')
+        filename = safe_blob_name((request.json or {}).get('file'), ('projects/',))
         if not filename:
-            return jsonify({'success': False, 'error': 'No file specified'}), 400
+            return jsonify({'success': False, 'error': 'Invalid or missing file'}), 400
         bucket = gcs_client.bucket(GCS_BUCKET_NAME)
         blob = bucket.blob(filename)
         if blob.exists():
             blob.delete()
+        idx = bucket.blob(_index_blob_name(filename))
+        if idx.exists():
+            idx.delete()
         return jsonify({'success': True})
     except Exception as e:
         print(f"[PROJECT DELETE ERROR] {str(e)}")
-        return jsonify({'success': True})
+        return jsonify({'success': False, 'error': 'Delete failed'}), 500
 
 
 if __name__ == '__main__':
@@ -1868,4 +1912,4 @@ if __name__ == '__main__':
     print()
 
     # Use PORT from environment (for Cloud Run) or default to 3000 for local dev
-    app.run(debug=os.environ.get('FLASK_DEBUG', 'true').lower() == 'true', port=port, host='0.0.0.0')
+    app.run(debug=os.environ.get('FLASK_DEBUG', 'false').lower() == 'true', port=port, host='0.0.0.0')
