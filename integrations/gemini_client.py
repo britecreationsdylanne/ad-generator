@@ -275,7 +275,7 @@ class GeminiClient:
         Args:
             prompt: User prompt
             system_prompt: System instructions (will be prepended to prompt)
-            model: Model to use (default: gemini-3-pro-preview)
+            model: Model to use (default: gemini-3.1-pro-preview)
             max_tokens: Maximum output tokens
             temperature: Creativity setting
 
@@ -286,7 +286,7 @@ class GeminiClient:
             }
         """
         try:
-            text_model = model or "gemini-3-pro-preview"
+            text_model = model or "gemini-3.1-pro-preview"
             start_time = time.time()
 
             # Combine system prompt and user prompt
@@ -410,8 +410,8 @@ class GeminiClient:
             if len(content_parts) < 2:
                 raise ValueError("No valid images to analyze")
 
-            # Use Gemini 3 Pro Preview for vision analysis
-            vision_model = "gemini-3-pro-preview"
+            # Use Gemini 3.1 Pro Preview for vision analysis
+            vision_model = "gemini-3.1-pro-preview"
             print(f"[GEMINI VISION] Using model: {vision_model}")
 
             response = self.client.models.generate_content(
