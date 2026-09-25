@@ -549,7 +549,7 @@ Make it specific, visual, and actionable."""
             print("[API] Using Claude...")
             result = claude_client.generate_content(
                 prompt=prompt_context,
-                max_tokens=500,
+                max_tokens=1500,
                 temperature=0.7
             )
             prompt = result.get('content', '')
@@ -557,7 +557,7 @@ Make it specific, visual, and actionable."""
             print("[API] Using Gemini...")
             result = gemini_client.generate_content(
                 prompt=prompt_context,
-                max_tokens=500,
+                max_tokens=1500,
                 temperature=0.7
             )
             prompt = result.get('content', '')
@@ -565,7 +565,7 @@ Make it specific, visual, and actionable."""
             print("[API] Using OpenAI...")
             result = openai_client.generate_content(
                 prompt=prompt_context,
-                max_tokens=500,
+                max_tokens=1500,
                 temperature=0.7
             )
             prompt = result.get('content', '')

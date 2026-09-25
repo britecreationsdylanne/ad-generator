@@ -676,8 +676,8 @@
             <textarea id="campaignText" placeholder="Describe your campaign idea, key messages, themes, or any text you want incorporated...
 
 Example: Valentine's Day campaign for engagement ring insurance. Focus on celebrating love and protecting what matters most. Target newly engaged couples."
-                      oninput="updateCharCount()" maxlength="500"></textarea>
-            <div class="char-count" id="charCount">0 / 500 characters</div>
+                      oninput="updateCharCount()" maxlength="2000"></textarea>
+            <div class="char-count" id="charCount">0 / 2000 characters</div>
 
             <h2 style="margin-top: 2rem;">Inspiration Images (Optional)</h2>
             <p style="color: #7DA3AF; margin-bottom: 1rem;">Upload images to guide the visual style. <strong>Gemini Vision</strong> will analyze them.</p>
@@ -5683,9 +5683,9 @@ Example: Valentine's Day campaign for engagement ring insurance. Focus on celebr
         function updateCharCount() {
             const text = document.getElementById('campaignText').value;
             const count = text.length;
-            document.getElementById('charCount').textContent = `${count} / 500 characters`;
+            document.getElementById('charCount').textContent = `${count} / 2000 characters`;
 
-            if (count > 500) {
+            if (count > 2000) {
                 document.getElementById('charCount').style.color = '#D73D4F';
             } else {
                 document.getElementById('charCount').style.color = '#A9C1CB';
