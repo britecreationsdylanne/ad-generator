@@ -577,6 +577,26 @@ Look for trend forecasts, style guides, design inspiration, and industry predict
 that help venues understand what couples will be requesting for {season} weddings.
 """
         return self.search_web_responses_api(query, max_results=15, exclude_urls=exclude_urls)
+    # Backup image model. OpenAI shuts gpt-image-2 off on 2027-02-10; remove
+    # this fallback after that date.
+    LEGACY_IMAGE_MODEL = "gpt-image-2"
+
+    def _call_image_api(self, api_call, model: str, **kwargs):
+        """Call an images endpoint on `model`; if it fails, retry once on the
+        legacy model. Returns (response, model_used)."""
+        try:
+            return api_call(model=model, **kwargs), model
+        except Exception as e:
+            msg = str(e).lower()
+            # A prompt the new model refuses will be refused by the old one too
+            if model == self.LEGACY_IMAGE_MODEL or "moderation" in msg or "safety" in msg:
+                raise
+            print(f"[IMAGE] {model} failed ({e}); retrying with {self.LEGACY_IMAGE_MODEL}")
+            image = kwargs.get("image")
+            if hasattr(image, "seek"):
+                image.seek(0)  # the failed attempt already consumed the upload
+            return api_call(model=self.LEGACY_IMAGE_MODEL, **kwargs), self.LEGACY_IMAGE_MODEL
+
     def generate_image(
         self,
         prompt: str,
@@ -600,8 +620,9 @@ that help venues understand what couples will be requesting for {season} wedding
             raise ValueError("OpenAI API key not configured")
 
         start_time = time.time()
-        response = self.client.images.generate(
-            model=model,
+        response, model = self._call_image_api(
+            self.client.images.generate,
+            model,
             prompt=prompt,
             size=size,
             quality=quality,
@@ -646,8 +667,9 @@ that help venues understand what couples will be requesting for {season} wedding
         buffer = BytesIO(image_bytes)
         buffer.name = "image.png"  # OpenAI SDK infers format from filename
 
-        response = self.client.images.edit(
-            model=model,
+        response, model = self._call_image_api(
+            self.client.images.edit,
+            model,
             image=buffer,
             prompt=prompt,
             size=size,
