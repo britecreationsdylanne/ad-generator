@@ -580,16 +580,16 @@ that help venues understand what couples will be requesting for {season} wedding
     def generate_image(
         self,
         prompt: str,
-        model: str = "gpt-image-2",
+        model: str = "gpt-image-2.6-sunburst",
         size: str = "1024x1024",
         quality: str = "high",
     ) -> Dict:
         """
-        Generate an image using OpenAI's image API (GPT Image 2).
+        Generate an image using OpenAI's image API (GPT Image 2.6 Sunburst).
 
         Args:
             prompt: Text description of the image to generate
-            model: Image model (default: gpt-image-2)
+            model: Image model (default: gpt-image-2.6-sunburst)
             size: Output dimensions (e.g. 1024x1024, 1536x1024, 1024x1536)
             quality: low | medium | high
 
@@ -620,16 +620,16 @@ that help venues understand what couples will be requesting for {season} wedding
         self,
         image_data: str,
         prompt: str,
-        model: str = "gpt-image-2",
+        model: str = "gpt-image-2.6-sunburst",
         size: str = "1024x1024",
     ) -> Dict:
         """
-        Edit an image using OpenAI's image edit API (GPT Image 2).
+        Edit an image using OpenAI's image edit API (GPT Image 2.6 Sunburst).
 
         Args:
             image_data: Base64-encoded source image
             prompt: Edit instructions
-            model: Image model (default: gpt-image-2)
+            model: Image model (default: gpt-image-2.6-sunburst)
             size: Output dimensions
 
         Returns:

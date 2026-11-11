@@ -141,7 +141,7 @@ print("[OK] Claude initialized")
 
 
 def _openai_image_size_for(width, height):
-    """Map a target aspect ratio to a GPT Image 2 supported size."""
+    """Map a target aspect ratio to a GPT Image 2.6 Sunburst supported size."""
     aspect_ratio = width / height
     if aspect_ratio > 1.2:
         return "1536x1024"   # landscape
@@ -155,15 +155,15 @@ def generate_ad_image(prompt, width=1024, height=1024, provider="gemini"):
     Route image generation to the selected provider.
 
     provider: 'gemini' (Nano Banana / gemini-2.5-flash-image, default) or
-              'openai' (GPT Image 2).
+              'openai' (GPT Image 2.6 Sunburst).
     Returns a dict with an 'image_data' base64 field (provider-agnostic).
     """
     if provider == "openai":
         size = _openai_image_size_for(width, height)
-        print(f"[IMAGE] Provider: OpenAI GPT Image 2 ({size})")
+        print(f"[IMAGE] Provider: OpenAI GPT Image 2.6 Sunburst ({size})")
         return openai_client.generate_image(
             prompt=prompt,
-            model="gpt-image-2",
+            model="gpt-image-2.6-sunburst",
             size=size,
         )
     print("[IMAGE] Provider: Gemini (gemini-2.5-flash-image)")
@@ -177,11 +177,11 @@ def edit_ad_image(image_data, prompt, width=1024, height=1024, provider="gemini"
     """Route image editing to the selected provider. Returns dict with 'image_data'."""
     if provider == "openai":
         size = _openai_image_size_for(width, height)
-        print(f"[IMAGE EDIT] Provider: OpenAI GPT Image 2 ({size})")
+        print(f"[IMAGE EDIT] Provider: OpenAI GPT Image 2.6 Sunburst ({size})")
         return openai_client.edit_image(
             image_data=image_data,
             prompt=prompt,
-            model="gpt-image-2",
+            model="gpt-image-2.6-sunburst",
             size=size,
         )
     print("[IMAGE EDIT] Provider: Gemini (gemini-2.5-flash-image)")
